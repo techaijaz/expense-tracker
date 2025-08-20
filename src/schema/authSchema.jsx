@@ -1,0 +1,44 @@
+import * as z from 'zod';
+
+export default {
+  signUpSchema: () => {
+    return z.object({
+      firstName: z
+        .string({ required_error: 'First name is required' })
+        .min(3, {
+          message: 'First name is required and must be at least 3 characters',
+        })
+        .max(72, {
+          message: 'First name is required and must be at most 72 characters',
+        }),
+      lastName: z.string({ required_error: 'Last name is required' }).max(72, {
+        message: 'Last name is required and must be at most 72 characters',
+      }),
+      email: z
+        .string({ required_error: 'Email is required' })
+        .min(1, {
+          message: 'Email is required',
+        })
+        .email({ message: 'Invalid email' }),
+      password: z
+        .string({ required_error: 'Password is required' })
+        .min(1, {
+          message: 'Password is required',
+        })
+        .min(4, { message: 'Password must be at least 4 characters' }),
+    });
+  },
+  signInSchema: () => {
+    return z.object({
+      email: z
+        .string({ required_error: 'Email is required' })
+        .min(1, {
+          message: 'Email is required',
+        })
+        .email({ message: 'Invalid email' }),
+      password: z
+        .string({ required_error: 'Password is required' })
+        .min(8, { message: 'Password must be at least 8 characters' }),
+    });
+  },
+};

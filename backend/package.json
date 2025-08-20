@@ -1,0 +1,37 @@
+{
+    "name": "youtube-backend",
+    "version": "1.0.0",
+    "description": "",
+    "type": "module",
+    "main": "server.js",
+    "scripts": {
+        "dev": "cross-env NODE_ENV=development nodemon --legacy-watch src/server.js",
+        "start": "cross-env NODE_ENV=production node src/server.js"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "devDependencies": {
+        "nodemon": "^3.1.7",
+        "prettier": "3.3.3"
+    },
+    "dependencies": {
+        "bcrypt": "^5.1.1",
+        "colorette": "^2.0.20",
+        "cookie-parser": "^1.4.7",
+        "cors": "^2.8.5",
+        "cross-env": "^7.0.3",
+        "dayjs": "^1.11.13",
+        "dotenv-flow": "^4.1.0",
+        "express": "^4.21.1",
+        "helmet": "^8.0.0",
+        "joi": "^17.13.3",
+        "jsonwebtoken": "^9.0.2",
+        "mongoose": "^8.9.3",
+        "rate-limiter-flexible": "^5.0.4",
+        "source-map-support": "^0.5.21",
+        "uuid": "^11.0.3",
+        "winston": "^3.17.0",
+        "winston-mongodb": "^6.0.0"
+    }
+}
