@@ -21,21 +21,24 @@ export default {
                 return httpError(next, error, req, 422)
             }
 
-            const { amount, category, account, description, type, date } = value
+            const { amount, category, account, description, type, date, partyId, toAccountId, ledgerType } = value
 
             const payload = {
-                user: userId,
+                userId: userId,
                 date: dayjs(date).utc().toDate(),
                 amount,
-                category,
-                account,
-                description,
-                type,
+                categoryId: category,
+                accountId: account,
+                title: description,
+                type: type,
+                partyId: partyId || null,
+                toAccountId: toAccountId || null,
+                ledgerType: ledgerType || 'NORMAL',
             }
 
-            const newTransection = await databseService.createTransection(payload)
+            const result = await databseService.createTransaction(payload)
 
-            httpResponse(req, res, 200, responceseMessage.SUCCESS, newTransection)
+            httpResponse(req, res, 200, responceseMessage.SUCCESS, result)
         } catch (error) {
             httpError(next, error, req, 500)
         }
@@ -96,6 +99,47 @@ export default {
                 totalsExpense: totalsExpense[0]?.totalExpense,
             }
             httpResponse(req, res, 200, responceseMessage.SUCCESS, totals)
+        } catch (error) {
+            httpError(next, error, req, 500)
+        }
+    },
+    editTransaction: async (req, res, next) => {
+        try {
+            const userId = req.authenticatedUser._id
+            const ledgerId = req.params.id
+            const { body } = req
+
+            const { error, value } = validateJoiSchema(validationTransectionBody, body)
+            if (error) {
+                return httpError(next, error, req, 422)
+            }
+
+            const payload = {
+                userId: userId,
+                date: dayjs(value.date).utc().toDate(),
+                amount: value.amount,
+                categoryId: value.category,
+                accountId: value.account,
+                title: value.description,
+                type: value.type,
+                partyId: value.partyId || null,
+                toAccountId: value.toAccountId || null,
+                ledgerType: value.ledgerType || 'NORMAL',
+            }
+
+            const result = await databseService.editTransaction(ledgerId, userId, payload)
+            httpResponse(req, res, 200, 'Transaction updated successfully', result)
+        } catch (error) {
+            httpError(next, error, req, 500)
+        }
+    },
+    deleteTransaction: async (req, res, next) => {
+        try {
+            const userId = req.authenticatedUser._id
+            const ledgerId = req.params.id
+
+            await databseService.deleteTransaction(ledgerId, userId)
+            httpResponse(req, res, 200, 'Transaction deleted successfully')
         } catch (error) {
             httpError(next, error, req, 500)
         }

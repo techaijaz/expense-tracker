@@ -4,9 +4,10 @@ import transectionController from '../controller/transectionController.js'
 
 const router = express.Router()
 
-// add catagory
-router.route('/add').post(authentication, transectionController.addTransection)
-router.route('/all').get(authentication, transectionController.getAllTransections)
+router.route('/').post(authentication, transectionController.addTransection).get(authentication, transectionController.getAllTransections)
+
+router.route('/:id').put(authentication, transectionController.editTransaction).delete(authentication, transectionController.deleteTransaction)
+
 router.route('/gettotals').get(authentication, transectionController.gettotals)
 
 export default router

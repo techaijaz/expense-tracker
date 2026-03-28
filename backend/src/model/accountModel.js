@@ -2,38 +2,49 @@ import mongoose from 'mongoose'
 
 const accountSchema = new mongoose.Schema(
     {
-        user: {
+        userId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'User',
             required: true,
+            index: true,
         },
         name: {
             type: String,
             required: true,
-        },
-        accountNumber: {
-            type: String,
+            trim: true,
         },
         type: {
             type: String,
-            enum: ['Cash', 'Bank account', 'Credit card', 'Debt', 'Investment', 'Business'],
+            enum: ['BANK', 'CASH', 'CREDIT_CARD', 'INVESTMENT', 'BUSINESS'],
             required: true,
         },
         balance: {
             type: Number,
             default: 0,
+            required: true,
         },
-        status: {
+        currency: {
+            type: String,
+            default: 'INR',
+        },
+        isActive: {
             type: Boolean,
             default: true,
         },
-        isDefault: {
+        isDeleted: {
             type: Boolean,
             default: false,
         },
     },
     {
         timestamps: true,
+        toJSON: {
+            transform: function (doc, ret) {
+                delete ret.__v
+                delete ret.isDeleted
+                return ret
+            },
+        },
     }
 )
 

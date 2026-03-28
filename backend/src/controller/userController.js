@@ -16,6 +16,7 @@ export default {
     register: async (req, res, next) => {
         try {
             const { body } = req
+            console.log(body)
 
             // Todo
             // * body validation
@@ -24,7 +25,7 @@ export default {
                 return httpError(next, error, req, 422)
             }
 
-            const { name, email, password, consent } = value
+            const { firstName, lastName, email, password, consent } = value
 
             // * check if user already exist using
             const user = await databseService.findUserByEmail(email)
@@ -39,7 +40,8 @@ export default {
 
             // * create user
             const payload = {
-                name,
+                firstName,
+                lastName,
                 email,
                 password: encryptedPassword,
                 consent,

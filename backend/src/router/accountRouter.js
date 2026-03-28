@@ -1,24 +1,11 @@
 import express from 'express'
-import accountController from '../controller/accountController.js'
 import authentication from '../middleware/authentication.js'
+import accountController from '../controller/accountController.js'
 
 const router = express.Router()
 
-// Route to create a new account
-router.route('/create').post(authentication, accountController.createAccount)
+router.route('/').post(authentication, accountController.createAccount).get(authentication, accountController.getAllAccounts)
 
-// Route to get all accounts of a user
-router.route('/get').get(authentication, accountController.getAllAccounts)
-
-// Route to update an account
-router.route('/update/:id').put(authentication, accountController.updateAccount)
-
-// Route to update an balance
-router.route('/add-amount/:id').put(authentication, accountController.addAmount)
-
-// Route to fund transfer
-router.route('/transfer-funds').post(authentication, accountController.transferFund)
-
-// Additional routes can be added here, e.g., for fetching accounts, updating, deleting, etc.
+router.route('/:id').patch(authentication, accountController.updateAccount).delete(authentication, accountController.deleteAccount)
 
 export default router

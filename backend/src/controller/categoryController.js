@@ -1,83 +1,92 @@
-import { validateJoiSchema, validationCategoryBody } from '../service/validationService.js'
-import responceseMessage from '../constent/responceseMessage.js'
-import databseService from '../service/databseService.js'
-import httpError from '../util/httpError.js'
 import httpResponse from '../util/httpResponse.js'
+import httpError from '../util/httpError.js'
+import Category from '../model/categoryModel.js'
+import { validateJoiSchema, validationCategoryBody } from '../service/validationService.js'
+
+// Simple helper to generate a category tree
+const buildCategoryTree = (categories, parentId = null) => {
+    const parentStr = parentId ? parentId.toString() : null
+
+    return categories
+        .filter((c) => {
+            const cParent = c.parentId ? c.parentId.toString() : null
+            return cParent === parentStr
+        })
+        .map((c) => ({
+            ...c.toObject(),
+            children: buildCategoryTree(categories, c._id),
+        }))
+}
 
 export default {
-    getAllCategories: async (req, res, next) => {
-        try {
-            const userId = req.authenticatedUser._id // Assuming user ID is stored in req.user
-            const categories = await databseService.getAllCategories(userId)
-            httpResponse(req, res, 200, responceseMessage.SUCCESS, categories)
-        } catch (error) {
-            httpError(next, error, req, 500)
-        }
-    },
     createCategory: async (req, res, next) => {
         try {
-            const { body } = req
+            const { error, value } = validateJoiSchema(validationCategoryBody, req.body)
+            if (error) return httpError(next, error, req, 422)
 
-            // * body validation
-            const { error, value } = validateJoiSchema(validationCategoryBody, body)
-            if (error) {
-                return httpError(next, error, req, 422)
-            }
-
-            const { name } = value
-            const userId = req.authenticatedUser._id // Assuming user ID is stored in req.user
-
-            // * find category by user id and name
-            const category = await databseService.findCategoryByUserIdAndName(userId, name)
-            if (!category) {
-                httpError(next, responceseMessage.CATEGORY_FOUND, req, 422)
-            }
-            const payload = {
-                user: userId,
-                name,
-            }
-
-            // * create category
-            const newCategory = await databseService.createCategory(payload)
-
-            httpResponse(req, res, 200, responceseMessage.SUCCESS, newCategory)
+            const category = await Category.create({
+                ...value,
+                userId: req.authenticatedUser._id,
+            })
+            httpResponse(req, res, 201, 'Category created successfully', category)
         } catch (error) {
             httpError(next, error, req, 500)
         }
     },
-    addCatagory: async (req, res, next) => {
+    getAllCategories: async (req, res, next) => {
         try {
-            const userId = req.authenticatedUser._id
-            const { body } = req
+            const categories = await Category.find({
+                userId: req.authenticatedUser._id,
+                isDeleted: false,
+            })
+                .populate('parentId', 'name type')
+                .sort({ createdAt: -1 })
 
-            // * body validation
-            const { error, value } = validateJoiSchema(validationCategoryBody, body)
-            if (error) {
-                return httpError(next, error, req, 422)
-            }
+            // Build tree structure
+            const tree = buildCategoryTree(categories)
 
-            const { name } = value
+            httpResponse(req, res, 200, 'Categories retrieved successfully', {
+                flat: categories,
+                tree: tree,
+            })
+        } catch (error) {
+            httpError(next, error, req, 500)
+        }
+    },
+    updateCategory: async (req, res, next) => {
+        try {
+            const { name, type, parentId, icon } = req.body
+            const updateFields = {}
+            if (name !== undefined) updateFields.name = name
+            if (type !== undefined) updateFields.type = type
+            if (parentId !== undefined) updateFields.parentId = parentId
+            if (icon !== undefined) updateFields.icon = icon
 
-            // * find category by user id and name
-            const category = await databseService.findCategoryByUserIdAndName(userId, name)
-            if (category) {
-                httpError(next, responceseMessage.CATEGORY_FOUND, req, 422)
-            }
+            const category = await Category.findOneAndUpdate(
+                { _id: req.params.id, userId: req.authenticatedUser._id, isDeleted: false },
+                { $set: updateFields },
+                { new: true, runValidators: true }
+            )
+            if (!category) return httpError(next, 'Category not found', req, 404)
+            httpResponse(req, res, 200, 'Category updated successfully', category)
+        } catch (error) {
+            httpError(next, error, req, 500)
+        }
+    },
+    deleteCategory: async (req, res, next) => {
+        try {
+            // Soft delete category
+            const category = await Category.findOneAndUpdate(
+                { _id: req.params.id, userId: req.authenticatedUser._id, isDeleted: false },
+                { $set: { isDeleted: true } },
+                { new: true }
+            )
+            if (!category) return httpError(next, 'Category not found', req, 404)
 
-            const categories = await databseService.getAllCategories(userId)
-            if (categories.length > 10) {
-                httpError(next, responceseMessage.Limit_CATEGORY_10, req, 422)
-            }
+            // Note: you might also want to soft delete sub-categories here if needed.
+            await Category.updateMany({ parentId: req.params.id, userId: req.authenticatedUser._id }, { $set: { isDeleted: true } })
 
-            const payload = {
-                user: userId,
-                name,
-            }
-
-            // * create category
-            const newCategory = await databseService.addCatagory(payload)
-
-            httpResponse(req, res, 200, responceseMessage.SUCCESS, newCategory)
+            httpResponse(req, res, 200, 'Category soft-deleted successfully', category)
         } catch (error) {
             httpError(next, error, req, 500)
         }

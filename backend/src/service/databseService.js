@@ -3,7 +3,8 @@ import config from '../config/config.js'
 import userModel from '../model/userModel.js'
 import accountModel from '../model/accountModel.js'
 import categoryModel from '../model/categoryModel.js'
-import transactionModel from '../model/transectionModel.js'
+import transactionModel from '../model/transactionModel.js'
+import ledgerModel from '../model/ledgerModel.js'
 
 export default {
     connect: async () => {
@@ -169,24 +170,260 @@ export default {
             throw new Error('Database query failed')
         }
     },
-    createTransection: async (payload) => {
-        //update account
-        if (payload.type === 'expense') {
-            const account = await accountModel.findById(payload.account)
-            if (account) {
-                account.balance -= payload.amount
-                await account.save()
-            }
-        } else if (payload.type === 'income') {
-            const account = await accountModel.findById(payload.account)
-            if (account) {
-                account.balance += payload.amount
-                await account.save()
-            }
+    createTransaction: async (payload) => {
+        const session = await mongoose.startSession()
+        let result = {}
+
+        try {
+            await session.withTransaction(async () => {
+                // Step 1: Validate Account & Balance
+                const account = await accountModel.findById(payload.accountId).session(session)
+                if (!account) {
+                    throw new Error('Account not found')
+                }
+
+                const isExpense = payload.type === 'expense' || payload.type === 'DEBIT'
+                if (isExpense && account.balance < payload.amount) {
+                    throw new Error('Insufficient balance')
+                }
+
+                // Determine ledger type and double entry flag
+                let ledgerType = 'NORMAL'
+                let isDoubleEntry = false
+                if (payload.ledgerType && payload.ledgerType !== 'NORMAL') {
+                    ledgerType = payload.ledgerType
+                    isDoubleEntry = true
+                } else if (payload.type === 'transfer') {
+                    ledgerType = 'TRANSFER'
+                    isDoubleEntry = true
+                }
+
+                const transType = isExpense ? 'DEBIT' : 'CREDIT'
+
+                // Step 2: Create Ledger
+                const ledger = new ledgerModel({
+                    userId: payload.userId,
+                    title: payload.title,
+                    totalAmount: payload.amount,
+                    date: payload.date || new Date(),
+                    categoryId: payload.categoryId,
+                    partyId: payload.partyId || null,
+                    ledgerType: ledgerType,
+                    isDoubleEntry: isDoubleEntry,
+                    billUrl: payload.billUrl || '',
+                })
+                await ledger.save({ session })
+
+                // Step 3: Transactions
+                const transactions = []
+
+                // Single-Entry Transaction
+                const t1 = new transactionModel({
+                    ledgerId: ledger._id,
+                    userId: payload.userId,
+                    accountId: payload.accountId,
+                    type: transType,
+                    amount: payload.amount,
+                    note: payload.note || payload.title,
+                })
+                await t1.save({ session })
+                transactions.push(t1)
+
+                // Double-Entry Transaction
+                if (isDoubleEntry && payload.toAccountId) {
+                    const t2 = new transactionModel({
+                        ledgerId: ledger._id,
+                        userId: payload.userId,
+                        accountId: payload.toAccountId,
+                        type: transType === 'DEBIT' ? 'CREDIT' : 'DEBIT',
+                        amount: payload.amount,
+                        note: payload.note || payload.title,
+                    })
+                    await t2.save({ session })
+                    transactions.push(t2)
+
+                    // Update second account balance using $inc
+                    const balanceChange2 = t2.type === 'CREDIT' ? payload.amount : -payload.amount
+                    await accountModel.findByIdAndUpdate(payload.toAccountId, { $inc: { balance: balanceChange2 } }, { session })
+                }
+
+                // Step 4: Account Update using $inc
+                const balanceChange = transType === 'CREDIT' ? payload.amount : -payload.amount
+                const updatedAccount = await accountModel.findByIdAndUpdate(
+                    payload.accountId,
+                    { $inc: { balance: balanceChange } },
+                    { new: true, session }
+                )
+
+                // Snapshot balance
+                t1.balanceSnapshot = updatedAccount.balance
+                await t1.save({ session })
+
+                // Step 5: Party Update based on partyId
+                if (payload.partyId) {
+                    const debtChange = transType === 'DEBIT' ? payload.amount : -payload.amount
+                    await mongoose.model('Party').findByIdAndUpdate(payload.partyId, { $inc: { netDebt: debtChange } }, { session })
+                }
+
+                result = { ledger, transactions }
+            })
+        } finally {
+            await session.endSession()
         }
 
-        const result = await transactionModel.create(payload)
-        return await transactionModel.findById(result._id).populate('category', 'name').populate('account', 'name balance').lean()
+        return result
+    },
+    deleteTransaction: async (ledgerId, userId) => {
+        const session = await mongoose.startSession()
+        let success = false
+        try {
+            await session.withTransaction(async () => {
+                const ledger = await ledgerModel.findOne({ _id: ledgerId, userId }).session(session)
+                if (!ledger || ledger.isDeleted) throw new Error('Ledger not found or already deleted')
+
+                const transactions = await transactionModel.find({ ledgerId }).session(session)
+
+                // Reverse Account Balances
+                for (const t of transactions) {
+                    const reverseBalanceChange = t.type === 'CREDIT' ? -t.amount : t.amount // Reverse
+                    await accountModel.findByIdAndUpdate(t.accountId, { $inc: { balance: reverseBalanceChange } }, { session })
+                }
+
+                // Reverse Party Debt
+                if (ledger.partyId) {
+                    const primaryT = transactions[0]
+                    if (primaryT) {
+                        const reverseDebtChange = primaryT.type === 'DEBIT' ? -primaryT.amount : primaryT.amount
+                        await mongoose.model('Party').findByIdAndUpdate(ledger.partyId, { $inc: { netDebt: reverseDebtChange } }, { session })
+                    }
+                }
+
+                // Soft Delete
+                ledger.isDeleted = true
+                await ledger.save({ session })
+                await transactionModel.updateMany({ ledgerId }, { $set: { isDeleted: true } }, { session })
+
+                success = true
+            })
+        } finally {
+            await session.endSession()
+        }
+        return success
+    },
+    editTransaction: async (ledgerId, userId, payload) => {
+        const session = await mongoose.startSession()
+        let result = {}
+        try {
+            await session.withTransaction(async () => {
+                const ledger = await ledgerModel.findOne({ _id: ledgerId, userId }).session(session)
+                if (!ledger || ledger.isDeleted) throw new Error('Ledger not found or deleted')
+
+                const oldTransactions = await transactionModel.find({ ledgerId }).session(session)
+
+                // 1. REVERSE OLD BALANCES
+                for (const t of oldTransactions) {
+                    const reverseBalanceChange = t.type === 'CREDIT' ? -t.amount : t.amount
+                    await accountModel.findByIdAndUpdate(t.accountId, { $inc: { balance: reverseBalanceChange } }, { session })
+                }
+
+                // Reverse Old Party Debt
+                if (ledger.partyId) {
+                    const primaryT = oldTransactions[0]
+                    if (primaryT) {
+                        const reverseDebtChange = primaryT.type === 'DEBIT' ? -primaryT.amount : primaryT.amount
+                        await mongoose.model('Party').findByIdAndUpdate(ledger.partyId, { $inc: { netDebt: reverseDebtChange } }, { session })
+                    }
+                }
+
+                // Hard delete old transactions (we will recreate them to keep it clean)
+                // Or we could soft delete them and create new ones. Since it's an edit, deleting and recreating is safer.
+                await transactionModel.deleteMany({ ledgerId }).session(session)
+
+                // 2. VALIDATE NEW ACCOUNT BALANCES
+                const account = await accountModel.findById(payload.accountId).session(session)
+                if (!account) throw new Error('New Account not found')
+
+                const isExpense = payload.type === 'expense' || payload.type === 'DEBIT'
+                if (isExpense && account.balance < payload.amount) {
+                    throw new Error('Insufficient balance in new account')
+                }
+
+                let ledgerType = 'NORMAL'
+                let isDoubleEntry = false
+                if (payload.ledgerType && payload.ledgerType !== 'NORMAL') {
+                    ledgerType = payload.ledgerType
+                    isDoubleEntry = true
+                } else if (payload.type === 'transfer') {
+                    ledgerType = 'TRANSFER'
+                    isDoubleEntry = true
+                }
+
+                const transType = isExpense ? 'DEBIT' : 'CREDIT'
+
+                // 3. UPDATE LEDGER
+                ledger.title = payload.title
+                ledger.totalAmount = payload.amount
+                ledger.date = payload.date || new Date()
+                ledger.categoryId = payload.categoryId
+                ledger.partyId = payload.partyId || null
+                ledger.ledgerType = ledgerType
+                ledger.isDoubleEntry = isDoubleEntry
+                if (payload.billUrl) ledger.billUrl = payload.billUrl
+                await ledger.save({ session })
+
+                // 4. CREATE NEW TRANSACTIONS
+                const newTransactions = []
+
+                const t1 = new transactionModel({
+                    ledgerId: ledger._id,
+                    userId: payload.userId,
+                    accountId: payload.accountId,
+                    type: transType,
+                    amount: payload.amount,
+                    note: payload.note || payload.title,
+                })
+                await t1.save({ session })
+                newTransactions.push(t1)
+
+                if (isDoubleEntry && payload.toAccountId) {
+                    const t2 = new transactionModel({
+                        ledgerId: ledger._id,
+                        userId: payload.userId,
+                        accountId: payload.toAccountId,
+                        type: transType === 'DEBIT' ? 'CREDIT' : 'DEBIT',
+                        amount: payload.amount,
+                        note: payload.note || payload.title,
+                    })
+                    await t2.save({ session })
+                    newTransactions.push(t2)
+
+                    const balanceChange2 = t2.type === 'CREDIT' ? payload.amount : -payload.amount
+                    await accountModel.findByIdAndUpdate(payload.toAccountId, { $inc: { balance: balanceChange2 } }, { session })
+                }
+
+                // 5. APPLY NEW ACCOUNT BALANCE
+                const balanceChange = transType === 'CREDIT' ? payload.amount : -payload.amount
+                const updatedAccount = await accountModel.findByIdAndUpdate(
+                    payload.accountId,
+                    { $inc: { balance: balanceChange } },
+                    { new: true, session }
+                )
+
+                t1.balanceSnapshot = updatedAccount.balance
+                await t1.save({ session })
+
+                // 6. APPLY NEW PARTY DEBT
+                if (payload.partyId) {
+                    const debtChange = transType === 'DEBIT' ? payload.amount : -payload.amount
+                    await mongoose.model('Party').findByIdAndUpdate(payload.partyId, { $inc: { netDebt: debtChange } }, { session })
+                }
+
+                result = { ledger, transactions: newTransactions }
+            })
+        } finally {
+            await session.endSession()
+        }
+        return result
     },
     getTotalBalance: async (userId) => {
         return accountModel.aggregate([{ $match: { user: userId } }, { $group: { _id: null, totalBalance: { $sum: '$balance' } } }])

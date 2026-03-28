@@ -1,30 +1,42 @@
-// path/to/models/Party.js
-const mongoose = require('mongoose')
+import mongoose from 'mongoose'
 
-const partySchema = new mongoose.Schema(
+const partiesSchema = new mongoose.Schema(
     {
-        user: {
+        userId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'User',
+            index: true,
             required: true,
         },
         name: {
             type: String,
             required: true,
+            trim: true,
         },
-        type: {
+        relation: {
             type: String,
-            enum: ['payer', 'payee'],
+            enum: ['FRIEND', 'FAMILY', 'VENDOR', 'CLIENT'],
             required: true,
         },
-        contactInfo: {
-            type: String, // Optional field for contact information
+        netDebt: {
+            type: Number,
+            default: 0,
+        },
+        isDeleted: {
+            type: Boolean,
+            default: false,
         },
     },
     {
         timestamps: true,
+        toJSON: {
+            transform: function (doc, ret) {
+                delete ret.__v
+                delete ret.isDeleted
+                return ret
+            },
+        },
     }
 )
 
-// ... existing code for exporting the model ...
-module.exports = mongoose.model('Party', partySchema)
+export default mongoose.model('Party', partiesSchema)

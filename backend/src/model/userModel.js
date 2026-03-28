@@ -2,7 +2,14 @@ import mongoose, { Schema } from 'mongoose'
 
 const userSchema = new Schema(
     {
-        name: {
+        firstName: {
+            type: String,
+            required: true,
+            lowercase: true,
+            trim: true,
+            index: true,
+        },
+        lastName: {
             type: String,
             required: true,
             lowercase: true,
@@ -28,6 +35,7 @@ const userSchema = new Schema(
         consent: {
             type: Boolean,
             required: true,
+            default: false,
         },
         refreshToken: {
             _id: false,

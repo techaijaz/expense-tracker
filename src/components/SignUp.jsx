@@ -4,8 +4,11 @@ import { useForm } from 'react-hook-form';
 import { Button } from './ui/button';
 import { FcGoogle } from 'react-icons/fc';
 import { Input } from './ui/input';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import api from '@/utils/httpMethods';
+import { toast } from 'sonner';
 function SignUp() {
+  const navigate = useNavigate();
   const {
     register,
     handleSubmit,
@@ -14,8 +17,22 @@ function SignUp() {
     resolver: zodResolver(authSchema.signUpSchema()),
   });
 
-  const onSubmit = (data) => {
+  const onSubmit = async (data) => {
     console.log('Form Data:', data);
+    //
+    try {
+      const response = await api.post('/user/register', data);
+      if (response.success) {
+        toast.success(response.message || 'Registration successful!');
+        // Optionally, redirect to the sign-in page or clear the form
+        navigate('/');
+      }
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message ||
+          'An error occurred. Please try again later.'
+      );
+    }
   };
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors">
