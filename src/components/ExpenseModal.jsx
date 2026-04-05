@@ -87,17 +87,17 @@ function ExpenseModal() {
       <DialogTrigger asChild>
         <Button onClick={() => setIsOpen(true)}>{buttonText}</Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-lg dark:bg-gray-800 dark:text-white">
+      <DialogContent className="sm:max-w-lg bg-card text-on-surface border border-secondary-container">
         <DialogHeader>
-          <DialogTitle>Record Expense</DialogTitle>
+          <DialogTitle className="text-on-surface font-headline font-bold text-xl">Record Expense</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {/* Account Selection */}
           <div>
-            <Label>Account</Label>
+            <Label className="uppercase tracking-widest text-on-surface-variant text-[10px] font-bold">Account</Label>
             <Select onValueChange={(value) => setValue('account', value)}>
-              <SelectTrigger className="dark:bg-gray-800 dark:text-white dark:border-gray-600">
+              <SelectTrigger className="mt-1 bg-secondary-container border border-secondary-container text-on-surface outline-none focus:ring-1 focus:ring-primary/40">
                 <SelectValue placeholder="Select Account" />
               </SelectTrigger>
               <SelectContent>
@@ -107,30 +107,30 @@ function ExpenseModal() {
               </SelectContent>
             </Select>
             {errors.account && (
-              <p className="text-red-500 text-sm">{errors.account.message}</p>
+              <p className="text-error text-xs font-semibold mt-1">{errors.account.message}</p>
             )}
           </div>
 
           {/* Amount */}
           <div>
-            <Label>Amount</Label>
+            <Label className="uppercase tracking-widest text-on-surface-variant text-[10px] font-bold">Amount</Label>
             <Input
               type="number"
               {...register('amount', { valueAsNumber: true })}
-              placeholder="Enter amount"
-              className="dark:bg-gray-800 dark:text-white dark:border-gray-600"
+              placeholder="0.00"
+              className="mt-1 bg-secondary-container border border-secondary-container text-on-surface outline-none focus:ring-1 focus:ring-primary/40"
             />
             {errors.amount && (
-              <p className="text-red-500 text-sm">{errors.amount.message}</p>
+              <p className="text-error text-xs font-semibold mt-1">{errors.amount.message}</p>
             )}
           </div>
 
           {/* Category Selection */}
           <div>
-            <Label>Category</Label>
-            <div className="flex items-center gap-2">
+            <Label className="uppercase tracking-widest text-on-surface-variant text-[10px] font-bold">Category</Label>
+            <div className="flex items-center gap-2 mt-1">
               <Select onValueChange={(value) => setValue('category', value)}>
-                <SelectTrigger>
+                <SelectTrigger className="bg-secondary-container border border-secondary-container text-on-surface outline-none focus:ring-1 focus:ring-primary/40">
                   <SelectValue placeholder="Select Category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -145,34 +145,36 @@ function ExpenseModal() {
                 variant="outline"
                 size="icon"
                 onClick={() => setIsCategoryModalOpen(true)}
+                className="border-secondary-container text-on-surface hover:bg-surface-variant"
               >
                 +
               </Button>
             </div>
             {errors.category && (
-              <p className="text-red-500 text-sm">{errors.category.message}</p>
+              <p className="text-error text-xs font-semibold mt-1">{errors.category.message}</p>
             )}
           </div>
 
           {/* Description */}
           <div>
-            <Label>Description</Label>
+            <Label className="uppercase tracking-widest text-on-surface-variant text-[10px] font-bold">Description</Label>
             <Textarea
               {...register('description')}
               placeholder="Optional description"
-              className="dark:bg-gray-800 dark:text-white dark:border-gray-600"
+              className="mt-1 bg-secondary-container border border-secondary-container text-on-surface outline-none focus:ring-1 focus:ring-primary/40 min-h-[100px]"
             />
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="pt-2">
             <Button
               type="button"
               variant="secondary"
               onClick={() => setIsOpen(false)}
+              className="bg-surface-variant text-on-surface hover:bg-surface-variant/80"
             >
               Cancel
             </Button>
-            <Button type="submit">Save Expense</Button>
+            <Button type="submit" className="bg-primary text-on-primary hover:opacity-90">Save Expense</Button>
           </DialogFooter>
         </form>
       </DialogContent>

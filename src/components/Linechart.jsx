@@ -1,97 +1,96 @@
-import { TrendingUp } from 'lucide-react';
-import { CartesianGrid, Line, LineChart, XAxis } from 'recharts';
+import { AreaChart, Area, XAxis, ResponsiveContainer, Tooltip } from 'recharts';
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from '@/components/ui/chart';
+export function Linechart({ data }) {
+  const renderData = data && data.length > 0 ? data : [];
 
-// Chart Configuration
-const chartConfig = {
-  desktop: {
-    label: 'Desktop',
-    color: 'hsl(var(--chart-1))',
-  },
-};
-
-// Sample Data
-const chartData = [
-  { month: 'January', desktop: 186 },
-  { month: 'February', desktop: 305 },
-  { month: 'March', desktop: 237 },
-  { month: 'April', desktop: 73 },
-  { month: 'May', desktop: 209 },
-  { month: 'June', desktop: 214 },
-];
-
-export function Linechart() {
   return (
-    <Card className="shadow-lg rounded-lg bg-white dark:bg-gray-800 h-[400px]">
-      {/* Header Section */}
-      <CardHeader>
-        <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-          Line Chart
-        </CardTitle>
-        <CardDescription className="text-sm text-gray-500 dark:text-gray-400">
-          January - June 2024
-        </CardDescription>
-      </CardHeader>
-
-      {/* Chart Section */}
-      <CardContent>
-        <ChartContainer config={chartConfig} className="h-[200px] w-full">
-          <LineChart
-            data={chartData}
-            margin={{ top: 10, right: 20, left: 0, bottom: 10 }}
-            className="overflow-hidden"
+    <div className="bg-surface-container-low rounded-xl p-8 flex flex-col h-[400px] relative">
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h3 className="text-lg font-bold font-headline">
+            Cash Flow Analytics
+          </h3>
+          <p className="text-xs text-outline mt-1">
+            Daily liquidity tracking (Last 30 days)
+          </p>
+        </div>
+        <div className="flex space-x-4">
+          <div className="flex items-center space-x-2">
+            <span className="w-3 h-3 rounded-full bg-primary"></span>
+            <span className="text-xs text-outline font-medium">Inflow</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <span className="w-3 h-3 rounded-full bg-tertiary"></span>
+            <span className="text-xs text-outline font-medium">Outflow</span>
+          </div>
+        </div>
+      </div>
+      <div className="flex-1 relative mt-4 border-l border-b border-white/5 flex items-end">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart
+            data={renderData}
+            margin={{ top: 10, right: 0, left: 0, bottom: 0 }}
           >
-            <CartesianGrid
-              vertical={false}
-              strokeDasharray="3 3"
-              stroke="hsl(var(--gray-200))"
-            />
+            <defs>
+              <linearGradient id="colorIn" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="var(--accent-color)" stopOpacity={0.2} />
+                <stop offset="100%" stopColor="var(--accent-color)" stopOpacity={0} />
+              </linearGradient>
+            </defs>
             <XAxis
-              dataKey="month"
+              dataKey="date"
               tickLine={false}
               axisLine={false}
-              tickMargin={8}
-              tickFormatter={(value) => value.slice(0, 3)}
-              className="text-sm text-gray-600 dark:text-gray-300"
+              tick={{ fill: '#8e9196', fontSize: 10, fontWeight: 500 }}
+              dy={15}
+              tickFormatter={(val) => {
+                if (!val) return '';
+                const parts = val.split('-');
+                if (parts.length === 3) return `${parts[2]} Sept`;
+                return val;
+              }}
             />
-            <ChartTooltip
-              cursor={{ stroke: 'hsl(var(--chart-1))', strokeWidth: 2 }}
-              content={<ChartTooltipContent hideLabel />}
+            <Tooltip
+              contentStyle={{
+                backgroundColor: '#283646',
+                borderColor: 'transparent',
+                color: 'var(--text-primary)',
+                borderRadius: '4px',
+                fontSize: '10px',
+                fontWeight: 'bold',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+              }}
+              itemStyle={{ color: '#fff' }}
+              labelStyle={{ display: 'none' }}
+              cursor={{ stroke: 'rgba(76, 214, 251, 0.4)', strokeWidth: 1 }}
+              formatter={(value, name) => [
+                `+$${Number(value).toLocaleString()}`,
+                name,
+              ]}
             />
-            <Line
-              dataKey="desktop"
+            <Area
               type="monotone"
-              stroke="hsl(var(--chart-1))"
+              dataKey="dailyIncome"
+              name="Inflow"
+              stroke="var(--accent-color)"
               strokeWidth={3}
-              dot={false}
+              fillOpacity={1}
+              fill="url(#colorIn)"
             />
-          </LineChart>
-        </ChartContainer>
-      </CardContent>
-
-      {/* Footer Section */}
-      <CardFooter className="flex flex-col items-start gap-2 text-sm">
-        <div className="flex items-center gap-2 font-medium text-green-600 dark:text-green-400">
-          Trending up by 5.2% this month
-          <TrendingUp className="h-4 w-4" />
-        </div>
-        <div className="text-gray-500 dark:text-gray-400">
-          Showing total visitors for the last 6 months
-        </div>
-      </CardFooter>
-    </Card>
+            <Area
+              type="monotone"
+              dataKey="dailyExpense"
+              name="Outflow"
+              stroke="#27e0a9"
+              strokeWidth={2}
+              fill="transparent"
+              strokeDasharray="4 4"
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
   );
 }

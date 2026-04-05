@@ -14,9 +14,13 @@ import { useEffect } from 'react';
 import { toast } from 'sonner';
 import { useDispatch } from 'react-redux';
 import { updateAccount } from '@/redux/accountSlice';
+import { useSelector } from 'react-redux';
+import { restrictDecimals } from '@/utils/format';
 
 const AddMoneyPopup = ({ open, setOpen, accountId }) => {
   const dispatch = useDispatch();
+  const preferences = useSelector((state) => state.auth.user?.user?.preferences);
+  const { decimalPlaces = 2 } = preferences || {};
   const { data, error, loading, makeRequest } = useApi();
   const {
     register,
@@ -60,45 +64,49 @@ const AddMoneyPopup = ({ open, setOpen, accountId }) => {
 
   return (
     <Dialog open={open} onOpenChange={closeDialog}>
-      <DialogContent className="bg-white dark:bg-gray-800 rounded p-6">
+      <DialogContent className="bg-card rounded-xl border border-secondary-container p-8 shadow-2xl">
         <DialogHeader>
-          <DialogTitle className="text-gray-900 dark:text-gray-100">
+          <DialogTitle className="text-on-surface text-xl font-bold font-headline tracking-tighter">
             Add Money
           </DialogTitle>
-          <DialogDescription className="text-gray-600 dark:text-gray-400">
+          <DialogDescription className="text-on-surface-variant mt-1 text-sm">
             Please enter the amount you wish to add.
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="mt-4">
-          <input
-            type="number"
-            placeholder="Enter amount"
-            className={`border rounded p-2 w-full ${
-              errors.amount ? 'border-red-500' : ''
-            }`}
-            {...register('amount', {
-              valueAsNumber: true, // Automatically convert input to a number
-            })}
-          />
-          {errors.amount && (
-            <p className="text-red-500 dark:text-red-400 mt-2">
-              {errors.amount.message}
-            </p>
-          )}
+        <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-6">
+          <div>
+            <input
+              type="number"
+              placeholder={`0.${'0'.repeat(decimalPlaces)}`}
+              className={`w-full bg-secondary-container border ${
+                errors.amount ? 'border-error' : 'border-secondary-container'
+              } rounded-lg p-3.5 text-on-surface outline-none focus:ring-2 focus:ring-primary/40`}
+              {...register('amount')}
+              onInput={(e) => {
+                e.target.value = restrictDecimals(e.target.value, decimalPlaces);
+              }}
+              step={1 / Math.pow(10, decimalPlaces)}
+            />
+            {errors.amount && (
+              <p className="text-error mt-2 text-xs font-semibold">
+                {errors.amount.message}
+              </p>
+            )}
+          </div>
 
-          <div className="mt-4 flex space-x-2">
+          <div className="flex space-x-2">
             <button
               type="submit"
-              className={`bg-blue-500 text-white rounded p-2 flex-1 ${
+              className={`bg-primary text-on-primary rounded-lg p-3 font-bold text-sm tracking-tight shadow-lg shadow-primary/20 hover:opacity-90 transition-all flex-1 ${
                 loading ? 'opacity-50 cursor-not-allowed' : ''
               }`}
               disabled={loading} // Disable button while loading
             >
               {loading ? (
-                <span className="animate-spin">Loading...</span>
+                <span className="animate-pulse">Processing...</span>
               ) : (
-                'Add'
+                'Add Funds'
               )}
             </button>
           </div>

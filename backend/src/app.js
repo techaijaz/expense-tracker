@@ -7,10 +7,32 @@ import helmet from 'helmet'
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
 import config from './config/config.js'
+import swaggerUi from 'swagger-ui-express'
+import authentication from './middleware/authentication.js'
+import { readFileSync } from 'fs'
+
+const swaggerFile = JSON.parse(readFileSync(new URL('../swagger-output.json', import.meta.url)))
 
 const app = express()
 //Middlewares
-app.use(helmet())
+//Middlewares
+app.use(
+    helmet({
+        contentSecurityPolicy: {
+            directives: {
+                defaultSrc: ["'self'"],
+                scriptSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net'],
+                styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://cdn.jsdelivr.net'],
+                imgSrc: ["'self'", 'data:', 'https://cdn.jsdelivr.net'],
+                connectSrc: ["'self'"],
+                fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+                objectSrc: ["'none'"],
+                mediaSrc: ["'self'"],
+                frameSrc: ["'none'"],
+            },
+        },
+    })
+)
 app.use(cookieParser())
 app.use(
     cors({
@@ -29,6 +51,8 @@ const __dirname = path.dirname(__filename)
 app.use(express.static(path.join(__dirname, 'public')))
 
 //Routs
+//Routs
+app.use('/api-docs', authentication, swaggerUi.serve, swaggerUi.setup(swaggerFile))
 app.use('/api/v1', router)
 
 //404 Error handeler

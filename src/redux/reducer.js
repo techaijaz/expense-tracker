@@ -4,6 +4,7 @@ import appSlice from './appSlice';
 import accountSlice from './accountSlice';
 import categorySlice from './categorySlice';
 import transectionSlice from './transectionSlice';
+import loanSlice from './loanSlice';
 
 const rootReducer = combineReducers({
   auth: authSlice,
@@ -11,6 +12,7 @@ const rootReducer = combineReducers({
   accounts: accountSlice,
   category: categorySlice,
   transections: transectionSlice,
+  loans: loanSlice,
 });
 
 export default rootReducer;

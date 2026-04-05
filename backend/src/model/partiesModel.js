@@ -30,13 +30,23 @@ const partiesSchema = new mongoose.Schema(
     {
         timestamps: true,
         toJSON: {
+            virtuals: true,
             transform: function (doc, ret) {
                 delete ret.__v
                 delete ret.isDeleted
                 return ret
             },
         },
+        toObject: {
+            virtuals: true,
+        },
     }
 )
+
+partiesSchema.virtual('status').get(function () {
+    if (this.netDebt > 0) return 'Receivable'
+    if (this.netDebt < 0) return 'Payable'
+    return 'Settled'
+})
 
 export default mongoose.model('Party', partiesSchema)

@@ -27,6 +27,10 @@ export default {
     const response = await instance.put(url, data, getRequestHeader(file));
     return response.data;
   },
+  patch: async (url, data = {}, file = false) => {
+    const response = await instance.patch(url, data, getRequestHeader(file));
+    return response.data;
+  },
   delete: async (url) => {
     try {
       const response = await instance.delete(url, getRequestHeader());

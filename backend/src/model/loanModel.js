@@ -1,39 +1,25 @@
-const mongoose = require('mongoose')
+import mongoose from 'mongoose'
 
 const loanSchema = new mongoose.Schema(
     {
-        user: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'User',
+        user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+        party: { type: mongoose.Schema.Types.ObjectId, ref: 'Party', required: true },
+        accountId: { type: mongoose.Schema.Types.ObjectId, ref: 'Account', required: true },
+        amount: { type: Number, required: true },
+
+        // Sirf ye batayega ki udhaar liya hai ya diya hai
+        type: {
+            type: String,
+            enum: ['BORROWED', 'LENT'],
             required: true,
         },
-        amount: {
-            type: Number,
-            required: true,
-        },
-        lender: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'Party',
-            required: true,
-        },
-        borrower: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'Party',
-            required: true,
-        },
-        interestRate: {
-            type: Number,
-            required: true,
-        },
-        dueDate: {
-            type: Date,
-            required: true,
-        },
+
+        dueDate: { type: Date },
+        interestRate: { type: Number, default: 0 },
+        status: { type: String, enum: ['PENDING', 'PAID'], default: 'PENDING' },
+        isDeleted: { type: Boolean, default: false },
     },
-    {
-        timestamps: true,
-    }
+    { timestamps: true }
 )
 
-// ... existing code for exporting the model ...
-module.exports = mongoose.model('Loan', loanSchema)
+export default mongoose.model('Loan', loanSchema)

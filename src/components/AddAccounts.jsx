@@ -1,336 +1,422 @@
-/* eslint-disable react/prop-types */
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from './ui/dialog';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
+import { useEffect, useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import accountSchema from '@/schema/accountSchema';
-import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { addAccount, setAccounts } from '../redux/accountSlice';
 import { toast } from 'sonner';
-import useApi from '@/hooks/useApi';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from './ui/select';
+  addAccount,
+  updateAccount as updateAccountAction,
+} from '../redux/accountSlice';
+import api from '@/utils/httpMethods';
+import accountSchema from '@/schema/accountSchema';
+import { getCurrencySymbol, restrictDecimals } from '@/utils/format';
 
-function AddAccounts({
-  btnLabel = '+ Add',
-  btnVariant = 'default',
-  formData = {},
-  isEdit = false,
-}) {
+// ── types that REQUIRE an account number ───────────────────────────────────────
+const REQUIRES_ACC_NUM = ['BANK', 'CREDIT_CARD'];
+const ACCOUNT_TYPE_LABELS = {
+  CASH: 'Cash',
+  BANK: 'Bank Account',
+  CREDIT_CARD: 'Credit Card',
+  WALLET: 'E-Wallet',
+  INVESTMENT: 'Investment',
+};
+
+// ── shared input styles matching TransectionPopup ──────────────────────────────
+const labelCx =
+  'text-[0.6875rem] font-bold uppercase tracking-[0.1em] text-outline ml-1';
+const inputCx =
+  'w-full bg-surface-container-low border-none rounded-lg px-4 py-3 text-sm text-on-surface focus:ring-1 focus:ring-primary/40 outline-none appearance-none placeholder:text-surface-variant transition-all';
+const selectCx =
+  'w-full bg-surface-container-low border-none rounded-lg px-4 py-3 text-sm text-on-surface focus:ring-1 focus:ring-primary/40 outline-none appearance-none cursor-pointer';
+const errorCx =
+  'text-[10px] text-error mt-1 ml-1 font-medium flex items-center gap-1';
+
+function AccountModal({ onClose, onSaved, account = null, hasCash = false }) {
+  const isEdit = !!account;
   const dispatch = useDispatch();
-  const { user } = useSelector((state) => state.auth);
-  const { accounts } = useSelector((state) => state.accounts);
-  const { data, error, loading, makeRequest } = useApi();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isDisableDialogOpen, setIsDisableDialogOpen] = useState(false); // For confirmation dialog
-  const [accountType, setAccountType] = useState('Bank account');
-  const [isDefault, setIsDefault] = useState(false); // Track if account is default
-  const [isEnabled, setIsEnabled] = useState(true); // Track enable/disable state
+  const preferences = useSelector((state) => state.auth.user?.user?.preferences);
+  const { currency = 'INR', decimalPlaces = 2 } = preferences || {};
+  const currencySymbol = getCurrencySymbol(currency);
+
+  const [loading, setLoading] = useState(false);
+  const [initialBalanceLoading, setInitialBalanceLoading] = useState(isEdit);
+  const [isDefault, setIsDefault] = useState(account?.isDefault || false);
+  //const accNumRef = useRef(null);
 
   const {
     register,
     handleSubmit,
-    formState: { errors },
     setValue,
-    reset,
     watch,
+    formState: { errors },
+    reset,
   } = useForm({
     resolver: zodResolver(accountSchema.addAccountSchema),
+    defaultValues: {
+      type: account?.type || (hasCash ? 'BANK' : 'CASH'),
+      name: account?.name || '',
+      accountNumber: account?.accountNumber || '',
+      balance: 0,
+      creditLimit: account?.creditLimit || 0,
+    },
   });
-  //const accountType = watch('type');
+
+  const accountType = watch('type');
+  const needsAccNum = REQUIRES_ACC_NUM.includes(accountType);
+
+  // Synchronize form with account prop changes
+  useEffect(() => {
+    if (isEdit && account) {
+      reset({
+        type: account.type,
+        name: account.name,
+        accountNumber: account.type === 'CASH' ? '' : account.accountNumber,
+        balance: 0, // Reset to 0 while we fetch the actual opening balance
+        creditLimit: account.creditLimit || 0,
+      });
+    }
+  }, [isEdit, account, reset]);
+
+  // Fetch initial opening balance if in edit mode
   useEffect(() => {
     if (isEdit) {
-      setValue('name', formData.name);
-      setValue('accountNumber', formData.accountNumber);
-      setValue('balance', formData.balance);
-      setValue('type', formData.type);
-      setAccountType(formData.type);
-      setIsDefault(formData.isDefault || false);
-      setIsEnabled(formData.status);
-    } else {
-      setIsEnabled(true);
+      const fetchOpeningBalance = async () => {
+        try {
+          const res = await api.get(`/account/${account._id}/opening-balance`);
+          setValue('balance', res?.data?.amount || 0);
+        } catch (err) {
+          console.error('Failed to fetch opening balance', err);
+        } finally {
+          setInitialBalanceLoading(false);
+        }
+      };
+      fetchOpeningBalance();
     }
-  }, [isEdit, formData, setValue]);
+  }, [isEdit, account, setValue]);
+
+  // Auto-focus account number when editing BANK/CREDIT_CARD
+  // useEffect(() => {
+  //   if (isEdit && needsAccNum && accNumRef.current) {
+  //     accNumRef.current.select(); // User said "account number should be selected"
+  //   }
+  // }, [isEdit, needsAccNum]);
 
   const onSubmit = async (data) => {
-    if (loading) return;
+    setLoading(true);
+    try {
+      const payload = {
+        name: data.name,
+        type: data.type,
+        balance: data.type === 'CREDIT_CARD' ? 0 : Number(data.balance || 0),
+        creditLimit: data.type === 'CREDIT_CARD' ? Number(data.creditLimit || 0) : 0,
+        isDefault,
+        accountNumber: needsAccNum
+          ? data.accountNumber
+          : data.type === 'CASH'
+            ? ''
+            : data.accountNumber,
+      };
 
-    const payload = {
-      user: user.user._id,
-      name: data.name,
-      accountNumber: data.accountNumber,
-      type: accountType,
-      balance: data.balance,
-      isDefault,
-      status: isEnabled,
-    };
-
-    const url = isEdit ? `/account/update/${formData._id}` : '/account/create';
-
-    const method = isEdit ? 'put' : 'post';
-
-    makeRequest({ url, method, data: payload });
-  };
-
-  useEffect(() => {
-    if (error) {
-      toast.error(error || 'Failed to save account. Please try again.');
-    }
-  }, [error]);
-
-  useEffect(() => {
-    if (data) {
+      let res;
       if (isEdit) {
-        dispatch(setAccounts(data));
+        res = await api.patch(`/account/${account._id}`, payload);
         toast.success('Account updated successfully!');
       } else {
-        dispatch(addAccount(data));
-        toast.success('Account added successfully!');
+        res = await api.post('/account', payload);
+        toast.success('Account created successfully!');
       }
-      setIsDialogOpen(false);
-    }
-    reset();
-  }, [data, formData.id, isEdit, dispatch, reset]);
 
-  const handleDisableToggle = () => {
-    if (!isEnabled) {
-      setIsEnabled(true);
-    } else {
-      setIsDisableDialogOpen(true); // Show confirmation dialog
+      onSaved(res?.data);
+      onClose();
+    } catch (err) {
+      toast.error(
+        err?.response?.data?.message ||
+          `Failed to ${isEdit ? 'update' : 'create'} account`,
+      );
+    } finally {
+      setLoading(false);
     }
-  };
-
-  const confirmDisable = () => {
-    // Perform the disable action
-    if (isEdit) {
-      const activeAccounts = accounts.filter((account) => account.status);
-      if (activeAccounts.length === 1) {
-        toast.error('You cannot disable the last account.');
-        return;
-      }
-    }
-    setIsEnabled(false);
-    setIsDisableDialogOpen(false);
   };
 
   return (
-    <>
-      {/* Main Dialog */}
-      <Dialog
-        open={isDialogOpen}
-        onOpenChange={() => {
-          setIsDialogOpen(!isDialogOpen);
-          reset();
-        }}
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md animate-in fade-in duration-300">
+      <div
+        className="w-full max-w-lg bg-surface-container-highest shadow-2xl shadow-black/80 border border-white/10 overflow-hidden rounded-2xl animate-in zoom-in-95 duration-300"
+        style={{ backdropFilter: 'blur(20px)' }}
       >
-        <DialogTrigger asChild>
-          <Button variant={btnVariant}>{btnLabel}</Button>
-        </DialogTrigger>
-        <DialogContent className="sm:max-w-[425px] bg-white dark:bg-gray-800 dark:text-white">
-          <DialogHeader>
-            <DialogTitle className="text-gray-900 dark:text-gray-100">
-              {isEdit ? 'Edit Account' : 'Add Account'}
-            </DialogTitle>
-            <DialogDescription className="text-gray-600 dark:text-gray-400">
-              {`Please fill in the form below to ${
-                isEdit ? 'update' : 'add'
-              } an account.`}
-            </DialogDescription>
-          </DialogHeader>
-          <form
-            onSubmit={handleSubmit(onSubmit)}
-            className="flex flex-col gap-4 py-4"
+        {/* Header */}
+        <div className="pt-10 pl-10 pr-6 pb-6 flex justify-between items-start">
+          <div>
+            <h2 className="text-2xl font-black text-on-surface tracking-tight font-headline">
+              {isEdit ? 'Refine Account' : 'Initialize Account'}
+            </h2>
+            <p className="text-sm text-outline mt-1 font-body">
+              {isEdit
+                ? 'Update your account parameters.'
+                : 'Add a new financial hub to your ecosystem.'}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-white/5 rounded-full text-outline transition-colors outline-none"
           >
-            <div>
-              <label
-                htmlFor="type"
-                className="block text-sm font-medium text-gray-900 dark:text-gray-100"
-              >
-                Type
-              </label>
-              <Select
-                className="bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 w-full h-[40px] border rounded"
-                value={watch('type')} // Ensure React Hook Form controls it
-                onValueChange={(value) => {
-                  setValue('type', value, { shouldValidate: true });
-                  setAccountType(value);
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Debt type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Cash">Cash</SelectItem>
-                  <SelectItem value="Bank account">Bank account</SelectItem>
-                  <SelectItem value="Credit card">Credit card</SelectItem>
-                  <SelectItem value="Debt">Debt</SelectItem>
-                  <SelectItem value="Investment">Investment</SelectItem>
-                  <SelectItem value="Business">Business</SelectItem>
-                </SelectContent>
-              </Select>
-              {errors.type && (
-                <p className="text-red-500 dark:text-red-400">
-                  {errors.type.message}
-                </p>
-              )}
-            </div>
-            <div>
-              <label
-                htmlFor="name"
-                className="block text-sm font-medium text-gray-900 dark:text-gray-100"
-              >
-                {(() => {
-                  if (accountType === 'Business') {
-                    return 'Business Name';
-                  } else if (accountType === 'Debt') {
-                    return 'Party Name';
-                  } else if (accountType === 'Investment') {
-                    return 'Investment Name';
-                  } else {
-                    return 'Account Name';
+            <span className="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="px-10 pb-10 space-y-6"
+        >
+          <div className="grid grid-cols-2 gap-6">
+            {/* Account Type */}
+            <div className="col-span-2 sm:col-span-1 space-y-1.5">
+              <label className={labelCx}>Account Type</label>
+              <div className="relative">
+                <select
+                  {...register('type')}
+                  disabled={isEdit}
+                  className={
+                    selectCx + (isEdit ? ' opacity-60 cursor-not-allowed' : '')
                   }
-                })()}
-              </label>
-              <Input
-                id="name"
-                name="name"
-                type="text"
-                className="bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 w-full"
-                {...register('name')}
-              />
-              {errors.name && (
-                <p className="text-red-500 dark:text-red-400">
-                  {errors.name.message}
-                </p>
-              )}
+                >
+                  {Object.entries(ACCOUNT_TYPE_LABELS)
+                    .filter(([v]) => !(v === 'CASH' && hasCash && !isEdit))
+                    .map(([v, l]) => (
+                      <option key={v} value={v}>
+                        {l}
+                      </option>
+                    ))}
+                </select>
+                {!isEdit && (
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline pointer-events-none text-sm">
+                    expand_more
+                  </span>
+                )}
+              </div>
             </div>
 
-            <div>
-              <label
-                htmlFor="accountNumber"
-                className="block text-sm font-medium text-gray-900 dark:text-gray-100"
-              >
-                Account Number
-              </label>
-              <Input
-                id="accountNumber"
-                name="accountNumber"
+            {/* Account Name */}
+            <div className="col-span-2 sm:col-span-1 space-y-1.5">
+              <label className={labelCx}>Account Name</label>
+              <input
+                {...register('name')}
+                placeholder="e.g. HDFC Savings"
+                className={inputCx}
                 type="text"
-                className="bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 w-full"
+              />
+              {errors.name && <p className={errorCx}>{errors.name.message}</p>}
+            </div>
+
+            {/* Account Number */}
+            <div
+              className={`col-span-2 sm:col-span-1 space-y-1.5 ${accountType === 'CASH' ? 'hidden' : ''}`}
+            >
+              <label className={labelCx}>
+                Account Number{' '}
+                {needsAccNum && <span className="text-error">*</span>}
+              </label>
+              <input
                 {...register('accountNumber')}
-                disabled={accountType === 'Cash'}
+                // ref={(e) => {
+                //   register('accountNumber').ref(e);
+                //   accNumRef.current = e;
+                // }}
+                placeholder={needsAccNum ? 'Last 4 digits' : 'Max 4 digits'}
+                className={inputCx}
+                type="text"
+                maxLength={4}
               />
               {errors.accountNumber && (
-                <p className="text-red-500 dark:text-red-400">
-                  {errors.accountNumber.message}
-                </p>
+                <p className={errorCx}>{errors.accountNumber.message}</p>
               )}
             </div>
 
-            <div>
-              <label
-                htmlFor="balance"
-                className="block text-sm font-medium text-gray-900 dark:text-gray-100"
-              >
-                Balance
-              </label>
-              <Input
-                id="balance"
-                name="balance"
-                type="number"
-                className="bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 w-full"
-                {...register('balance', { valueAsNumber: true })}
+            {/* Opening Balance - Hidden for Credit Cards */}
+            {accountType !== 'CREDIT_CARD' && (
+              <div className="col-span-2 sm:col-span-1 space-y-1.5 animate-in fade-in duration-300">
+                <label className={labelCx}>Opening Balance</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-primary font-bold text-sm">
+                    {currencySymbol}
+                  </span>
+                  <input
+                    {...register('balance')}
+                    onInput={(e) => {
+                      e.target.value = restrictDecimals(
+                        e.target.value,
+                        decimalPlaces,
+                      );
+                    }}
+                    placeholder={`0.${'0'.repeat(decimalPlaces)}`}
+                    className={inputCx + ' pl-8'}
+                    step={1 / Math.pow(10, decimalPlaces)}
+                    type="number"
+                    disabled={initialBalanceLoading}
+                  />
+                </div>
+                {errors.balance && (
+                  <p className={errorCx}>{errors.balance.message}</p>
+                )}
+                {initialBalanceLoading && (
+                  <p className="text-[10px] text-primary/60 mt-1 ml-1 animate-pulse italic">
+                    Retrieving initial balance...
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Credit Limit */}
+            {accountType === 'CREDIT_CARD' && (
+              <div className="col-span-2 sm:col-span-1 space-y-1.5 animate-in slide-in-from-top-2">
+                <label className={labelCx}>Credit Limit</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-error font-bold text-sm">
+                    {currencySymbol}
+                  </span>
+                  <input
+                    {...register('creditLimit')}
+                    onInput={(e) => {
+                      e.target.value = restrictDecimals(
+                        e.target.value,
+                        decimalPlaces,
+                      );
+                    }}
+                    placeholder={`0.${'0'.repeat(decimalPlaces)}`}
+                    className={inputCx + ' pl-8'}
+                    step={1 / Math.pow(10, decimalPlaces)}
+                    type="number"
+                  />
+                </div>
+                {errors.creditLimit && (
+                  <p className={errorCx}>{errors.creditLimit.message}</p>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Set as Default Toggle */}
+          <div
+            onClick={() => setIsDefault(!isDefault)}
+            className="flex items-center justify-between p-4 rounded-xl bg-surface-container-low border border-outline-variant/10 cursor-pointer hover:bg-surface-container-high transition-colors group"
+          >
+            <div className="space-y-0.5">
+              <p className="text-sm font-bold text-on-surface flex items-center gap-2">
+                <span
+                  className={`material-symbols-outlined text-lg ${isDefault ? 'text-amber-400' : 'text-outline'} group-hover:scale-110 transition-transform`}
+                  style={{
+                    fontVariationSettings: isDefault ? "'FILL' 1" : "'FILL' 0",
+                  }}
+                >
+                  star
+                </span>
+                Set as Default
+              </p>
+              <p className="text-[11px] text-outline ml-6 font-medium">
+                Auto-selected in new transaction popups.
+              </p>
+            </div>
+            <div
+              className={`w-10 h-5 rounded-full transition-colors relative ${isDefault ? 'bg-primary' : 'bg-surface-container-highest'}`}
+            >
+              <div
+                className={`absolute top-1 w-3 h-3 rounded-full bg-white shadow transition-transform ${isDefault ? 'translate-x-6' : 'translate-x-1'}`}
               />
-              {errors.balance && (
-                <p className="text-red-500 dark:text-red-400">
-                  {errors.balance.message}
-                </p>
-              )}
             </div>
+          </div>
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={isDefault}
-                  onChange={() => setIsDefault(!isDefault)}
-                  className="mr-2"
-                />
-                <label className="text-sm text-gray-900 dark:text-gray-100">
-                  Set as Default
-                </label>
-              </div>
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={isEnabled}
-                  onChange={handleDisableToggle}
-                  className="mr-2"
-                />
-                <label className="text-sm text-gray-900 dark:text-gray-100">
-                  Enable Account
-                </label>
-              </div>
-            </div>
-
-            <DialogFooter>
-              <Button
-                type="submit"
-                className="bg-blue-500 dark:bg-blue-700 text-white dark:hover:bg-blue-600"
-              >
-                {loading ? 'Saving...' : isEdit ? 'Update' : 'Save'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Confirmation Dialog */}
-      <Dialog
-        open={isDisableDialogOpen}
-        onOpenChange={() => setIsDisableDialogOpen(false)}
-      >
-        <DialogContent className="bg-white dark:bg-gray-800 dark:text-white">
-          <DialogHeader>
-            <DialogTitle>Disable Account</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to disable this account?
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="ghost"
-              onClick={() => setIsDisableDialogOpen(false)}
+          {/* Footer */}
+          <div className="pt-4 flex items-center justify-end gap-4">
+            <button
+              onClick={onClose}
+              type="button"
+              className="px-6 py-2.5 text-sm font-bold text-outline hover:bg-white/5 rounded-lg transition-colors outline-none"
             >
               Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={confirmDisable}
-              className="bg-red-500 text-white dark:bg-red-700"
+            </button>
+            <button
+              type="submit"
+              disabled={loading || initialBalanceLoading}
+              className="px-8 py-2.5 text-sm font-bold bg-gradient-to-br from-primary to-on-primary-container text-on-primary rounded-lg shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all outline-none disabled:opacity-50 disabled:scale-100"
             >
-              Disable
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+              {loading
+                ? isEdit
+                  ? 'Updating...'
+                  : 'Creating...'
+                : isEdit
+                  ? 'Save Changes'
+                  : 'Initialize Account'}
+            </button>
+          </div>
+        </form>
+
+        <div className="h-1 w-full bg-gradient-to-r from-transparent via-primary/20 to-transparent"></div>
+      </div>
+    </div>
   );
 }
 
-export default AddAccounts;
+export default function AddAccounts({
+  btnLabel = '+ Add',
+  customTrigger = null,
+  editAccount = null,
+  onEditClose = null,
+}) {
+  const dispatch = useDispatch();
+  const { accounts } = useSelector((state) => state.accounts);
+  const [isOpen, setIsOpen] = useState(false);
+
+  // Check if user already has a Cash account
+  const hasCash = accounts.some((a) => a.type === 'CASH' && !a.isDeleted);
+
+  const handleSaved = (account) => {
+    if (editAccount) {
+      dispatch(updateAccountAction(account));
+    } else {
+      dispatch(addAccount(account));
+    }
+  };
+
+  const handleClose = () => {
+    if (editAccount) {
+      onEditClose();
+    } else {
+      setIsOpen(false);
+    }
+  };
+
+  // If in edit mode (controlled externally), show the modal immediately
+  if (editAccount) {
+    return (
+      <AccountModal
+        account={editAccount}
+        onClose={handleClose}
+        onSaved={handleSaved}
+        hasCash={hasCash}
+      />
+    );
+  }
+
+  return (
+    <>
+      <div
+        onClick={() => setIsOpen(true)}
+        className="inline-block cursor-pointer"
+      >
+        {customTrigger ?? (
+          <button className="bg-primary text-background px-4 py-2 rounded-lg font-bold text-sm hover:opacity-90 transition-all">
+            {btnLabel}
+          </button>
+        )}
+      </div>
+
+      {isOpen && (
+        <AccountModal
+          onClose={handleClose}
+          onSaved={handleSaved}
+          hasCash={hasCash}
+        />
+      )}
+    </>
+  );
+}

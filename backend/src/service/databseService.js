@@ -41,7 +41,7 @@ export default {
             { $set: { 'refreshToken.token': null } } // Set the token field to null
         )
     },
-    getRefreshTokan: (token) => {
+    getRefreshToken: (token) => {
         return userModel.findOne(
             { 'refreshToken.token': token } // Find user with the given refresh token
         )
@@ -50,7 +50,7 @@ export default {
         return accountModel.create(payload)
     },
     getAccountsByUserId: (userId) => {
-        return accountModel.find({ user: userId }).select('name accountNumber type balance isDefault status') // Find accounts associated with the given user ID
+        return accountModel.find({ userId, isDeleted: false }).sort({ isDefault: -1, createdAt: -1 })
     },
     findAccountByAccountType: (type) => {
         return accountModel.findOne({ type }) // Find account with the given type
@@ -86,19 +86,19 @@ export default {
         try {
             // 1. Create default account
             const account = await accountModel.create({
-                user: userId,
+                userId: userId,
                 name: 'Cash',
-                accountNumber: '',
-                type: 'Cash',
-                balance: 0.0, // Use number instead of string
-                status: true,
+                type: 'CASH',
+                balance: 0.0,
+                isActive: true,
                 isDefault: true,
             })
 
             // 2. Create default category
             const category = await categoryModel.create({
-                user: userId,
+                userId: userId,
                 name: 'Expense',
+                type: 'EXPENSE',
             })
 
             // 3. Update user flag

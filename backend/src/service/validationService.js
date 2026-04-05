@@ -12,24 +12,23 @@ export const validationRegisterBody = Joi.object({
     firstName: Joi.string().required().min(3).max(72).trim(),
     lastName: Joi.string().required().min(3).max(72).trim(),
     email: Joi.string().email().required(),
-    // phone: Joi.string().min(4).max(20).required(),
     password: Joi.string().min(8).max(72).required().trim(),
-    //.regex(/^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/),
-    //consent: Joi.boolean().required().valid(true),
 })
 
 export const validationLoginBody = Joi.object({
     email: Joi.string().email().required(),
     password: Joi.string().min(8).max(72).required().trim(),
-    //.regex(/^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/),
 })
 
 export const validationAccountBody = Joi.object({
     name: Joi.string().required().min(3).max(72).trim(),
-    type: Joi.string().valid('BANK', 'CASH', 'CREDIT_CARD', 'INVESTMENT', 'BUSINESS').required(),
+    type: Joi.string().valid('BANK', 'CASH', 'CREDIT_CARD', 'INVESTMENT', 'BUSINESS', 'WALLET').required(),
+    accountNumber: Joi.string().allow(null, '').optional(),
     balance: Joi.number().default(0),
+    creditLimit: Joi.number().optional().default(0),
     currency: Joi.string().default('INR'),
     isActive: Joi.boolean().default(true),
+    isDefault: Joi.boolean().default(false),
 })
 
 export const validationCategoryBody = Joi.object({
@@ -59,4 +58,25 @@ export const validationTransectionBody = Joi.object({
         otherwise: Joi.optional().allow(null, ''),
     }),
     ledgerType: Joi.string().valid('NORMAL', 'TRANSFER', 'DEBT_GIVEN', 'DEBT_TAKEN', 'DEBT_REPAYMENT').optional().default('NORMAL'),
+})
+
+export const validationLoanBody = Joi.object({
+    party: Joi.string().required(),
+    accountId: Joi.string().required(),
+    amount: Joi.number().required().min(1),
+    type: Joi.string().valid('BORROWED', 'LENT').required(),
+    dueDate: Joi.date().allow(null, '').optional(),
+    interestRate: Joi.number().min(0).default(0),
+})
+
+export const validationChangePasswordBody = Joi.object({
+    currentPassword: Joi.string().min(8).max(72).required().trim(),
+    newPassword: Joi.string().min(8).max(72).required().trim(),
+})
+
+export const validationPreferencesBody = Joi.object({
+    currency: Joi.string().valid('INR', 'USD', 'EUR', 'GBP', 'JPY', 'AUD', 'CAD', 'SGD').optional(),
+    decimalPlaces: Joi.number().min(0).max(4).optional(),
+    theme: Joi.string().valid('dark', 'light', 'system').optional(),
+    accentColor: Joi.string().valid('lightblue', 'tomato', 'orange', 'mint', 'brown').optional(),
 })

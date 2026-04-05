@@ -22,6 +22,9 @@ const useApi = () => {
       } else if (method === 'post') {
         const response = await httpMethods.post(url, data, file);
         setData(response.data);
+      } else if (method === 'patch') {
+        const response = await httpMethods.patch(url, data, file);
+        setData(response.data);
       } else if (method === 'put') {
         const response = await httpMethods.put(url, data, file);
         setData(response.data);
@@ -30,8 +33,9 @@ const useApi = () => {
         setData(response.data);
       }
     } catch (err) {
-      setError(err.response.data.data || err.message);
-      console.error('API Error:', err.response.data.data);
+      const msg = err?.response?.data?.message || err?.response?.data?.data || err?.message || 'Request failed';
+      setError(msg);
+      console.error('API Error:', msg, err);
     } finally {
       setLoading(false);
     }

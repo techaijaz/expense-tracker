@@ -1,112 +1,185 @@
 import InfoCard from './InfoCard';
-import { FaSackDollar } from 'react-icons/fa6';
-import { FaDollarSign } from 'react-icons/fa';
-import { FaRegMoneyBillAlt } from 'react-icons/fa';
-import { Linechart } from './LineChart';
-import { ResponsiveContainer } from 'recharts';
 import Piechart from './Piechart';
-import { InvoiceTable } from './InvoiceTable';
-import { AccountTable } from './AccountTable';
-//import { Button } from './ui/button';
-// import ExpenseModal from './ExpenseModal';
-import TransactionPopup from './TransectionPopup';
-import { Button } from './ui/button';
+import axiosInstance from '@/utils/axiosInstance';
 import { useEffect, useState } from 'react';
-import useApi from '@/hooks/useApi';
+import { useOutletContext } from 'react-router-dom';
+import { Linechart } from './Linechart';
+import { InvoiceTable } from './InvoiceTable';
 import { useSelector } from 'react-redux';
+import { formatAmount, getCurrencySymbol } from '@/utils/format';
 
 function Dashboard() {
-  const { transections } = useSelector((state) => state.transections);
-  const { accounts } = useSelector((state) => state.accounts);
-  const [isOpen, setIsOpen] = useState(false);
-  const { data, error, makeRequest } = useApi();
+  const { openTransactionPopup } = useOutletContext();
+  const [overview, setOverview] = useState(null);
+  const [categories, setCategories] = useState([]);
+  const [trend, setTrend] = useState([]);
+  const [accountsMode, setAccountsMode] = useState([]);
+  const [recent, setRecent] = useState([]);
+
+  const preferences = useSelector(
+    (state) => state.auth.user?.user?.preferences,
+  );
+  const { currency = 'INR', decimalPlaces = 2 } = preferences || {};
+  const currencySymbol = getCurrencySymbol(currency);
+
   useEffect(() => {
-    makeRequest({ url: 'transactions/gettotals', method: 'get' });
-  }, [makeRequest, transections.length]);
+    const fetchDashboardData = async () => {
+      try {
+        const [overviewRes, categoriesRes, trendRes, distRes, recentRes] =
+          await Promise.all([
+            axiosInstance.get('/reports/overview'),
+            axiosInstance.get('/reports/categories'),
+            axiosInstance.get('/reports/trend'),
+            axiosInstance.get('/reports/accounts-distribution'),
+            axiosInstance.get('/reports/recent'),
+          ]);
 
-  if (error) {
-    console.log(error);
-  }
-  const handleSuccess = () => {
-    setIsOpen(false);
-  };
+        setOverview(overviewRes.data.data);
+
+        if (categoriesRes.data.data) {
+          const formattedCats = categoriesRes.data.data.map((c) => ({
+            name: c.categoryName,
+            value: c.totalAmount,
+          }));
+          setCategories(formattedCats);
+        }
+
+        setTrend(trendRes.data.data);
+
+        if (distRes.data.data) {
+          const formattedAccts = distRes.data.data.map((a) => ({
+            name: a.accountName,
+            value: a.balance,
+          }));
+          setAccountsMode(formattedAccts);
+        }
+
+        setRecent(recentRes.data.data);
+      } catch (err) {
+        console.error('Dashboard fetch error:', err);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  const totalBalance = overview?.currentMonth?.income
+    ? overview.currentMonth.income - overview.currentMonth.expense
+    : 0;
+
   return (
-    <div className="w-full p-4 md:p-8 bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
-      {/* Header */}
-      <div className="flex flex-wrap items-center justify-between w-full mx-auto mt-5 p-6 bg-white dark:bg-gray-800 shadow-md rounded-lg">
+    <div className="max-w-[1400px] mx-auto p-8 space-y-8 w-full">
+      {/* Header Section */}
+      <div className="flex justify-between items-end">
         <div>
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-          <p className="text-lg mt-2">Monitor your financial activities</p>
+          <h1 className="text-3xl font-bold font-headline text-on-surface tracking-tight">
+            aiexpenser
+          </h1>
+          <p className="text-outline text-sm mt-1">
+            Global liquidity overview for the last 30 days.
+          </p>
         </div>
-        {/* <Button variant="primary">Pay</Button> */}
-        {/* <ExpenseModal /> */}
-        <Button variant="primary" onClick={() => setIsOpen(true)}>
-          Pay
-        </Button>
-        <TransactionPopup
-          open={isOpen}
-          setOpen={setIsOpen}
-          onSuccess={handleSuccess}
-        />
+        <div className="flex space-x-2">
+          <button className="bg-surface-container-high px-4 py-2 rounded-md text-sm font-medium text-outline hover:text-on-surface transition-colors flex items-center">
+            <span
+              className="material-symbols-outlined text-sm mr-2"
+              style={{ fontVariationSettings: "'FILL' 0" }}
+            >
+              calendar_today
+            </span>
+            Sept 1 - Sept 30
+          </button>
+          <button className="bg-surface-container-high px-3 py-2 rounded-md text-outline hover:text-on-surface transition-colors">
+            <span className="material-symbols-outlined text-sm">
+              filter_list
+            </span>
+          </button>
+        </div>
       </div>
 
-      {/* Info Cards */}
-      <div className="flex flex-wrap gap-6 mt-6">
+      {/* Stats Row */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <InfoCard
-          icon={<FaSackDollar />}
-          title={'Total Balance'}
-          description={'Overall total balance'}
-          amount={data?.totalBalance || 0}
+          accentColor="tertiary"
+          icon="account_balance"
+          title="Total Balance"
+          amount={formatAmount(totalBalance, currency, decimalPlaces)}
+          trendText={
+            overview?.comparison?.incomeChange > 0
+              ? `+${overview.comparison.incomeChange}% from last month`
+              : `${overview?.comparison?.incomeChange || 0}% from last month`
+          }
+          trendUp={overview?.comparison?.incomeChange >= 0}
         />
         <InfoCard
-          icon={<FaRegMoneyBillAlt />}
-          title={'Total Income'}
-          description={'Overall total income'}
-          amount={data?.totalsIncome || 0}
+          accentColor="primary"
+          icon="payments"
+          title="Monthly Income"
+          amount={formatAmount(
+            overview?.currentMonth?.income || 0,
+            currency,
+            decimalPlaces,
+          )}
+          trendText={
+            overview?.comparison?.incomeChange > 0
+              ? `${formatAmount((overview?.currentMonth?.income || 0) - (overview?.previousMonth?.income || 0), currency, decimalPlaces)} higher than prev`
+              : 'Down from prev month'
+          }
+          trendUp={overview?.comparison?.incomeChange >= 0}
         />
         <InfoCard
-          icon={<FaDollarSign />}
-          title={'Total Expense'}
-          description={'Overall total expense'}
-          amount={data?.totalsExpense || 0}
+          accentColor="error"
+          icon="shopping_cart"
+          title="Monthly Expense"
+          amount={formatAmount(
+            overview?.currentMonth?.expense || 0,
+            currency,
+            decimalPlaces,
+          )}
+          trendText={
+            overview?.comparison?.expenseChange < 0
+              ? `Reduced by ${Math.abs(overview.comparison.expenseChange)}%`
+              : `+${overview?.comparison?.expenseChange || 0}% higher`
+          }
+          trendUp={overview?.comparison?.expenseChange <= 0}
         />
       </div>
 
-      {/* Line Chart */}
-      <div className="mt-6 p-6 bg-white dark:bg-gray-800 shadow-md rounded-lg">
-        <ResponsiveContainer width="100%">
-          <Linechart />
-        </ResponsiveContainer>
-      </div>
-
-      {/* Pie Charts */}
-      <div className="flex flex-wrap gap-6 mt-6">
-        <div className="w-full md:w-[32%] bg-white dark:bg-gray-800 shadow-md rounded-lg p-4">
-          <ResponsiveContainer width="100%">
-            <Piechart title="Account" />
-          </ResponsiveContainer>
+      {/* Main Chart Area */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <Linechart data={trend} />
         </div>
-        <div className="w-full md:w-[32%] bg-white dark:bg-gray-800 shadow-md rounded-lg p-4">
-          <ResponsiveContainer width="100%">
-            <Piechart title="Debts" />
-          </ResponsiveContainer>
-        </div>
-        <div className="w-full md:w-[32%] bg-white dark:bg-gray-800 shadow-md rounded-lg p-4">
-          <ResponsiveContainer width="100%">
-            <Piechart title="Catagories" />
-          </ResponsiveContainer>
+        <div className="lg:col-span-1">
+          <Piechart
+            title="Asset Distribution"
+            data={
+              accountsMode.length > 0
+                ? accountsMode
+                : [
+                    { name: 'Cash & Savings', value: 842000 },
+                    { name: 'Crypto Portfolio', value: 312592 },
+                    { name: 'Commodities', value: 130000 },
+                  ]
+            }
+          />
         </div>
       </div>
 
-      {/* Tables */}
-      <div className="flex flex-wrap gap-6 mt-6">
-        <div className="w-full md:w-[66%] p-4 bg-white dark:bg-gray-800 shadow-md rounded-lg">
-          <InvoiceTable transections={transections} />
-        </div>
-        <div className="w-full md:w-[32%] p-4 bg-white dark:bg-gray-800 shadow-md rounded-lg">
-          <AccountTable accounts={accounts} />
-        </div>
-      </div>
+      <InvoiceTable transactions={recent} />
+
+      {/* Contextual FAB */}
+      <button
+        onClick={openTransactionPopup}
+        className="fixed bottom-10 right-10 w-16 h-16 rounded-full btn-primary-gradient text-on-primary shadow-2xl shadow-primary/40 flex items-center justify-center transition-transform hover:scale-110 active:scale-90 z-50"
+      >
+        <span
+          className="material-symbols-outlined text-3xl"
+          style={{ fontVariationSettings: "'wght' 600" }}
+        >
+          add
+        </span>
+      </button>
     </div>
   );
 }

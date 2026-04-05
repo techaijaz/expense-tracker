@@ -26,6 +26,7 @@ const userSchema = new Schema(
         avatar: {
             type: String,
             trim: true,
+            default: null,
         },
         password: {
             type: String,
@@ -47,6 +48,39 @@ const userSchema = new Schema(
         setBasicDetails: {
             type: Boolean,
             default: false,
+        },
+        lastLoginAt: {
+            type: Date,
+            default: null,
+        },
+        subscriptionTier: {
+            type: String,
+            default: 'BASIC',
+            enum: ['BASIC', 'PRO'],
+        },
+        preferences: {
+            _id: false,
+            currency: {
+                type: String,
+                default: 'INR',
+                enum: ['INR', 'USD', 'EUR', 'GBP', 'JPY', 'AUD', 'CAD', 'SGD'],
+            },
+            decimalPlaces: {
+                type: Number,
+                default: 2,
+                min: 0,
+                max: 4,
+            },
+            theme: {
+                type: String,
+                default: 'dark',
+                enum: ['dark', 'light', 'system'],
+            },
+            accentColor: {
+                type: String,
+                default: 'lightblue',
+                enum: ['lightblue', 'tomato', 'orange', 'mint', 'brown'],
+            },
         },
     },
     {

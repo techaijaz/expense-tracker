@@ -15,13 +15,13 @@ function AccountOptDropdown({ open, id }) {
           open ? 'block' : 'hidden'
         } absolute left-[3.5rem] top-[1.5rem] z-50`}
       >
-        <div className="absolute z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-          <div onClick={() => setFtOpen(true)} className="cursor-pointer p-3">
-            <BiTransfer className="mr-2" />
+        <div className="absolute z-10 mt-2 w-48 origin-top-right rounded-xl bg-card border border-secondary-container py-1 shadow-xl ring-1 ring-black/5 focus:outline-none">
+          <div onClick={() => setFtOpen(true)} className="cursor-pointer p-3 text-sm text-on-surface hover:bg-surface-variant transition-colors flex items-center">
+            <BiTransfer className="mr-2 text-lg text-on-surface-variant" />
             Transfer Fund
           </div>
-          <div onClick={() => setAmOpen(true)} className="cursor-pointer p-3">
-            <BiTransfer className="mr-2" />
+          <div onClick={() => setAmOpen(true)} className="cursor-pointer p-3 text-sm text-on-surface hover:bg-surface-variant transition-colors flex items-center">
+            <BiTransfer className="mr-2 text-lg text-on-surface-variant" />
             Add Amount
           </div>
         </div>

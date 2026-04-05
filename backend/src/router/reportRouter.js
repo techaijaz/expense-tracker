@@ -1,0 +1,13 @@
+import express from 'express'
+import authentication from '../middleware/authentication.js'
+import reportController from '../controller/reportController.js'
+
+const router = express.Router()
+
+router.route('/overview').get(authentication, reportController.getOverview)
+router.route('/categories').get(authentication, reportController.getCategorySpending)
+router.route('/trend').get(authentication, reportController.getTrend)
+router.route('/accounts-distribution').get(authentication, reportController.getAccountDistribution)
+router.route('/recent').get(authentication, reportController.getRecentActivity)
+
+export default router

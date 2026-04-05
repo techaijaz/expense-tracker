@@ -1,31 +1,27 @@
 const Logo = () => {
   return (
-    <div className="flex items-center space-x-2">
-      {/* Icon */}
-      {/* <div className="bg-green-500 text-white rounded-full w-10 h-10 flex items-center justify-center shadow-md">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          strokeWidth="2"
-          stroke="currentColor"
-          className="w-6 h-6"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M12 8v4m0 4h.01m6.938-2.328a9 9 0 11-13.856-9.674m13.856 9.674L12 3m0 0L5.062 14.328"
-          />
-        </svg>
-      </div> */}
+    <div className="flex items-center gap-3">
+      {/* Logo Mark */}
+      <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="36" height="36" rx="10" fill="url(#fullLogoGrad)" />
+        <path d="M10 24L18 10L26 24" stroke="var(--bg-primary)" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M13 20H23" stroke="var(--bg-primary)" strokeWidth="2.2" strokeLinecap="round" />
+        <circle cx="18" cy="27" r="2" fill="var(--bg-primary)" />
+        <defs>
+          <linearGradient id="fullLogoGrad" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
+            <stop stopColor="var(--accent-color)" />
+            <stop offset="1" stopColor="var(--accent-color)" />
+          </linearGradient>
+        </defs>
+      </svg>
       {/* Text */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-800">
-          Expense<span className="text-green-500">Tracker</span>
-        </h1>
-        <p className="text-sm text-gray-500">
-          Track your expenses effortlessly
-        </p>
+        <div className="text-xl font-black text-primary tracking-tighter font-headline leading-none">
+          aiexpenser
+        </div>
+        <div className="text-[9px] uppercase tracking-widest opacity-50 font-bold mt-0.5 text-outline">
+          Smart Finance
+        </div>
       </div>
     </div>
   );

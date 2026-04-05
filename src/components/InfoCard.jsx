@@ -1,45 +1,47 @@
-/* eslint-disable react/prop-types */
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from '@/components/ui/card';
-
 const InfoCard = ({
+  accentColor = 'primary',
   icon,
   title,
-  description,
   amount,
-  iconBgColor = 'bg-green-100',
-  iconTextColor = 'text-green-600',
+  trendText,
+  trendUp,
 }) => {
   return (
-    <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-lg w-full sm:w-[48%] md:w-[32%] bg-white dark:bg-gray-800">
-      <div className="flex items-center p-4 space-x-4">
-        {/* Icon Section */}
-        <div
-          className={`p-3 rounded-full flex items-center justify-center ${iconBgColor} ${iconTextColor}`}
+    <div className="bg-surface-container-low p-6 rounded-xl relative overflow-hidden group">
+      <div
+        className={`absolute left-0 top-0 bottom-0 w-[2px] bg-${accentColor}`}
+      ></div>
+      <div className="flex justify-between items-start mb-4">
+        <span className="text-xs font-bold uppercase tracking-widest text-outline">
+          {title}
+        </span>
+        <span
+          className={`material-symbols-outlined text-${accentColor} opacity-50`}
+          style={{ fontVariationSettings: "'FILL' 0" }}
         >
           {icon}
+        </span>
+      </div>
+      <div className="space-y-1">
+        <div className="text-4xl font-extrabold font-headline tabular-nums">
+          {amount}
         </div>
-
-        {/* Text Section */}
-        <div className="flex-1">
-          <CardHeader className="p-0 space-y-1">
-            <CardTitle className="text-lg font-semibold text-gray-800 dark:text-gray-100">
-              {title}
-            </CardTitle>
-            <p className="text-2xl font-bold text-gray-900 dark:text-gray-200">
-              {amount}
-            </p>
-            <CardDescription className="text-sm text-gray-500 dark:text-gray-400">
-              {description}
-            </CardDescription>
-          </CardHeader>
+        <div
+          className={`flex items-center text-${trendUp ? 'tertiary' : 'error'} text-xs font-bold`}
+        >
+          <span
+            className="material-symbols-outlined text-xs mr-1"
+            style={{ fontVariationSettings: "'wght' 700" }}
+          >
+            {trendUp ? 'trending_up' : 'trending_down'}
+          </span>
+          {trendText}
         </div>
       </div>
-    </Card>
+      <div
+        className={`absolute -right-10 -bottom-10 w-32 h-32 bg-${accentColor}/5 rounded-full blur-3xl group-hover:bg-${accentColor}/10 transition-colors`}
+      ></div>
+    </div>
   );
 };
 

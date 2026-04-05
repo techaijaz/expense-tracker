@@ -25,18 +25,34 @@ const processQueue = (error, token = null) => {
   failedQueue = [];
 };
 
+// Function to get access token from persisted redux state
+const getAccessToken = () => {
+  try {
+    const root = localStorage.getItem('persist:root');
+    if (!root) return null;
+    const parsedRoot = JSON.parse(root);
+    const auth = JSON.parse(parsedRoot.auth);
+    return auth.user?.accessToken;
+  } catch (error) {
+    return null;
+  }
+};
+
 // Request interceptor
 instance.interceptors.request.use(
   function (config) {
-    const requestKey = `${config.method}:${config.url}`;
+    const accessToken = getAccessToken();
+    if (accessToken) {
+      config.headers.Authorization = `Bearer ${accessToken}`;
+    }
 
+    const requestKey = `${config.method}:${config.url}`;
     if (cancelMap.has(requestKey)) {
       cancelMap.get(requestKey).cancel('Canceled due to a new request.');
     }
 
     const source = axios.CancelToken.source();
     config.cancelToken = source.token;
-
     cancelMap.set(requestKey, source);
 
     return config;
@@ -61,7 +77,14 @@ instance.interceptors.response.use(
     }
     // console.log('Error Response:', error);
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (error.response?.status === 401) {
+      // If the request was to the refresh token endpoint and it failed, OR if we've already retried
+      if (originalRequest.url === '/user/refresh-token' || originalRequest._retry) {
+        localStorage.clear();
+        window.location.href = '/';
+        return Promise.reject(error);
+      }
+
       originalRequest._retry = true;
 
       if (isRefreshing) {
@@ -69,7 +92,7 @@ instance.interceptors.response.use(
           failedQueue.push({ resolve, reject });
         })
           .then((token) => {
-            originalRequest.headers.Authorization = `${token}`;
+            originalRequest.headers.Authorization = `Bearer ${token}`;
             return instance(originalRequest);
           })
           .catch((err) => Promise.reject(err));
@@ -84,7 +107,7 @@ instance.interceptors.response.use(
         processQueue(null, accessToken);
 
         // Retry the original request
-        originalRequest.headers.Authorization = `${accessToken}`;
+        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
         return instance(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);
@@ -97,6 +120,7 @@ instance.interceptors.response.use(
         isRefreshing = false;
       }
     }
+
 
     if (error.config) {
       const requestKey = `${error.config.method}:${error.config.url}`;
