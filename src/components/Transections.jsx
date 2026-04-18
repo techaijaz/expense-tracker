@@ -1,439 +1,681 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useOutletContext } from 'react-router-dom';
 import useApi from '@/hooks/useApi';
-import { setTransections } from '@/redux/transectionSlice';
+import {
+  setTransections,
+  deleteTransection,
+} from '@/redux/transectionSlice';
+import { updateAccount } from '@/redux/accountSlice';
 import { formatDate } from '@/utils/utils';
+import { DateRangePicker } from './DateRangePicker';
+import { DeleteConfirmModal } from './SharedComponents';
+import TransectionPopup from './TransectionPopup';
+import { toast } from 'sonner';
+import { formatAmount } from '@/utils/format';
+import api from '@/utils/httpMethods';
 
 export default function Transections() {
   const dispatch = useDispatch();
   const { openTransactionPopup } = useOutletContext();
   const { transections } = useSelector((state) => state.transections);
-  const { data, makeRequest } = useApi();
+  const { categories: groupedCategories } = useSelector(
+    (state) => state.category,
+  );
+  const categories = useMemo(() => {
+    const {
+      INCOME = [],
+      EXPENSE = [],
+      TRANSFER = [],
+    } = groupedCategories || {};
+    return [...INCOME, ...EXPENSE, ...TRANSFER];
+  }, [groupedCategories]);
+  const { accounts = [] } = useSelector((state) => state.accounts);
+  const { data, makeRequest, loading } = useApi();
+
+  // Filter & Pagination State
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [category, setCategory] = useState('all');
+  const [account, setAccount] = useState('all');
+  const [type, setType] = useState('all');
+  const [party, setParty] = useState('all');
+  const [parties, setParties] = useState([]);
+  const [dateRange, setDateRange] = useState({
+    from: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+    to: new Date(),
+  });
+  const [page, setPage] = useState(1);
+  const [limit] = useState(20);
+
+  // Fetch Parties
+  useEffect(() => {
+    const fetchParties = async () => {
+      try {
+        const res = await api.get('/parties');
+        setParties(res.data || []);
+      } catch (e) {
+        console.error('Failed to fetch parties');
+      }
+    };
+    fetchParties();
+  }, []);
+
+  // Modal State
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState(null);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
+
+  // Search Debounce
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  // Fetch Logic
+  const fetchTransactions = useCallback(() => {
+    const params = {
+      page,
+      limit,
+      search: debouncedSearch || undefined,
+      categoryId: category !== 'all' ? category : undefined,
+      accountId: account !== 'all' ? account : undefined,
+      type: type !== 'all' ? type : undefined,
+      partyId: party !== 'all' ? party : undefined,
+      dateFrom: dateRange?.from?.toISOString(),
+      dateTo: dateRange?.to?.toISOString(),
+    };
+    makeRequest({ url: '/transactions', method: 'get', params });
+  }, [
+    page,
+    limit,
+    debouncedSearch,
+    category,
+    account,
+    type,
+    party,
+    dateRange,
+    makeRequest,
+  ]);
 
   useEffect(() => {
-    // Attempting to fetch transactions, fallback to 'transactions/all' if needed based on prior version
-    makeRequest({ url: '/transactions', method: 'get' });
-  }, [makeRequest]);
+    fetchTransactions();
+  }, [fetchTransactions]);
 
   useEffect(() => {
-    if (data)
+    if (data) {
       dispatch(setTransections(data?.data || data?.transactions || data));
+    }
   }, [data, dispatch]);
 
-  const handleSuccess = () => {
-    setIsOpen(false);
-    makeRequest({ url: '/transactions', method: 'get' });
-  };
+  const list = useMemo(
+    () => (Array.isArray(transections) ? transections : []),
+    [transections],
+  );
 
-  const list = Array.isArray(transections) ? transections : [];
-
-  // Calculate running stats (using available transaction data)
+  // Summary
   const inflow = list
-    .filter((t) => ['INCOME', 'income'].includes(t.type || t.categoryType))
+    .filter((t) => t && ['INCOME', 'income'].includes(t.type || t.categoryType))
     .reduce((acc, curr) => acc + (curr.amount || 0), 0);
   const outflow = list
-    .filter((t) => ['EXPENSE', 'expense'].includes(t.type || t.categoryType))
+    .filter((t) => t && ['EXPENSE', 'expense'].includes(t.type || t.categoryType))
     .reduce((acc, curr) => acc + (curr.amount || 0), 0);
   const netPrecision = inflow - outflow;
 
+  const user = useSelector((state) => state.auth.user?.user || state.auth.user);
+  const currency = user?.preferences?.currency || 'INR';
+
+  // Handlers
+  const handleEdit = (t) => {
+    setEditingTransaction(t);
+    setIsEditOpen(true);
+  };
+
+  const handleDeleteClick = (id) => {
+    setDeletingId(id);
+    setIsDeleteOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    try {
+      const res = await api.delete(`/transactions/${deletingId}`);
+      dispatch(deleteTransection(deletingId));
+      if (res?.data?.updatedAccounts) {
+        res.data.updatedAccounts.forEach((acc) => {
+          dispatch(updateAccount(acc));
+        });
+      }
+      toast.success('Transaction deleted');
+      window.dispatchEvent(new CustomEvent('refetch-system-metrics'));
+      setIsDeleteOpen(false);
+    } catch (err) {
+      toast.error('Failed to delete transaction');
+    }
+  };
+
+  // Type badge helper
+  const getTypeBadge = (t) => {
+    if (!t) return { cls: 'txn-type-badge expense', label: 'Unknown' };
+    const typeName = (t.type || 'expense').toLowerCase();
+    if (typeName === 'income')
+      return { cls: 'txn-type-badge income', label: '↓ Income' };
+    if (typeName === 'transfer')
+      return { cls: 'txn-type-badge transfer', label: '⇄ Transfer' };
+    if (typeName === 'debt') {
+      const sub = (t.debtType || '').toLowerCase();
+      if (sub === 'repayment')
+        return { cls: 'txn-type-badge repayment', label: '↑ Repayment' };
+      return { cls: 'txn-type-badge debt', label: '↓ Debt' };
+    }
+    return { cls: 'txn-type-badge expense', label: '↑ Expense' };
+  };
+
+  const getAmountDisplay = (t) => {
+    if (!t) return { cls: 'txn-amount', prefix: '' };
+    const typeName = (t.type || 'expense').toLowerCase();
+    if (typeName === 'income') return { cls: 'txn-amount credit', prefix: '+' };
+    if (typeName === 'transfer') return { cls: 'txn-amount', prefix: '' };
+    return { cls: 'txn-amount debit', prefix: '-' };
+  };
+
+  const totalRecords = data?.pagination?.total || (data?.transactions ? data.transactions.length : list.length);
+  const totalPages = Math.max(1, Math.ceil(totalRecords / limit));
+  const startRecord = totalRecords > 0 ? (page - 1) * limit + 1 : 0;
+  const endRecord = Math.min(page * limit, totalRecords);
+
   return (
-    <div className="flex-1 p-6 lg:p-10 space-y-8 bg-surface-dim w-full max-w-[1600px] mx-auto">
-      {/* Header Section */}
-      <header className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
-        <div className="space-y-2">
-          <h1 className="text-4xl font-extrabold tracking-tight text-on-surface font-headline">
-            Transaction Ledger
-          </h1>
-          <p className="text-slate-400 font-medium">
-            Precision tracking for your financial ecosystem.
-          </p>
+    <div className="txn-page-wrap">
+
+      {/* ── SUMMARY KPI CARDS ── */}
+      <div className="txn-kpi-row">
+        <div className="kpi-card green">
+          <div className="kpi-label">Total Inflow</div>
+          <div className="kpi-val" style={{ fontSize: 20 }}>{formatAmount(inflow, currency)}</div>
+          <div className="kpi-change up">↑ +12% vs last month</div>
         </div>
-        <div className="flex items-center gap-3">
-          <button className="bg-surface-container-high text-on-surface px-4 py-2.5 rounded-md text-sm font-semibold flex items-center gap-2 hover:bg-surface-variant transition-colors border border-outline-variant/10">
-            <span
-              className="material-symbols-outlined text-[18px]"
-              style={{ fontVariationSettings: "'FILL' 0" }}
-            >
-              file_download
-            </span>
-            Export CSV
-          </button>
-          <button
-            onClick={openTransactionPopup}
-            className="bg-gradient-to-br from-primary to-on-primary-container text-on-primary px-6 py-2.5 rounded-md text-sm font-bold shadow-lg shadow-primary/10 hover:opacity-90 transition-all active:scale-95 flex items-center gap-2 border-none"
+        <div className="kpi-card red">
+          <div className="kpi-label">Total Outflow</div>
+          <div className="kpi-val" style={{ fontSize: 20 }}>{formatAmount(outflow, currency)}</div>
+          <div className="kpi-change down">↓ -5% vs last month</div>
+        </div>
+        <div className="kpi-card blue">
+          <div className="kpi-label">Net Precision</div>
+          <div className="kpi-val" style={{ fontSize: 20 }}>{formatAmount(netPrecision, currency)}</div>
+          <div className="kpi-change up">↑ +2.4% vs last month</div>
+        </div>
+      </div>
+
+      {/* ── FILTER BAR (row 1) ── */}
+      <div className="txn-filter-bar">
+        {/* Search */}
+        <div className="filter-group search-wrap" style={{ position: 'relative' }}>
+          <label>Search</label>
+          <div style={{ position: 'relative' }}>
+            <span className="search-icon">🔍</span>
+            <input
+              className="filter-input"
+              placeholder="Find by description, category…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+        </div>
+
+        {/* Date Range */}
+        <div className="filter-group">
+          <label>Date Range</label>
+          <DateRangePicker
+            value={dateRange}
+            onChange={setDateRange}
+          />
+        </div>
+
+        {/* Flow Type */}
+        <div className="filter-group">
+          <label>Flow Type</label>
+          <select
+            className="filter-input"
+            value={type}
+            onChange={(e) => { setType(e.target.value); setPage(1); }}
           >
-            <span
-              className="material-symbols-outlined text-[18px]"
-              style={{ fontVariationSettings: "'FILL' 0" }}
-            >
-              add
-            </span>
-            New Transaction
+            <option value="all">All Flows</option>
+            <option value="expense">Expense</option>
+            <option value="income">Income</option>
+            <option value="transfer">Transfer</option>
+            <option value="debt">Debt</option>
+          </select>
+        </div>
+
+        {/* Account */}
+        <div className="filter-group">
+          <label>Account</label>
+          <select
+            className="filter-input"
+            value={account}
+            onChange={(e) => { setAccount(e.target.value); setPage(1); }}
+          >
+            <option value="all">All Accounts</option>
+            {accounts.map((a) => (
+              <option key={a._id} value={a._id}>{a.name}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* ── FILTER BAR (row 2) ── */}
+      <div className="txn-filter-bar2">
+        <div className="filter-group">
+          <label>Category</label>
+          <select
+            className="filter-input"
+            value={category}
+            onChange={(e) => { setCategory(e.target.value); setPage(1); }}
+          >
+            <option value="all">All Categories</option>
+            {categories.map((c) => (
+              <option key={c._id} value={c._id}>{c.icon} {c.name}</option>
+            ))}
+          </select>
+        </div>
+        <div className="filter-group">
+          <label>Party (Debt)</label>
+          <select
+            className="filter-input"
+            value={party}
+            onChange={(e) => { setParty(e.target.value); setPage(1); }}
+          >
+            <option value="all">All Parties</option>
+            {parties.map((p) => (
+              <option key={p._id} value={p._id}>{p.name}</option>
+            ))}
+          </select>
+        </div>
+        <div className="filter-group" style={{ display: 'flex', alignItems: 'flex-end' }}>
+          <button
+            className="txn-clear-btn"
+            onClick={() => {
+              setSearch('');
+              setDebouncedSearch('');
+              setCategory('all');
+              setAccount('all');
+              setType('all');
+              setParty('all');
+              setDateRange({
+                from: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+                to: new Date(),
+              });
+              setPage(1);
+            }}
+          >
+            ✕ Clear Filters
           </button>
         </div>
-      </header>
+      </div>
 
-      {/* Advanced Filters */}
-      <section className="bg-surface-container-low rounded-xl p-6 border border-outline-variant/5 shadow-lg">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          <div className="lg:col-span-1">
-            <label className="block text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-1.5 ml-1">
-              Search Label
-            </label>
-            <div className="relative">
-              <input
-                className="w-full bg-surface-container-highest border-none rounded-lg py-2.5 pl-3 pr-10 text-sm focus:ring-1 focus:ring-primary/40 text-on-surface placeholder:text-slate-500 outline-none"
-                placeholder="Filter by title..."
-                type="text"
-              />
-              <span
-                className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-lg"
-                style={{ fontVariationSettings: "'FILL' 0" }}
-              >
-                search
-              </span>
-            </div>
-          </div>
-          <div>
-            <label className="block text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-1.5 ml-1">
-              Date Range
-            </label>
-            <div className="relative">
-              <input
-                className="w-full bg-surface-container-highest border-none rounded-lg py-2.5 pl-3 pr-10 text-sm focus:ring-1 focus:ring-primary/40 text-on-surface outline-none"
-                type="text"
-                defaultValue="Oct 01 - Oct 31, 2023"
-              />
-              <span
-                className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-lg"
-                style={{ fontVariationSettings: "'FILL' 0" }}
-              >
-                calendar_month
-              </span>
-            </div>
-          </div>
-          <div>
-            <label className="block text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-1.5 ml-1">
-              Category
-            </label>
-            <select className="w-full bg-surface-container-highest border-none rounded-lg py-2.5 px-3 text-sm focus:ring-1 focus:ring-primary/40 text-on-surface appearance-none outline-none">
-              <option>All Categories</option>
-              <option>Operational</option>
-              <option>Marketing</option>
-              <option>Salaries</option>
-              <option>Infrastructure</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-1.5 ml-1">
-              Account
-            </label>
-            <select className="w-full bg-surface-container-highest border-none rounded-lg py-2.5 px-3 text-sm focus:ring-1 focus:ring-primary/40 text-on-surface appearance-none outline-none">
-              <option>All Accounts</option>
-              <option>Main Treasury</option>
-              <option>OpEx Savings</option>
-              <option>Crypto Wallet</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-1.5 ml-1">
-              Ledger Type
-            </label>
-            <select className="w-full bg-surface-container-highest border-none rounded-lg py-2.5 px-3 text-sm focus:ring-1 focus:ring-primary/40 text-on-surface appearance-none outline-none">
-              <option>All Types</option>
-              <option>Expense</option>
-              <option>Income</option>
-              <option>Transfer</option>
-              <option>Debt</option>
-            </select>
-          </div>
+      {/* ── TRANSACTION TABLE ── */}
+      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+        {/* Table Header */}
+        <div className="txn-head">
+          <div>Type</div>
+          <div>Description</div>
+          <div>Category</div>
+          <div>Date</div>
+          <div style={{ textAlign: 'right' }}>Amount</div>
         </div>
-      </section>
 
-      {/* Data Table */}
-      <section className="bg-surface-container-low rounded-xl overflow-hidden shadow-2xl shadow-black/20 border border-outline-variant/5">
-        <div className="overflow-x-auto min-h-[400px]">
-          <table className="w-full text-left border-collapse min-w-[800px]">
-            <thead>
-              <tr className="bg-surface-container-highest/50 border-b border-outline-variant/10">
-                <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-slate-400">
-                  Status
-                </th>
-                <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-slate-400">
-                  Transaction Details
-                </th>
-                <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-slate-400">
-                  Category
-                </th>
-                <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-slate-400">
-                  Date
-                </th>
-                <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-slate-400">
-                  Account
-                </th>
-                <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-slate-400 text-right">
-                  Amount
-                </th>
-                <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-slate-400 text-center">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-outline-variant/5">
-              {list.length > 0 ? (
-                list.map((t, idx) => {
-                  const title = t.title || t.description || 'Transaction';
-                  const accountName =
-                    t.account?.name ||
-                    t.accountName ||
-                    t.transactions?.[0]?.accountName ||
-                    'System';
-                  const catName = t.category?.name || t.category || 'General';
-                  const isIncome = ['INCOME', 'income'].includes(
-                    t.type || t.categoryType,
-                  );
-                  const isExpense = ['EXPENSE', 'expense'].includes(
-                    t.type || t.categoryType,
-                  );
-                  const isCleared =
-                    t.status !== 'pending' && t.ledgerType !== 'PENDING';
+        {/* Body */}
+        {loading ? (
+          <div className="txn-empty-state">
+            <div className="txn-spinner" />
+            <span>Synchronizing Ledger…</span>
+          </div>
+        ) : list.length === 0 ? (
+          <div className="txn-empty-state">
+            <div style={{ fontSize: 32, marginBottom: 12 }}>📭</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text2)' }}>No movements found</div>
+            <div style={{ fontSize: 12, marginTop: 4, color: 'var(--text3)' }}>
+              Try adjusting your filters or add a transaction.
+            </div>
+          </div>
+        ) : (
+          list.filter(Boolean).map((t) => {
+            const badge = getTypeBadge(t);
+            const amtDisplay = getAmountDisplay(t);
+            const typeName = (t.type || 'expense').toLowerCase();
+            const isDebt = typeName === 'debt';
+            const isTransfer = typeName === 'transfer';
 
-                  return (
-                    <tr
-                      key={t._id || t.id || idx}
-                      className="group hover:bg-surface-container-high/40 transition-colors"
+            return (
+              <div key={t._id} className="txn-row">
+                {/* Type */}
+                <div>
+                  <span className={badge.cls}>{badge.label}</span>
+                  {isDebt && t.partyId && (
+                    <div style={{ fontSize: 10, color: 'var(--amber)', marginTop: 4 }}>
+                      👤 {t.partyId.name}
+                    </div>
+                  )}
+                </div>
+
+                {/* Description + Account */}
+                <div>
+                  <div className="txn-desc">{t.title || '— No description —'}</div>
+                  <div className="txn-account">
+                    {t.accountId?.name || 'Unknown'}
+                    {isTransfer && t.targetAccountId?.name && (
+                      <span style={{ color: 'var(--accent)' }}> → {t.targetAccountId.name}</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Category */}
+                <div>
+                  <span className="txn-cat">
+                    {t.categoryId?.icon && <span>{t.categoryId.icon}</span>}
+                    {t.categoryId?.name || 'Unclassified'}
+                  </span>
+                </div>
+
+                {/* Date */}
+                <div className="txn-date">{formatDate(t.date)}</div>
+
+                {/* Amount + Actions */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6 }}>
+                  <span className={amtDisplay.cls}>
+                    {amtDisplay.prefix}{formatAmount(t.amount, currency)}
+                  </span>
+                  <div className="txn-row-actions">
+                    <button
+                      className="icon-btn"
+                      style={{ width: 28, height: 28 }}
+                      title="Edit"
+                      onClick={(e) => { e.stopPropagation(); handleEdit(t); }}
                     >
-                      <td className="px-6 py-5">
-                        {isCleared ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-tertiary/10 text-tertiary uppercase">
-                            <span className="w-1.5 h-1.5 rounded-full bg-tertiary shadow-[0_0_8px_rgba(39,224,169,0.8)]"></span>
-                            Cleared
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-secondary-container/30 text-secondary uppercase border border-secondary/20">
-                            <span className="w-1.5 h-1.5 rounded-full bg-secondary"></span>
-                            Pending
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-6 py-5">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-surface-container-highest flex items-center justify-center border border-outline-variant/10 min-w-[40px]">
-                            <span
-                              className={`material-symbols-outlined text-xl ${isIncome ? 'text-tertiary' : 'text-primary'}`}
-                              style={{ fontVariationSettings: "'FILL' 0" }}
-                            >
-                              {t.icon ||
-                                (isIncome ? 'payments' : 'receipt_long')}
-                            </span>
-                          </div>
-                          <div className="flex flex-col">
-                            <div className="text-sm font-semibold text-on-surface truncate max-w-[200px]">
-                              {title}
-                            </div>
-                            <div className="text-[11px] text-slate-500 truncate max-w-[200px]">
-                              {t._id ? `ID #${t._id.substring(0, 8)}` : 'Entry'}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-5">
-                        <span className="text-sm text-slate-300 capitalize">
-                          {catName}
-                        </span>
-                      </td>
-                      <td className="px-6 py-5">
-                        <span className="text-sm text-slate-300 font-variant-numeric: tabular-nums">
-                          {formatDate(t.date)}
-                        </span>
-                      </td>
-                      <td className="px-6 py-5">
-                        <div className="flex items-center gap-2">
-                          <div
-                            className={`w-2 h-2 rounded-full ${isIncome ? 'bg-tertiary' : 'bg-primary'}`}
-                          ></div>
-                          <span className="text-sm text-slate-300 truncate max-w-[150px]">
-                            {accountName}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-5 text-right flex-col justify-center h-full">
-                        <span
-                          className={`text-sm font-bold tnum block ${isIncome ? 'text-tertiary' : 'text-error'}`}
-                        >
-                          {isIncome ? '+ ' : isExpense ? '- ' : ''}$
-                          {Number(t.amount || 0).toLocaleString(undefined, {
-                            minimumFractionDigits: 2,
-                          })}
-                        </span>
-                      </td>
-                      <td className="px-6 py-5">
-                        <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
-                            className="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/10 rounded transition-colors"
-                            title="View Details"
-                          >
-                            <span
-                              className="material-symbols-outlined text-lg"
-                              style={{ fontVariationSettings: "'FILL' 0" }}
-                            >
-                              visibility
-                            </span>
-                          </button>
-                          <button
-                            className="p-1.5 text-slate-400 hover:text-error hover:bg-error/10 rounded transition-colors"
-                            title="Delete"
-                          >
-                            <span
-                              className="material-symbols-outlined text-lg"
-                              style={{ fontVariationSettings: "'FILL' 0" }}
-                            >
-                              delete
-                            </span>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              ) : (
-                <tr>
-                  <td
-                    colSpan="7"
-                    className="px-6 py-16 text-center text-outline font-medium"
-                  >
-                    No transactions found matching criteria.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                      ✏️
+                    </button>
+                    <button
+                      className="icon-btn"
+                      style={{ width: 28, height: 28, color: 'var(--red)' }}
+                      title="Delete"
+                      onClick={(e) => { e.stopPropagation(); handleDeleteClick(t._id); }}
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
 
-        {/* Pagination Footer */}
-        <footer className="px-6 py-4 bg-surface-container-highest/20 flex flex-col md:flex-row items-center justify-between border-t border-outline-variant/5 gap-4">
-          <div className="text-xs text-slate-500">
-            Showing{' '}
-            <span className="text-on-surface font-bold">
-              1-{Math.min(10, list.length)}
-            </span>{' '}
-            of <span className="text-on-surface font-bold">{list.length}</span>{' '}
-            records
-          </div>
-          <div className="flex items-center gap-2 hidden lg:flex">
-            <button
-              className="p-1.5 text-slate-500 hover:text-primary transition-colors disabled:opacity-30"
-              disabled
-            >
-              <span
-                className="material-symbols-outlined text-xl"
-                style={{ fontVariationSettings: "'FILL' 0" }}
-              >
-                first_page
-              </span>
-            </button>
-            <button
-              className="p-1.5 text-slate-500 hover:text-primary transition-colors disabled:opacity-30"
-              disabled
-            >
-              <span
-                className="material-symbols-outlined text-xl"
-                style={{ fontVariationSettings: "'FILL' 0" }}
-              >
-                chevron_left
-              </span>
-            </button>
-            <div className="flex items-center gap-1 px-2">
-              <button className="w-8 h-8 rounded text-xs font-bold bg-primary text-on-primary shadow-lg shadow-primary/20">
-                1
-              </button>
-            </div>
-            <button
-              className="p-1.5 text-slate-500 hover:text-primary transition-colors disabled:opacity-30"
-              disabled
-            >
-              <span
-                className="material-symbols-outlined text-xl"
-                style={{ fontVariationSettings: "'FILL' 0" }}
-              >
-                chevron_right
-              </span>
-            </button>
-            <button
-              className="p-1.5 text-slate-500 hover:text-primary transition-colors disabled:opacity-30"
-              disabled
-            >
-              <span
-                className="material-symbols-outlined text-xl"
-                style={{ fontVariationSettings: "'FILL' 0" }}
-              >
-                last_page
-              </span>
-            </button>
-          </div>
-        </footer>
-      </section>
+        {/* ── PAGINATION FOOTER ── */}
+        <div className="txn-pagination">
+          <span>Showing {startRecord}–{endRecord} of {totalRecords} records</span>
+          <div style={{ display: 'flex', gap: 4 }}>
+            <button className="icon-btn txn-page-btn" onClick={() => setPage(1)} disabled={page === 1}>⟨⟨</button>
+            <button className="icon-btn txn-page-btn" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>⟨</button>
 
-      {/* Bottom Contextual Stats (Bento Style) */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-surface-container-low p-6 rounded-xl border border-outline-variant/10 relative overflow-hidden group">
-          <div className="absolute top-0 left-0 w-1 h-full bg-tertiary"></div>
-          <div className="flex justify-between items-start mb-4">
-            <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">
-              Total Inflow
-            </p>
-            <span
-              className="material-symbols-outlined text-tertiary text-lg group-hover:scale-110 transition-transform"
-              style={{ fontVariationSettings: "'FILL' 0" }}
-            >
-              trending_up
-            </span>
-          </div>
-          <h3 className="text-2xl font-bold text-on-surface tnum">
-            ${inflow.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-          </h3>
-        </div>
-
-        <div className="bg-surface-container-low p-6 rounded-xl border border-outline-variant/10 relative overflow-hidden group">
-          <div className="absolute top-0 left-0 w-1 h-full bg-error"></div>
-          <div className="flex justify-between items-start mb-4">
-            <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">
-              Total Outflow
-            </p>
-            <span
-              className="material-symbols-outlined text-error text-lg group-hover:scale-110 transition-transform"
-              style={{ fontVariationSettings: "'FILL' 0" }}
-            >
-              trending_down
-            </span>
-          </div>
-          <h3 className="text-2xl font-bold text-on-surface tnum">
-            ${outflow.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-          </h3>
-        </div>
-
-        <div className="bg-surface-container-low p-6 rounded-xl border border-outline-variant/10 relative overflow-hidden group">
-          <div className="absolute top-0 left-0 w-1 h-full bg-primary"></div>
-          <div className="flex justify-between items-start mb-4">
-            <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">
-              Net Precision
-            </p>
-            <span
-              className="material-symbols-outlined text-primary text-lg group-hover:scale-110 transition-transform"
-              style={{ fontVariationSettings: "'FILL' 0" }}
-            >
-              account_balance_wallet
-            </span>
-          </div>
-          <h3 className="text-2xl font-bold text-on-surface tnum">
-            $
-            {netPrecision.toLocaleString(undefined, {
-              minimumFractionDigits: 2,
+            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+              const start = Math.max(1, Math.min(totalPages - 4, page - 2));
+              const pageNum = start + i;
+              if (pageNum < 1 || pageNum > totalPages) return null;
+              return (
+                <button
+                  key={pageNum}
+                  onClick={() => setPage(pageNum)}
+                  className={pageNum === page ? 'txn-page-active' : 'icon-btn txn-page-btn'}
+                >
+                  {pageNum}
+                </button>
+              );
             })}
-          </h3>
+
+            <button className="icon-btn txn-page-btn" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages}>⟩</button>
+            <button className="icon-btn txn-page-btn" onClick={() => setPage(totalPages)} disabled={page >= totalPages}>⟩⟩</button>
+          </div>
         </div>
-      </section>
+      </div>
+
+      {/* ── SCOPED STYLES ── */}
+      <style>{`
+        @keyframes txn-spin { to { transform: rotate(360deg); } }
+
+        .txn-page-wrap {
+          padding: 24px;
+          display: flex;
+          flex-direction: column;
+          gap: 0;
+          background: var(--bg);
+          min-height: 100%;
+        }
+
+        /* KPI Row */
+        .txn-kpi-row {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 14px;
+          margin-bottom: 16px;
+        }
+
+        /* Filter Bar Row 1 */
+        .txn-filter-bar {
+          background: var(--bg2);
+          border: 1px solid var(--border);
+          border-radius: var(--r) var(--r) 0 0;
+          padding: 16px;
+          display: grid;
+          grid-template-columns: 1fr auto auto auto;
+          gap: 12px;
+          align-items: end;
+        }
+
+        /* Filter Bar Row 2 */
+        .txn-filter-bar2 {
+          background: var(--bg2);
+          border: 1px solid var(--border);
+          border-top: none;
+          border-radius: 0 0 var(--r) var(--r);
+          padding: 12px 16px;
+          display: grid;
+          grid-template-columns: 1fr 1fr auto;
+          gap: 12px;
+          margin-bottom: 16px;
+          align-items: end;
+        }
+
+        .filter-group label {
+          font-size: 10px;
+          color: var(--text3);
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          font-weight: 600;
+          margin-bottom: 5px;
+          display: block;
+        }
+        .filter-input {
+          width: 100%;
+          height: 40px;
+          padding: 8px 12px;
+          background: var(--bg3);
+          border: 1px solid var(--border2);
+          border-radius: var(--r2);
+          color: var(--text);
+          font-family: var(--font);
+          font-size: 13px;
+          outline: none;
+          transition: border-color .15s;
+          appearance: none;
+          -webkit-appearance: none;
+          cursor: pointer;
+        }
+        .filter-input:focus { border-color: var(--accent); }
+        .filter-input::placeholder { color: var(--text3); }
+        .search-wrap { position: relative; }
+        .search-wrap .filter-input { padding-left: 32px; }
+        .search-icon {
+          position: absolute;
+          left: 12px;
+          top: 50%;
+          transform: translateY(-50%);
+          color: var(--text3);
+          font-size: 14px;
+          pointer-events: none;
+        }
+
+        .txn-clear-btn {
+          width: 100%;
+          height: 40px;
+          padding: 8px 16px;
+          background: transparent;
+          border: 1px solid var(--border2);
+          border-radius: var(--r2);
+          color: var(--text2);
+          font-family: var(--font);
+          font-size: 12px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all .15s;
+          white-space: nowrap;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .txn-clear-btn:hover { border-color: var(--red-border); color: var(--red); }
+
+        /* Table */
+        .txn-head {
+          display: grid;
+          grid-template-columns: 110px 1fr 130px 90px 160px;
+          gap: 12px;
+          padding: 8px 16px;
+          border-bottom: 1px solid var(--border);
+          font-size: 10px;
+          color: var(--text3);
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          font-weight: 600;
+        }
+        .txn-row {
+          display: grid;
+          grid-template-columns: 110px 1fr 130px 90px 160px;
+          gap: 12px;
+          padding: 12px 16px;
+          border-bottom: 1px solid var(--border);
+          align-items: center;
+          transition: background .1s;
+          cursor: pointer;
+        }
+        .txn-row:last-child { border-bottom: none; }
+        .txn-row:hover { background: var(--bg3); }
+        .txn-row:hover .txn-row-actions { opacity: 1 !important; }
+
+        .txn-row-actions {
+          display: flex;
+          gap: 2px;
+          opacity: 0;
+          transition: opacity .15s;
+        }
+
+        /* Badges */
+        .txn-type-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          padding: 4px 8px;
+          border-radius: var(--r2);
+          font-size: 11px;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.04em;
+        }
+        .txn-type-badge.expense  { background: var(--red-bg);    color: var(--red);    border: 1px solid var(--red-border); }
+        .txn-type-badge.income   { background: var(--green-bg);  color: var(--green);  border: 1px solid var(--green-border); }
+        .txn-type-badge.transfer { background: var(--accent-glow); color: var(--accent); border: 1px solid rgba(91,141,239,0.2); }
+        .txn-type-badge.debt     { background: var(--amber-bg);  color: var(--amber);  border: 1px solid var(--amber-border); }
+        .txn-type-badge.repayment{ background: var(--purple-bg); color: var(--purple); border: 1px solid rgba(167,139,250,0.2); }
+
+        .txn-desc    { font-size: 13px; font-weight: 500; color: var(--text); }
+        .txn-account { font-size: 11px; color: var(--text2); margin-top: 2px; }
+        .txn-cat     { font-size: 11px; padding: 3px 8px; background: var(--bg4); border-radius: var(--r2); color: var(--text2); display: inline-flex; align-items: center; gap: 4px; }
+        .txn-date    { font-size: 12px; color: var(--text2); font-family: var(--mono); }
+        .txn-amount  { font-family: var(--mono); font-weight: 600; font-size: 14px; text-align: right; color: var(--text2); white-space: nowrap; }
+        .txn-amount.credit { color: var(--green); }
+        .txn-amount.debit  { color: var(--red); }
+
+        /* Empty / Loading */
+        .txn-empty-state {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          padding: 60px 24px;
+          color: var(--text3);
+          font-size: 13px;
+        }
+        .txn-spinner {
+          width: 36px;
+          height: 36px;
+          border: 3px solid var(--border2);
+          border-top-color: var(--accent);
+          border-radius: 50%;
+          animation: txn-spin 0.8s linear infinite;
+        }
+
+        /* Pagination */
+        .txn-pagination {
+          padding: 12px 16px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          border-top: 1px solid var(--border);
+          font-size: 11px;
+          color: var(--text3);
+        }
+        .txn-page-btn {
+          width: 28px !important;
+          height: 28px !important;
+          font-size: 11px !important;
+        }
+        .txn-page-active {
+          width: 28px;
+          height: 28px;
+          border-radius: var(--r2);
+          border: none;
+          cursor: pointer;
+          font-size: 11px;
+          background: var(--accent);
+          color: #fff;
+          font-family: var(--font);
+          font-weight: 600;
+        }
+      `}</style>
+
+      {/* ── MODALS ── */}
+      {isEditOpen && editingTransaction && (
+        <TransectionPopup
+          open={isEditOpen}
+          setOpen={setIsEditOpen}
+          editTransection={editingTransaction}
+          onSuccess={() => {
+            setIsEditOpen(false);
+            fetchTransactions();
+          }}
+        />
+      )}
+
+      {isDeleteOpen && (
+        <DeleteConfirmModal
+          title="Delete Transaction"
+          description="Are you sure you want to permanently remove this transaction? This action cannot be undone."
+          onConfirm={confirmDelete}
+          onCancel={() => setIsDeleteOpen(false)}
+        />
+      )}
     </div>
   );
 }

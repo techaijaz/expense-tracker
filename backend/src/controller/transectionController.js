@@ -13,7 +13,6 @@ export default {
         try {
             const userId = req.authenticatedUser._id
             const { body } = req
-            console.log(body)
 
             // * body validation
             const { error, value } = validateJoiSchema(validationTransectionBody, body)
@@ -21,24 +20,21 @@ export default {
                 return httpError(next, error, req, 422)
             }
 
-            const { amount, category, account, description, type, date, partyId, toAccountId, ledgerType } = value
-
             const payload = {
+                ...value,
                 userId: userId,
-                date: dayjs(date).utc().toDate(),
-                amount,
-                categoryId: category,
-                accountId: account,
-                title: description,
-                type: type,
-                partyId: partyId || null,
-                toAccountId: toAccountId || null,
-                ledgerType: ledgerType || 'NORMAL',
+                date: dayjs(value.date).utc().toDate(),
             }
 
             const result = await databseService.createTransaction(payload)
 
-            httpResponse(req, res, 200, responceseMessage.SUCCESS, result)
+            // Populate the primary transaction for the frontend
+            const populatedTransaction = await databseService.getPopulatedTransaction(result.transaction._id, userId)
+
+            httpResponse(req, res, 200, responceseMessage.SUCCESS, {
+                transaction: populatedTransaction,
+                updatedAccounts: result.updatedAccounts,
+            })
         } catch (error) {
             httpError(next, error, req, 500)
         }
@@ -46,30 +42,32 @@ export default {
     getAllTransections: async (req, res, next) => {
         try {
             const userId = req.authenticatedUser._id
-            console.log('User ID:', userId, 'Query Params:', req.query)
+            const { search, dateFrom, dateTo, categoryId, accountId, type, partyId, limit = 10, page = 1 } = req.query
 
-            // Extract and validate query parameters
-            const { search, dateFrom, dateTo, category, account, amount, description, type, limit = 10, page = 1 } = req.query
+            const parsedLimit = Math.max(1, Math.min(parseInt(limit) || 10, 100))
+            const parsedPage = Math.max(1, parseInt(page) || 1)
 
-            // Build a safe filter object
-            const filters = {
-                search,
-                dateRange: {
-                    from: dateFrom ? new Date(dateFrom) : null,
-                    to: dateTo ? new Date(dateTo) : null,
-                },
-                category,
-                account,
-                amount,
-                description: description?.substring(0, 1000), // Limit text length
-                type,
-                pagination: {
-                    limit: Math.max(1, Math.min(parseInt(limit) || 10, 100)), // Keep limit within 1-100
-                    skip: page > 1 ? (page - 1) * filters.pagination.limit : 0, // Ensure page is at least 1
-                },
+            // 1. History Limit Logic for Basic Users
+            const user = await databseService.findUserById(userId, 'plan')
+            const plan = user?.plan || 'basic'
+            
+            let finalDateFrom = dateFrom ? new Date(dateFrom) : null
+            if (plan === 'basic') {
+                const threeMonthsAgo = dayjs().subtract(3, 'months').toDate()
+                if (!finalDateFrom || finalDateFrom < threeMonthsAgo) {
+                    finalDateFrom = threeMonthsAgo
+                }
             }
 
-            console.log('Applying Filters:', filters)
+            const filters = {
+                search,
+                dateRange: { from: finalDateFrom, to: dateTo ? new Date(dateTo) : null },
+                categoryId,
+                accountId,
+                type,
+                partyId,
+                pagination: { limit: parsedLimit, page: parsedPage },
+            }
 
             const { transactions, totalCount } = await databseService.getAllTransections(userId, filters)
 
@@ -77,13 +75,12 @@ export default {
                 transactions,
                 pagination: {
                     total: totalCount,
-                    page: filters.pagination.page,
-                    pages: Math.ceil(totalCount / filters.pagination.limit),
-                    limit: filters.pagination.limit,
+                    page: parsedPage,
+                    pages: Math.ceil(totalCount / parsedLimit),
+                    limit: parsedLimit,
                 },
             })
         } catch (error) {
-            console.error('Error fetching transactions:', error)
             httpError(next, error, req, 500)
         }
     },
@@ -93,10 +90,11 @@ export default {
             const totalBalance = await databseService.getTotalBalance(userId)
             const totalsIncome = await databseService.getTotalIncome(userId)
             const totalsExpense = await databseService.getTotalExpense(userId)
+            
             const totals = {
-                totalBalance: totalBalance[0]?.totalBalance,
-                totalsIncome: totalsIncome[0]?.totalIncome,
-                totalsExpense: totalsExpense[0]?.totalExpense,
+                totalBalance: totalBalance[0]?.totalBalance || 0,
+                totalsIncome: totalsIncome[0]?.totalIncome || 0,
+                totalsExpense: totalsExpense[0]?.totalExpense || 0,
             }
             httpResponse(req, res, 200, responceseMessage.SUCCESS, totals)
         } catch (error) {
@@ -106,7 +104,7 @@ export default {
     editTransaction: async (req, res, next) => {
         try {
             const userId = req.authenticatedUser._id
-            const ledgerId = req.params.id
+            const transactionId = req.params.id
             const { body } = req
 
             const { error, value } = validateJoiSchema(validationTransectionBody, body)
@@ -115,20 +113,18 @@ export default {
             }
 
             const payload = {
+                ...value,
                 userId: userId,
                 date: dayjs(value.date).utc().toDate(),
-                amount: value.amount,
-                categoryId: value.category,
-                accountId: value.account,
-                title: value.description,
-                type: value.type,
-                partyId: value.partyId || null,
-                toAccountId: value.toAccountId || null,
-                ledgerType: value.ledgerType || 'NORMAL',
             }
 
-            const result = await databseService.editTransaction(ledgerId, userId, payload)
-            httpResponse(req, res, 200, 'Transaction updated successfully', result)
+            const result = await databseService.editTransaction(transactionId, userId, payload)
+            const populatedTransaction = await databseService.getPopulatedTransaction(result.transaction._id, userId)
+
+            httpResponse(req, res, 200, 'Transaction updated successfully', {
+                transaction: populatedTransaction,
+                updatedAccounts: result.updatedAccounts,
+            })
         } catch (error) {
             httpError(next, error, req, 500)
         }
@@ -136,12 +132,13 @@ export default {
     deleteTransaction: async (req, res, next) => {
         try {
             const userId = req.authenticatedUser._id
-            const ledgerId = req.params.id
+            const transactionId = req.params.id
 
-            await databseService.deleteTransaction(ledgerId, userId)
-            httpResponse(req, res, 200, 'Transaction deleted successfully')
+            const result = await databseService.deleteTransaction(transactionId, userId)
+            httpResponse(req, res, 200, 'Transaction deleted successfully', result)
         } catch (error) {
             httpError(next, error, req, 500)
         }
     },
 }
+

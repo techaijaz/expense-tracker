@@ -17,12 +17,12 @@ export default {
         background: 'var(--bg-primary)',
         surface: 'var(--bg-card)',
         'surface-dim': 'var(--bg-primary)',
-        'surface-bright': 'var(--bg-card)',
-        'surface-container-lowest': 'var(--bg-primary)',
-        'surface-container-low': 'var(--bg-primary)',
-        'surface-container': 'var(--bg-card)',
-        'surface-container-high': 'var(--bg-card)',
-        'surface-container-highest': 'var(--bg-card)',
+        'surface-bright': 'var(--surface-highest)',
+        'surface-container-lowest': 'var(--input-bg)',
+        'surface-container-low': 'var(--surface-low)',
+        'surface-container': 'var(--surface-mid)',
+        'surface-container-high': 'var(--surface-high)',
+        'surface-container-highest': 'var(--surface-highest)',
         'surface-variant': 'var(--hover-bg)',
         'inverse-surface': 'var(--text-primary)',
         'inverse-on-surface': 'var(--bg-primary)',
@@ -31,15 +31,15 @@ export default {
         'on-surface-variant': 'var(--text-muted)',
         'on-background': 'var(--text-primary)',
 
-        primary: 'var(--accent-color)',
+        primary: 'var(--brand-primary)',
         'on-primary': '#ffffff',
-        'primary-container': 'var(--hover-bg)',
-        'on-primary-container': 'var(--accent-color)',
+        'primary-container': 'var(--brand-accent)',
+        'on-primary-container': '#ffffff',
         'inverse-primary': 'var(--text-muted)',
 
-        secondary: 'var(--text-muted)',
+        secondary: 'var(--brand-primary)',
         'on-secondary': '#ffffff',
-        'secondary-container': 'var(--input-bg)',
+        'secondary-container': 'var(--surface-mid)',
         'on-secondary-container': 'var(--text-primary)',
 
         outline: 'var(--border-color)',
@@ -50,11 +50,11 @@ export default {
         'error-container': '#93000a',
         'on-error-container': '#ffdad6',
 
-        // Optional remnants
-        tertiary: '#27e0a9',
-        'on-tertiary': '#003827',
-        'tertiary-container': '#001f14',
-        'on-tertiary-container': '#00956e',
+        // Premium Branded Colors
+        brand: {
+          primary: 'var(--brand-primary)',
+          accent: 'var(--brand-accent)',
+        },
       },
       fontFamily: {
         headline: ['Manrope', 'sans-serif'],

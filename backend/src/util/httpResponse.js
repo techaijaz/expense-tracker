@@ -14,10 +14,10 @@ export default (req, res, responseStatusCode, responseMessage, data = null) => {
         message: responseMessage,
         data: data,
     }
-    // Log
-    logger.info('CONTROLLER_RESPONSE', {
-        meta: response,
-    })
+    // Log (Sanitized for BSON/MongoDB constraints)
+    // logger.info('CONTROLLER_RESPONSE', {
+    //     meta: JSON.parse(JSON.stringify(response)),
+    // })
 
     //Production env check
     if (config.ENV === EApplicationEnvionment.PRODUCTION) {

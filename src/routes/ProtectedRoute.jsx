@@ -1,13 +1,25 @@
-//import { useSelector } from 'react-redux';
 import { useSelector } from 'react-redux';
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 
 const ProtectedRoute = () => {
   const { user } = useSelector((store) => store.auth);
-  //console.log(user.user);
+  const location = useLocation();
 
-  const isAuthenticated = user;
-  return isAuthenticated ? <Outlet /> : <Navigate to="/" />;
+  if (!user) {
+    return <Navigate to="/" />;
+  }
+
+  // Redirect to onboarding if not done
+  if (!user.onboardingDone && location.pathname !== '/onboarding') {
+    return <Navigate to="/onboarding" />;
+  }
+
+  // Redirect away from onboarding if already done
+  if (user.onboardingDone && location.pathname === '/onboarding') {
+    return <Navigate to="/dashboard" />;
+  }
+
+  return <Outlet />;
 };
 
 export default ProtectedRoute;

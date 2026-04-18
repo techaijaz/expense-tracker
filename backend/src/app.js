@@ -23,14 +23,15 @@ app.use(
                 defaultSrc: ["'self'"],
                 scriptSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net'],
                 styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://cdn.jsdelivr.net'],
-                imgSrc: ["'self'", 'data:', 'https://cdn.jsdelivr.net'],
-                connectSrc: ["'self'"],
+                imgSrc: ["'self'", 'data:', 'https://cdn.jsdelivr.net', 'http://localhost:*', 'https://*'],
+                connectSrc: ["'self'", 'http://localhost:*', 'https://*'],
                 fontSrc: ["'self'", 'https://fonts.gstatic.com'],
                 objectSrc: ["'none'"],
                 mediaSrc: ["'self'"],
                 frameSrc: ["'none'"],
             },
         },
+        crossOriginResourcePolicy: { policy: 'cross-origin' },
     })
 )
 app.use(cookieParser())
@@ -47,8 +48,8 @@ app.use(express.json())
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-// Serve static files from the 'public' directory
-app.use(express.static(path.join(__dirname, 'public')))
+// Serve static files from the 'public' directory at the root
+app.use(express.static(path.resolve(__dirname, '..', 'public')))
 
 //Routs
 //Routs

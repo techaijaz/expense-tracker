@@ -1,26 +1,53 @@
 import { createSlice } from '@reduxjs/toolkit';
 
-export const categorySlice = createSlice({
+const categorySlice = createSlice({
   name: 'category',
   initialState: {
-    categories: [],
+    categories: {
+      INCOME: [],
+      EXPENSE: [],
+      TRANSFER: [],
+    },
   },
   reducers: {
     setCategories: (state, action) => {
+      // action.payload should be the grouped object from backend
       state.categories = action.payload;
     },
     addCatagory: (state, action) => {
-      state.categories.push(action.payload);
+      const { type } = action.payload;
+      if (state.categories[type]) {
+        state.categories[type].unshift(action.payload);
+      }
     },
     removeCategory: (state, action) => {
-      state.categories = state.categories.filter((c) => c._id !== action.payload);
+      const { _id, type } = action.payload;
+      if (state.categories[type]) {
+        state.categories[type] = state.categories[type].filter(
+          (c) => c._id !== _id,
+        );
+      }
     },
     updateCategory: (state, action) => {
-      const idx = state.categories.findIndex((c) => c._id === action.payload._id);
-      if (idx !== -1) state.categories[idx] = action.payload;
+      const { _id, type } = action.payload;
+      if (state.categories[type]) {
+        const idx = state.categories[type].findIndex((c) => c._id === _id);
+        if (idx !== -1) state.categories[type][idx] = action.payload;
+      }
     },
   },
 });
 
-export const { setCategories, addCatagory, removeCategory, updateCategory } = categorySlice.actions;
+export const {
+  setCategories,
+  addCatagory,
+  removeCategory,
+  updateCategory,
+} = categorySlice.actions;
+
+// Selector for flat categories if needed by some components
+export const selectFlatCategories = (state) => {
+  const { INCOME, EXPENSE, TRANSFER } = state.category.categories;
+  return [...(INCOME || []), ...(EXPENSE || []), ...(TRANSFER || [])];
+};
 export default categorySlice.reducer;

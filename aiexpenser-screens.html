@@ -1,0 +1,1731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>aiexpenser — UI Screens</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080B12;--bg2:#0E1220;--bg3:#141928;--bg4:#1C2235;--bg5:#232A3E;
+  --border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.1);--border3:rgba(255,255,255,0.16);
+  --text:#EEF0F8;--text2:#8892B0;--text3:#4A5578;
+  --accent:#5B8DEF;--accent2:#4070D4;--accent-glow:rgba(91,141,239,0.15);
+  --green:#2DD4A0;--green-bg:rgba(45,212,160,0.1);--green-border:rgba(45,212,160,0.2);
+  --red:#FF6B6B;--red-bg:rgba(255,107,107,0.1);--red-border:rgba(255,107,107,0.2);
+  --amber:#F5A623;--amber-bg:rgba(245,166,35,0.1);--amber-border:rgba(245,166,35,0.2);
+  --purple:#A78BFA;--purple-bg:rgba(167,139,250,0.1);
+  --teal:#22D3EE;--teal-bg:rgba(34,211,238,0.1);
+  --font:'Sora',sans-serif;--mono:'JetBrains Mono',monospace;
+  --r:10px;--r2:6px;--r3:16px;--r4:20px;
+  --sidebar:220px;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;overflow:hidden}
+
+/* ── NAV SWITCHER ── */
+#nav-switcher{position:fixed;top:0;left:0;right:0;z-index:9999;background:rgba(8,11,18,0.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border2);padding:0 16px;height:44px;display:flex;align-items:center;gap:6px;overflow-x:auto;scrollbar-width:none}
+#nav-switcher::-webkit-scrollbar{display:none}
+.nav-btn{flex-shrink:0;padding:4px 12px;border-radius:var(--r2);border:1px solid var(--border2);background:transparent;color:var(--text2);font-family:var(--font);font-size:11px;font-weight:500;cursor:pointer;transition:all .15s;white-space:nowrap}
+.nav-btn:hover{background:var(--bg4);color:var(--text)}
+.nav-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.nav-sep{width:1px;height:20px;background:var(--border2);flex-shrink:0;margin:0 4px}
+
+/* ── SCREENS ── */
+.screen{display:none;position:fixed;top:44px;left:0;right:0;bottom:0;overflow:auto}
+.screen.active{display:flex}
+
+/* ── AUTH SCREENS ── */
+.auth-wrap{flex:1;display:grid;grid-template-columns:1fr 1fr;min-height:100%}
+.auth-left{background:var(--bg2);border-right:1px solid var(--border);padding:48px;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden}
+.auth-left::before{content:'';position:absolute;top:-100px;left:-100px;width:400px;height:400px;background:radial-gradient(circle,rgba(91,141,239,0.08) 0%,transparent 70%);pointer-events:none}
+.auth-right{background:var(--bg);padding:48px;display:flex;align-items:center;justify-content:center}
+.auth-card{width:100%;max-width:400px}
+.auth-logo{display:flex;align-items:center;gap:10px;margin-bottom:48px}
+.logo-box{width:32px;height:32px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#fff;font-family:var(--mono)}
+.logo-text{font-size:16px;font-weight:700;letter-spacing:-0.3px}
+.logo-sub{font-size:9px;color:var(--text3);letter-spacing:0.1em;font-weight:500;text-transform:uppercase}
+.auth-hero h1{font-size:36px;font-weight:700;line-height:1.15;letter-spacing:-0.5px;margin-bottom:12px}
+.auth-hero h1 span{color:var(--accent)}
+.auth-hero p{color:var(--text2);font-size:14px;line-height:1.7;max-width:380px}
+.stat-cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:32px}
+.stat-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:16px}
+.stat-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;margin-bottom:6px}
+.stat-val{font-size:22px;font-weight:700;font-family:var(--mono);letter-spacing:-0.5px}
+.stat-val.green{color:var(--green)}
+.stat-val.red{color:var(--red)}
+.stat-change{font-size:11px;color:var(--green);margin-top:4px;display:flex;align-items:center;gap:4px}
+.feat-list{margin-top:28px;display:flex;flex-direction:column;gap:12px}
+.feat-item{display:flex;align-items:flex-start;gap:12px}
+.feat-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.feat-icon.blue{background:var(--accent-glow);color:var(--accent)}
+.feat-icon.green{background:var(--green-bg);color:var(--green)}
+.feat-icon.purple{background:var(--purple-bg);color:var(--purple)}
+.feat-icon.amber{background:var(--amber-bg);color:var(--amber)}
+.feat-title{font-size:13px;font-weight:600;margin-bottom:2px}
+.feat-desc{font-size:12px;color:var(--text2);line-height:1.5}
+.user-badges{display:flex;align-items:center;gap:8px;margin-top:28px}
+.ubadge{width:28px;height:28px;border-radius:50%;border:2px solid var(--bg2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#fff;margin-left:-8px}
+.ubadge:first-child{margin-left:0}
+.ubadge.b1{background:#5B8DEF}.ubadge.b2{background:#2DD4A0}.ubadge.b3{background:#F5A623}.ubadge.b4{background:#A78BFA}
+.user-count{font-size:12px;color:var(--text2);margin-left:8px}
+.stars{color:#F5A623;font-size:12px;margin-right:4px}
+
+/* Auth form */
+.form-title{font-size:24px;font-weight:700;letter-spacing:-0.3px;margin-bottom:6px}
+.form-sub{font-size:13px;color:var(--text2);margin-bottom:28px}
+.btn-google{width:100%;padding:11px;border:1px solid var(--border3);border-radius:var(--r);background:var(--bg3);color:var(--text);font-family:var(--font);font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .15s;margin-bottom:20px}
+.btn-google:hover{background:var(--bg4);border-color:var(--border3)}
+.or-div{display:flex;align-items:center;gap:12px;margin-bottom:20px;color:var(--text3);font-size:12px}
+.or-div::before,.or-div::after{content:'';flex:1;height:1px;background:var(--border)}
+.form-group{margin-bottom:16px}
+.form-label{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;display:block}
+.form-input{width:100%;padding:10px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r2);color:var(--text);font-family:var(--font);font-size:13px;outline:none;transition:border-color .15s}
+.form-input:focus{border-color:var(--accent)}
+.form-input::placeholder{color:var(--text3)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-link{color:var(--accent);text-decoration:none;font-size:12px;font-weight:500}
+.form-footer{text-align:center;margin-top:16px;font-size:13px;color:var(--text2)}
+.btn-primary{width:100%;padding:11px;background:var(--accent);border:none;border-radius:var(--r);color:#fff;font-family:var(--font);font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:6px;margin-top:4px}
+.btn-primary:hover{background:var(--accent2);transform:translateY(-1px)}
+.secure-note{text-align:center;margin-top:16px;font-size:11px;color:var(--text3);display:flex;align-items:center;justify-content:center;gap:6px}
+
+/* ── ONBOARDING ── */
+.onboard-wrap{flex:1;display:flex;align-items:center;justify-content:center;background:var(--bg);position:relative;overflow:hidden}
+.onboard-wrap::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:600px;height:600px;background:radial-gradient(circle,rgba(91,141,239,0.06) 0%,transparent 70%);pointer-events:none}
+.onboard-card{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r4);padding:48px;width:100%;max-width:520px;position:relative;z-index:1}
+.onboard-progress{display:flex;align-items:center;gap:8px;margin-bottom:36px}
+.prog-step{height:3px;border-radius:2px;flex:1;background:var(--bg4)}
+.prog-step.done{background:var(--accent)}
+.prog-step.active{background:var(--accent);opacity:0.6}
+.onboard-icon{width:56px;height:56px;border-radius:14px;background:var(--accent-glow);border:1px solid rgba(91,141,239,0.2);display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:20px}
+.onboard-title{font-size:26px;font-weight:700;letter-spacing:-0.4px;margin-bottom:8px}
+.onboard-sub{font-size:14px;color:var(--text2);line-height:1.6;margin-bottom:28px}
+.onboard-options{display:flex;flex-direction:column;gap:10px;margin-bottom:28px}
+.onboard-opt{padding:14px 16px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg3);cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:12px}
+.onboard-opt:hover,.onboard-opt.selected{border-color:var(--accent);background:var(--accent-glow)}
+.onboard-opt .opt-icon{width:36px;height:36px;border-radius:8px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.onboard-opt .opt-text{font-size:13px;font-weight:600}
+.onboard-opt .opt-sub{font-size:11px;color:var(--text2);margin-top:2px}
+.onboard-actions{display:flex;gap:10px}
+.btn-skip{flex:1;padding:11px;background:transparent;border:1px solid var(--border2);border-radius:var(--r);color:var(--text2);font-family:var(--font);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s}
+.btn-skip:hover{border-color:var(--border3);color:var(--text)}
+.btn-next{flex:2;padding:11px;background:var(--accent);border:none;border-radius:var(--r);color:#fff;font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:6px}
+.btn-next:hover{background:var(--accent2)}
+.pref-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px}
+.pref-item{padding:14px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg3)}
+.pref-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;margin-bottom:8px}
+.pref-select{width:100%;background:var(--bg4);border:1px solid var(--border2);border-radius:var(--r2);padding:8px 10px;color:var(--text);font-family:var(--font);font-size:13px;outline:none}
+.trial-features{display:flex;flex-direction:column;gap:10px;margin-bottom:28px}
+.trial-feat{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text2)}
+.trial-feat span:first-child{color:var(--green);font-size:16px}
+
+/* ── APP LAYOUT ── */
+.app-layout{flex:1;display:flex;overflow:hidden}
+.sidebar{width:var(--sidebar);background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+.sidebar-logo{padding:20px 16px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border)}
+.sidebar-logo .logo-wrap{display:flex;align-items:center;gap:8px}
+.sidebar-nav{flex:1;padding:12px 8px}
+.nav-section{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;font-weight:600;padding:8px 8px 4px;margin-top:8px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:var(--r2);cursor:pointer;transition:all .15s;font-size:13px;font-weight:500;color:var(--text2);margin-bottom:2px;text-decoration:none}
+.nav-item:hover{background:var(--bg4);color:var(--text)}
+.nav-item.active{background:var(--accent-glow);color:var(--accent);border:1px solid rgba(91,141,239,0.15)}
+.nav-item.active .nav-icon{color:var(--accent)}
+.nav-icon{font-size:16px;width:20px;text-align:center;flex-shrink:0}
+.sidebar-bottom{padding:12px 8px;border-top:1px solid var(--border)}
+.plan-badge{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);padding:12px;margin-bottom:8px}
+.plan-name{font-size:12px;font-weight:600;margin-bottom:4px}
+.plan-sub{font-size:11px;color:var(--text2);margin-bottom:10px}
+.btn-upgrade{width:100%;padding:8px;background:var(--accent);border:none;border-radius:var(--r2);color:#fff;font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer}
+.main-content{flex:1;overflow-y:auto;background:var(--bg)}
+.topbar{height:56px;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:12px;background:var(--bg2);position:sticky;top:0;z-index:100}
+.topbar-title{font-size:18px;font-weight:700;letter-spacing:-0.3px;flex:1}
+.topbar-sub{font-size:12px;color:var(--text2);font-weight:400}
+.btn-new{padding:8px 16px;background:var(--accent);border:none;border-radius:var(--r2);color:#fff;font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px}
+.btn-outline{padding:7px 14px;background:transparent;border:1px solid var(--border2);border-radius:var(--r2);color:var(--text2);font-family:var(--font);font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .15s}
+.btn-outline:hover{border-color:var(--border3);color:var(--text)}
+.icon-btn{width:36px;height:36px;border:1px solid var(--border2);border-radius:var(--r2);background:transparent;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:all .15s}
+.icon-btn:hover{background:var(--bg4);color:var(--text)}
+.avatar{width:32px;height:32px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;cursor:pointer;flex-shrink:0}
+.page-body{padding:24px}
+
+/* ── CARDS ── */
+.stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px}
+.kpi-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r3);padding:20px;position:relative;overflow:hidden}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.kpi-card.blue::before{background:var(--accent)}
+.kpi-card.green::before{background:var(--green)}
+.kpi-card.red::before{background:var(--red)}
+.kpi-card.amber::before{background:var(--amber)}
+.kpi-card.purple::before{background:var(--purple)}
+.kpi-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:12px}
+.kpi-icon.blue{background:var(--accent-glow);color:var(--accent)}
+.kpi-icon.green{background:var(--green-bg);color:var(--green)}
+.kpi-icon.red{background:var(--red-bg);color:var(--red)}
+.kpi-icon.amber{background:var(--amber-bg);color:var(--amber)}
+.kpi-icon.purple{background:var(--purple-bg);color:var(--purple)}
+.kpi-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;margin-bottom:6px}
+.kpi-val{font-size:26px;font-weight:700;font-family:var(--mono);letter-spacing:-0.5px;margin-bottom:6px}
+.kpi-change{font-size:11px;display:flex;align-items:center;gap:4px}
+.kpi-change.up{color:var(--green)}.kpi-change.down{color:var(--red)}.kpi-change.neutral{color:var(--text2)}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+.grid-3{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:24px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r3);padding:20px}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.card-title{font-size:14px;font-weight:700;letter-spacing:-0.2px}
+.card-sub{font-size:11px;color:var(--text2);margin-top:2px}
+.card-link{font-size:12px;color:var(--accent);text-decoration:none;font-weight:500;cursor:pointer}
+
+/* ── CHART PLACEHOLDER ── */
+.chart-area{height:180px;display:flex;align-items:flex-end;gap:4px;padding-bottom:8px}
+.bar{border-radius:4px 4px 0 0;transition:opacity .15s;cursor:pointer;flex:1}
+.bar:hover{opacity:0.8}
+.bar.income{background:var(--accent)}
+.bar.expense{background:var(--red);opacity:0.7}
+.line-chart{height:140px;position:relative;overflow:hidden}
+.line-chart svg{width:100%;height:100%}
+.donut-wrap{display:flex;align-items:center;justify-content:center;gap:24px}
+.donut-legend{display:flex;flex-direction:column;gap:10px}
+.legend-item{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2)}
+.legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+/* ── TRANSACTIONS ── */
+.txn-table{width:100%}
+.txn-head{display:grid;grid-template-columns:120px 1fr 140px 100px 120px;gap:8px;padding:8px 16px;border-bottom:1px solid var(--border);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;font-weight:600}
+.txn-row{display:grid;grid-template-columns:120px 1fr 140px 100px 120px;gap:8px;padding:12px 16px;border-bottom:1px solid var(--border);align-items:center;transition:background .1s;cursor:pointer}
+.txn-row:hover{background:var(--bg3)}
+.txn-type-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 8px;border-radius:var(--r2);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em}
+.txn-type-badge.expense{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border)}
+.txn-type-badge.income{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
+.txn-type-badge.transfer{background:var(--accent-glow);color:var(--accent);border:1px solid rgba(91,141,239,0.2)}
+.txn-type-badge.debt{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border)}
+.txn-type-badge.repayment{background:var(--purple-bg);color:var(--purple);border:1px solid rgba(167,139,250,0.2)}
+.txn-desc{font-size:13px;font-weight:500}
+.txn-account{font-size:11px;color:var(--text2);margin-top:2px}
+.txn-cat{font-size:11px;padding:3px 8px;background:var(--bg4);border-radius:var(--r2);color:var(--text2);display:inline-flex;align-items:center;gap:4px}
+.txn-date{font-size:12px;color:var(--text2);font-family:var(--mono)}
+.txn-amount{font-family:var(--mono);font-weight:600;font-size:14px;text-align:right}
+.txn-amount.credit{color:var(--green)}
+.txn-amount.debit{color:var(--red)}
+.status-dot{width:6px;height:6px;border-radius:50%;display:inline-block;margin-right:4px}
+.status-dot.cleared{background:var(--green)}.status-dot.pending{background:var(--amber)}
+
+/* ── FILTERS ── */
+.filter-bar{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:16px;display:grid;grid-template-columns:1fr auto auto auto;gap:12px;align-items:end}
+.filter-bar2{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:12px}
+.filter-group label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;margin-bottom:5px;display:block}
+.filter-input{width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r2);color:var(--text);font-family:var(--font);font-size:12px;outline:none;transition:border-color .15s}
+.filter-input:focus{border-color:var(--accent)}
+.filter-input::placeholder{color:var(--text3)}
+.search-wrap{position:relative}
+.search-wrap input{padding-left:32px}
+.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:14px;pointer-events:none}
+
+/* ── ACCOUNTS ── */
+.accounts-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin-bottom:24px}
+.account-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r3);padding:20px;position:relative;overflow:hidden;cursor:pointer;transition:all .2s}
+.account-card:hover{border-color:var(--border3);transform:translateY(-2px)}
+.account-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:60px;background:linear-gradient(transparent,rgba(0,0,0,0.2));pointer-events:none}
+.acc-type-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:var(--r2);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:12px}
+.acc-type-badge.bank{background:var(--accent-glow);color:var(--accent)}
+.acc-type-badge.cash{background:var(--green-bg);color:var(--green)}
+.acc-type-badge.credit{background:var(--red-bg);color:var(--red)}
+.acc-type-badge.investment{background:var(--purple-bg);color:var(--purple)}
+.acc-type-badge.ewallet{background:var(--amber-bg);color:var(--amber)}
+.acc-name{font-size:18px;font-weight:700;margin-bottom:4px;letter-spacing:-0.3px}
+.acc-num{font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:16px}
+.acc-balance{font-size:28px;font-weight:700;font-family:var(--mono);letter-spacing:-0.8px}
+.acc-menu{position:absolute;top:16px;right:16px;width:28px;height:28px;border-radius:6px;background:var(--bg4);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:var(--text2)}
+.acc-default{display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--amber);font-weight:600;margin-left:8px}
+.net-liquidity{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r3);padding:24px;margin-bottom:16px;display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.alloc-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.alloc-label{font-size:12px;color:var(--text2);flex:1}
+.alloc-pct{font-size:12px;font-weight:600;font-family:var(--mono);min-width:40px;text-align:right}
+.alloc-bar-wrap{height:4px;background:var(--bg4);border-radius:2px;flex:2;overflow:hidden}
+.alloc-bar{height:100%;border-radius:2px}
+
+/* ── LOANS ── */
+.loan-tabs{display:flex;gap:4px;padding:4px;background:var(--bg3);border-radius:var(--r);border:1px solid var(--border);margin-bottom:20px;width:fit-content}
+.loan-tab{padding:8px 20px;border-radius:var(--r2);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;color:var(--text2)}
+.loan-tab.active{background:var(--bg2);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,0.3)}
+.debt-table{width:100%}
+.debt-row{display:grid;grid-template-columns:1fr 100px 120px 100px 120px 100px;gap:8px;padding:14px 16px;border-bottom:1px solid var(--border);align-items:center;transition:background .1s}
+.debt-row:hover{background:var(--bg3)}
+.debt-head{display:grid;grid-template-columns:1fr 100px 120px 100px 120px 100px;gap:8px;padding:8px 16px;border-bottom:1px solid var(--border);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;font-weight:600}
+.party-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;margin-right:10px}
+.direction-badge{padding:3px 8px;border-radius:var(--r2);font-size:10px;font-weight:700;text-transform:uppercase}
+.direction-badge.lent{background:var(--green-bg);color:var(--green)}
+.direction-badge.borrowed{background:var(--red-bg);color:var(--red)}
+.status-badge{padding:3px 8px;border-radius:var(--r2);font-size:10px;font-weight:600}
+.status-badge.active{background:var(--amber-bg);color:var(--amber)}
+.status-badge.settled{background:var(--green-bg);color:var(--green)}
+.status-badge.partial{background:var(--purple-bg);color:var(--purple)}
+.formal-loan-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r3);padding:20px;margin-bottom:12px}
+.loan-card-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
+.loan-type-badge{padding:3px 8px;border-radius:var(--r2);font-size:10px;font-weight:700;text-transform:uppercase;background:var(--accent-glow);color:var(--accent)}
+.loan-progress-wrap{margin-bottom:16px}
+.loan-progress-bar{height:6px;background:var(--bg4);border-radius:3px;overflow:hidden;margin-top:6px}
+.loan-progress-fill{height:100%;border-radius:3px;background:var(--accent)}
+.loan-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.loan-stat{text-align:center;padding:10px;background:var(--bg3);border-radius:var(--r2)}
+.loan-stat-val{font-size:14px;font-weight:700;font-family:var(--mono);margin-bottom:2px}
+.loan-stat-label{font-size:10px;color:var(--text3)}
+
+/* ── BUDGET ── */
+.budget-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.budget-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r3);padding:20px}
+.budget-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.budget-cat{display:flex;align-items:center;gap:10px}
+.budget-cat-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.budget-amounts{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.budget-spent{font-size:18px;font-weight:700;font-family:var(--mono)}
+.budget-total{font-size:12px;color:var(--text2)}
+.progress-bar{height:6px;background:var(--bg4);border-radius:3px;overflow:hidden;margin-bottom:8px}
+.progress-fill{height:100%;border-radius:3px;transition:width .3s}
+.progress-fill.safe{background:var(--green)}
+.progress-fill.warn{background:var(--amber)}
+.progress-fill.over{background:var(--red)}
+.budget-footer{display:flex;justify-content:space-between;font-size:11px;color:var(--text2)}
+
+/* ── RECURRING ── */
+.recurring-list{display:flex;flex-direction:column;gap:8px}
+.recurring-row{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:16px;display:grid;grid-template-columns:36px 1fr 100px 100px 90px 60px;gap:12px;align-items:center;transition:all .15s}
+.recurring-row:hover{border-color:var(--border2)}
+.rec-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.rec-name{font-size:13px;font-weight:600}
+.rec-sub{font-size:11px;color:var(--text2);margin-top:2px}
+.rec-freq{font-size:11px;padding:3px 8px;background:var(--bg4);border-radius:var(--r2);color:var(--text2);text-align:center}
+.rec-amount{font-size:14px;font-weight:700;font-family:var(--mono);text-align:right}
+.rec-next{font-size:11px;color:var(--text2);text-align:center}
+.toggle-wrap{display:flex;justify-content:flex-end}
+.toggle{width:32px;height:18px;border-radius:9px;position:relative;cursor:pointer}
+.toggle.on{background:var(--green)}
+.toggle.off{background:var(--bg4);border:1px solid var(--border2)}
+.toggle::after{content:'';position:absolute;top:2px;width:14px;height:14px;background:#fff;border-radius:50%;transition:transform .2s}
+.toggle.on::after{transform:translateX(14px)}
+.toggle.off::after{transform:translateX(2px)}
+
+/* ── NET WORTH ── */
+.nw-hero{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r3);padding:28px;margin-bottom:20px;text-align:center;position:relative;overflow:hidden}
+.nw-hero::before{content:'';position:absolute;top:-80px;left:50%;transform:translateX(-50%);width:320px;height:320px;background:radial-gradient(circle,rgba(91,141,239,0.08) 0%,transparent 70%);pointer-events:none}
+.nw-label{font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:0.1em;font-weight:600;margin-bottom:8px}
+.nw-val{font-size:48px;font-weight:700;font-family:var(--mono);letter-spacing:-1.5px;margin-bottom:8px}
+.nw-val.positive{color:var(--green)}
+.nw-val.negative{color:var(--red)}
+.nw-change{font-size:13px;color:var(--green);display:flex;align-items:center;justify-content:center;gap:6px}
+.nw-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.asset-list{display:flex;flex-direction:column;gap:8px}
+.asset-row{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--bg3);border-radius:var(--r2);border:1px solid var(--border)}
+.asset-name{font-size:13px;font-weight:500}
+.asset-type{font-size:10px;color:var(--text3);margin-top:2px;text-transform:uppercase;letter-spacing:0.06em}
+.asset-val{font-size:14px;font-weight:700;font-family:var(--mono)}
+
+/* ── SETTINGS ── */
+.settings-layout{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.settings-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r3);padding:20px;margin-bottom:16px}
+.settings-section-title{font-size:13px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.settings-section-title .icon{width:28px;height:28px;border-radius:6px;background:var(--accent-glow);display:flex;align-items:center;justify-content:center;font-size:14px}
+.settings-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)}
+.settings-row:last-child{border-bottom:none;padding-bottom:0}
+.settings-key{font-size:13px;font-weight:500}
+.settings-val{font-size:12px;color:var(--text2);margin-top:2px}
+.theme-opts{display:flex;gap:8px}
+.theme-opt{padding:7px 14px;border:1px solid var(--border2);border-radius:var(--r2);font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;color:var(--text2)}
+.theme-opt.active{border-color:var(--accent);color:var(--accent);background:var(--accent-glow)}
+.accent-opts{display:flex;gap:8px}
+.accent-opt{width:22px;height:22px;border-radius:50%;cursor:pointer;transition:all .15s}
+.accent-opt.active{outline:2px solid var(--text);outline-offset:2px}
+.cat-row{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg3);border-radius:var(--r2);margin-bottom:6px}
+.cat-icon-wrap{width:30px;height:30px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;margin-right:10px}
+.export-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.export-btn{padding:14px;border:1px solid var(--border2);border-radius:var(--r);background:var(--bg3);cursor:pointer;text-align:center;transition:all .15s}
+.export-btn:hover{border-color:var(--accent);background:var(--accent-glow)}
+.export-btn-icon{font-size:22px;margin-bottom:6px}
+.export-btn-label{font-size:13px;font-weight:600;color:var(--text)}
+.export-btn-sub{font-size:11px;color:var(--text2)}
+.metrics-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.metric-box{background:var(--bg3);border-radius:var(--r2);padding:12px;text-align:center}
+.metric-val{font-size:20px;font-weight:700;font-family:var(--mono);margin-bottom:2px}
+.metric-label{font-size:10px;color:var(--text3)}
+.danger-zone{background:var(--bg2);border:1px solid var(--red-border);border-radius:var(--r3);padding:20px;margin-top:8px}
+.danger-title{font-size:13px;font-weight:700;color:var(--red);margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.danger-desc{font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:14px}
+.btn-danger{padding:9px 16px;background:var(--red-bg);border:1px solid var(--red-border);border-radius:var(--r2);color:var(--red);font-family:var(--font);font-size:12px;font-weight:600;cursor:pointer;width:100%}
+
+/* ── MODAL OVERLAY ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);z-index:1000;display:flex;align-items:center;justify-content:center}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r4);padding:28px;width:100%;max-width:520px;position:relative;max-height:90vh;overflow-y:auto}
+.modal-sm{max-width:420px}
+.modal-lg{max-width:640px}
+.modal-title{font-size:18px;font-weight:700;letter-spacing:-0.3px;margin-bottom:4px}
+.modal-sub{font-size:12px;color:var(--text2);margin-bottom:24px}
+.modal-close{position:absolute;top:20px;right:20px;width:28px;height:28px;border-radius:6px;background:var(--bg4);border:1px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--text2)}
+.modal-tabs{display:flex;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:3px;margin-bottom:20px;gap:2px}
+.modal-tab{flex:1;padding:8px;text-align:center;border-radius:var(--r2);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;color:var(--text2)}
+.modal-tab.active{background:var(--bg2);color:var(--text)}
+.modal-tab.expense.active{color:var(--red)}
+.modal-tab.income.active{color:var(--green)}
+.modal-tab.transfer.active{color:var(--accent)}
+.modal-tab.debt.active{color:var(--amber)}
+.modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.modal-actions{display:flex;gap:10px;margin-top:20px;justify-content:flex-end}
+.btn-cancel{padding:9px 18px;background:transparent;border:1px solid var(--border2);border-radius:var(--r2);color:var(--text2);font-family:var(--font);font-size:13px;font-weight:500;cursor:pointer}
+.btn-save{padding:9px 20px;background:var(--accent);border:none;border-radius:var(--r2);color:#fff;font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer}
+.amount-input{font-size:28px;font-weight:700;font-family:var(--mono);background:transparent;border:none;color:var(--text);outline:none;width:100%}
+.amount-wrap{display:flex;align-items:center;gap:8px;padding:14px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);margin-bottom:14px}
+.currency-sym{font-size:20px;font-weight:700;color:var(--text3)}
+.acc-bal-hint{font-size:10px;color:var(--accent);font-weight:600}
+.acc-chip{display:flex;align-items:center;gap:6px;padding:8px 12px;background:var(--bg3);border:1px solid var(--accent);border-radius:var(--r2);font-size:13px;font-weight:500}
+.acc-chip .star{color:var(--amber);font-size:12px}
+
+/* ── REPORT PAGE ── */
+.report-tabs{display:flex;gap:4px;padding:4px;background:var(--bg3);border-radius:var(--r);border:1px solid var(--border);margin-bottom:20px;width:fit-content}
+.report-tab{padding:7px 16px;border-radius:var(--r2);font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;color:var(--text2)}
+.report-tab.active{background:var(--bg2);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,0.3)}
+.insight-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+.insight-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:16px}
+.insight-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;margin-bottom:6px}
+.insight-val{font-size:20px;font-weight:700;font-family:var(--mono)}
+.insight-sub{font-size:11px;color:var(--text2);margin-top:4px}
+.top-cats{display:flex;flex-direction:column;gap:8px}
+.top-cat-row{display:flex;align-items:center;gap:10px}
+.top-cat-rank{font-size:11px;color:var(--text3);font-family:var(--mono);min-width:16px}
+.top-cat-name{font-size:12px;flex:1}
+.top-cat-bar{height:4px;border-radius:2px;background:var(--accent);margin:2px 0}
+.top-cat-amt{font-size:12px;font-weight:600;font-family:var(--mono)}
+
+/* ── DASHBOARD SPECIFIC ── */
+.recent-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.mini-txn{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.mini-txn:last-child{border-bottom:none}
+.mini-txn-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.mini-txn-desc{font-size:13px;font-weight:500;flex:1}
+.mini-txn-sub{font-size:11px;color:var(--text2)}
+.mini-txn-amt{font-size:13px;font-weight:700;font-family:var(--mono)}
+.upcoming-item{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)}
+.upcoming-item:last-child{border-bottom:none}
+.due-chip{font-size:10px;padding:2px 7px;border-radius:var(--r2);font-weight:600}
+.due-chip.urgent{background:var(--red-bg);color:var(--red)}
+.due-chip.soon{background:var(--amber-bg);color:var(--amber)}
+.due-chip.ok{background:var(--green-bg);color:var(--green)}
+.budget-mini-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.budget-mini-label{font-size:12px;flex:1}
+.budget-mini-pct{font-size:11px;font-family:var(--mono);min-width:32px;text-align:right;font-weight:600}
+.budget-mini-bar{height:4px;border-radius:2px;flex:2;background:var(--bg4);overflow:hidden}
+.budget-mini-fill{height:100%;border-radius:2px}
+
+/* ── AMORTIZATION TABLE ── */
+.amort-table{width:100%;border-collapse:collapse}
+.amort-table th{padding:8px 12px;text-align:left;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;border-bottom:1px solid var(--border);background:var(--bg3)}
+.amort-table td{padding:10px 12px;font-size:12px;border-bottom:1px solid var(--border);font-family:var(--mono)}
+.amort-table tr:hover td{background:var(--bg3)}
+.amort-table td.interest{color:var(--red)}
+.amort-table td.principal{color:var(--green)}
+.amort-table td.paid-row{color:var(--text3)}
+</style>
+</head>
+<body>
+
+<!-- NAV SWITCHER -->
+<div id="nav-switcher">
+  <button class="nav-btn active" onclick="show('signin')">Sign In</button>
+  <button class="nav-btn" onclick="show('signup')">Sign Up</button>
+  <div class="nav-sep"></div>
+  <button class="nav-btn" onclick="show('onboard-welcome')">Onboard: Welcome</button>
+  <button class="nav-btn" onclick="show('onboard-prefs')">Onboard: Prefs</button>
+  <button class="nav-btn" onclick="show('onboard-account')">Onboard: Account</button>
+  <button class="nav-btn" onclick="show('onboard-trial')">Onboard: Trial</button>
+  <div class="nav-sep"></div>
+  <button class="nav-btn" onclick="show('dashboard')">Dashboard</button>
+  <button class="nav-btn" onclick="show('transactions')">Transactions</button>
+  <button class="nav-btn" onclick="show('accounts')">Accounts</button>
+  <button class="nav-btn" onclick="show('budget')">Budget</button>
+  <button class="nav-btn" onclick="show('recurring')">Recurring</button>
+  <button class="nav-btn" onclick="show('loans-personal')">Loans: Personal</button>
+  <button class="nav-btn" onclick="show('loans-formal')">Loans: Formal</button>
+  <button class="nav-btn" onclick="show('loan-detail')">Loan Detail</button>
+  <button class="nav-btn" onclick="show('networth')">Net Worth</button>
+  <button class="nav-btn" onclick="show('reports')">Reports</button>
+  <button class="nav-btn" onclick="show('settings')">Settings</button>
+  <div class="nav-sep"></div>
+  <button class="nav-btn" onclick="show('modal-txn')">Modal: Transaction</button>
+  <button class="nav-btn" onclick="show('modal-account')">Modal: Account</button>
+  <button class="nav-btn" onclick="show('modal-loan')">Modal: Formal Loan</button>
+  <button class="nav-btn" onclick="show('modal-budget')">Modal: Budget</button>
+  <button class="nav-btn" onclick="show('modal-recurring')">Modal: Recurring</button>
+  <button class="nav-btn" onclick="show('modal-debt')">Modal: Debt Settlement</button>
+  <button class="nav-btn" onclick="show('modal-delete')">Modal: Delete</button>
+  <button class="nav-btn" onclick="show('modal-prepay')">Modal: Prepayment</button>
+</div>
+
+<!-- ═══════════════════════════════════════ SIGN IN ═══════════════════════════════════════ -->
+<div class="screen active" id="screen-signin">
+  <div class="auth-wrap">
+    <div class="auth-left">
+      <div>
+        <div class="auth-logo"><div class="logo-box">ai</div><div><div class="logo-text">aiexpenser</div><div class="logo-sub">Smart Finance</div></div></div>
+        <div class="auth-hero">
+          <h1>Your Finances,<br><span>Reimagined.</span></h1>
+          <p>Track every rupee with precision. One unified dashboard for total financial clarity — expenses, loans, investments, and more.</p>
+        </div>
+        <div class="stat-cards">
+          <div class="stat-card"><div class="stat-label">Total Balance</div><div class="stat-val" style="color:var(--accent)">₹2,84,320</div><div class="stat-change">↑ +12.4% this month</div></div>
+          <div class="stat-card"><div class="stat-label">Monthly Savings</div><div class="stat-val green">₹18,500</div><div class="stat-change">↑ vs last month</div></div>
+          <div class="stat-card"><div class="stat-label">Total Expenses</div><div class="stat-val red">₹21,840</div><div class="stat-change" style="color:var(--red)">↑ +3.2%</div></div>
+          <div class="stat-card"><div class="stat-label">Active Loans</div><div class="stat-val" style="color:var(--purple)">₹6,14,000</div><div class="stat-change" style="color:var(--text2)">2 active loans</div></div>
+        </div>
+      </div>
+      <div>
+        <div class="user-badges">
+          <div class="ubadge b1">A</div><div class="ubadge b2">R</div><div class="ubadge b3">M</div><div class="ubadge b4">S</div>
+          <span class="user-count"><b style="color:var(--text)">2,400+</b> users this month</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px;margin-top:8px"><span class="stars">★★★★★</span><span style="font-size:12px;color:var(--text2)">4.9/5 average rating</span></div>
+      </div>
+    </div>
+    <div class="auth-right">
+      <div class="auth-card">
+        <div class="form-title">Welcome back</div>
+        <div class="form-sub">Sign in to your aiexpenser account</div>
+        <button class="btn-google"><svg width="18" height="18" viewBox="0 0 18 18"><path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/><path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/><path d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/></svg>Continue with Google</button>
+        <div class="or-div">OR</div>
+        <div class="form-group"><label class="form-label">Email Address</label><input class="form-input" type="email" placeholder="you@example.com"></div>
+        <div class="form-group"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><label class="form-label" style="margin-bottom:0">Password</label><a href="#" class="form-link">Forgot?</a></div><input class="form-input" type="password" placeholder="••••••••"></div>
+        <button class="btn-primary">Sign In →</button>
+        <div class="form-footer">Don't have an account? <a href="#" class="form-link" onclick="show('signup')">Create one</a></div>
+        <div class="secure-note">🔒 Secured with 256-bit encryption</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ SIGN UP ═══════════════════════════════════════ -->
+<div class="screen" id="screen-signup">
+  <div class="auth-wrap">
+    <div class="auth-left">
+      <div>
+        <div class="auth-logo"><div class="logo-box">ai</div><div><div class="logo-text">aiexpenser</div><div class="logo-sub">Smart Finance</div></div></div>
+        <div class="auth-hero">
+          <h1>Start your journey to<br><span>financial clarity.</span></h1>
+          <p>Join thousands managing money with precision and confidence. No bank access required — your data stays yours.</p>
+        </div>
+        <div class="feat-list">
+          <div class="feat-item"><div class="feat-icon blue">📊</div><div><div class="feat-title">Unified Dashboard</div><div class="feat-desc">All accounts, income, and expenses at a glance</div></div></div>
+          <div class="feat-item"><div class="feat-icon green">💳</div><div><div class="feat-title">Credit Card Cycle Tracking</div><div class="feat-desc">Never miss a due date or exceed utilization</div></div></div>
+          <div class="feat-item"><div class="feat-icon purple">🏦</div><div><div class="feat-title">Smart Loan Management</div><div class="feat-desc">Amortization schedules, EMI tracking, prepayment calc</div></div></div>
+          <div class="feat-item"><div class="feat-icon amber">🔄</div><div><div class="feat-title">Recurring Transactions</div><div class="feat-desc">Auto-track subscriptions and fixed payments</div></div></div>
+        </div>
+      </div>
+      <div class="user-badges" style="margin-top:28px">
+        <div class="ubadge b1">A</div><div class="ubadge b2">R</div><div class="ubadge b3">M</div><div class="ubadge b4">S</div>
+        <span class="user-count"><b style="color:var(--text)">2,400+</b> users · <span class="stars">★</span> 4.9/5</span>
+      </div>
+    </div>
+    <div class="auth-right">
+      <div class="auth-card">
+        <div class="form-title">Create account</div>
+        <div class="form-sub">Start your free account — no credit card needed</div>
+        <button class="btn-google"><svg width="18" height="18" viewBox="0 0 18 18"><path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/><path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/><path d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/></svg>Continue with Google</button>
+        <div class="or-div">OR</div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">First Name</label><input class="form-input" placeholder="Aijaz"></div>
+          <div class="form-group"><label class="form-label">Last Name</label><input class="form-input" placeholder="Khan"></div>
+        </div>
+        <div class="form-group"><label class="form-label">Email Address</label><input class="form-input" type="email" placeholder="you@example.com"></div>
+        <div class="form-group"><label class="form-label">Password</label><input class="form-input" type="password" placeholder="Min. 8 characters"></div>
+        <button class="btn-primary">Create Free Account →</button>
+        <div class="form-footer" style="font-size:11px;color:var(--text3)">By creating an account you agree to our <a href="#" class="form-link">Terms</a> and <a href="#" class="form-link">Privacy Policy</a></div>
+        <div class="form-footer">Already have an account? <a href="#" class="form-link" onclick="show('signin')">Sign in</a></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ ONBOARDING: WELCOME ═══════════════════════════════════ -->
+<div class="screen" id="screen-onboard-welcome">
+  <div class="onboard-wrap">
+    <div class="onboard-card">
+      <div class="onboard-progress"><div class="prog-step done"></div><div class="prog-step"></div><div class="prog-step"></div></div>
+      <div class="onboard-icon">👋</div>
+      <div class="onboard-title">Welcome to aiexpenser!</div>
+      <div class="onboard-sub">Let's get your workspace ready. It takes less than 2 minutes — or skip and explore on your own.</div>
+      <div class="onboard-options">
+        <div class="onboard-opt selected"><div class="opt-icon">⚙️</div><div><div class="opt-text">Setup my workspace</div><div class="opt-sub">Set preferences + add first account</div></div></div>
+        <div class="onboard-opt"><div class="opt-icon">🚀</div><div><div class="opt-text">Skip, take me to dashboard</div><div class="opt-sub">Default settings will be applied</div></div></div>
+      </div>
+      <div class="onboard-actions">
+        <button class="btn-next" style="flex:1" onclick="show('onboard-prefs')">Continue →</button>
+      </div>
+      <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--text3)">Default settings: DD/MM/YYYY · INR · 2 decimals · Dark · English</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ ONBOARDING: PREFS ═══════════════════════════════════ -->
+<div class="screen" id="screen-onboard-prefs">
+  <div class="onboard-wrap">
+    <div class="onboard-card">
+      <div class="onboard-progress"><div class="prog-step done"></div><div class="prog-step active"></div><div class="prog-step"></div></div>
+      <div class="onboard-icon">🌐</div>
+      <div class="onboard-title">Set your preferences</div>
+      <div class="onboard-sub">These can be changed anytime from Settings.</div>
+      <div class="pref-grid">
+        <div class="pref-item"><div class="pref-label">Language</div><select class="pref-select"><option>English</option><option>हिंदी</option></select></div>
+        <div class="pref-item"><div class="pref-label">Currency</div><select class="pref-select"><option>₹ INR — Indian Rupee</option><option>$ USD</option></select></div>
+        <div class="pref-item"><div class="pref-label">Date Format</div><select class="pref-select"><option>DD/MM/YYYY</option><option>MM/DD/YYYY</option><option>YYYY/MM/DD</option></select></div>
+        <div class="pref-item"><div class="pref-label">Decimal Places</div><select class="pref-select"><option>2 (1,234.56)</option><option>0 (1,235)</option><option>3 (1,234.567)</option></select></div>
+        <div class="pref-item"><div class="pref-label">Theme</div><select class="pref-select"><option>Dark</option><option>Light</option><option>System</option></select></div>
+        <div class="pref-item"><div class="pref-label">Fiscal Year</div><select class="pref-select"><option>April – March</option><option>January – December</option></select></div>
+      </div>
+      <div class="onboard-actions">
+        <button class="btn-skip" onclick="show('onboard-welcome')">← Back</button>
+        <button class="btn-next" onclick="show('onboard-account')">Save & Continue →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ ONBOARDING: ACCOUNT ═══════════════════════════════════ -->
+<div class="screen" id="screen-onboard-account">
+  <div class="onboard-wrap">
+    <div class="onboard-card">
+      <div class="onboard-progress"><div class="prog-step done"></div><div class="prog-step done"></div><div class="prog-step active"></div></div>
+      <div class="onboard-icon">🏦</div>
+      <div class="onboard-title">Add your first account</div>
+      <div class="onboard-sub">Your Cash account is already ready. Add a bank account to start tracking.</div>
+      <div style="background:var(--green-bg);border:1px solid var(--green-border);border-radius:var(--r);padding:12px;display:flex;align-items:center;gap:10px;margin-bottom:16px;font-size:13px"><span style="font-size:18px">✅</span><div><div style="font-weight:600;color:var(--green)">Cash account ready</div><div style="font-size:11px;color:var(--text2)">Auto-created — balance: ₹0.00</div></div></div>
+      <div class="form-group"><label class="form-label">Account Type</label><select class="form-input"><option>Bank Account</option><option>Credit Card</option><option>Investment</option><option>E-Wallet</option></select></div>
+      <div class="form-group"><label class="form-label">Account Name</label><input class="form-input" placeholder="e.g. HDFC Savings"></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Last 4 digits (optional)</label><input class="form-input" placeholder="1234"></div>
+        <div class="form-group"><label class="form-label">Opening Balance</label><input class="form-input" placeholder="₹ 0"></div>
+      </div>
+      <div class="onboard-actions">
+        <button class="btn-skip" onclick="show('onboard-prefs')">← Back</button>
+        <button class="btn-skip" onclick="show('onboard-trial')">Skip</button>
+        <button class="btn-next" onclick="show('onboard-trial')">Add & Continue →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ ONBOARDING: TRIAL ═══════════════════════════════════ -->
+<div class="screen" id="screen-onboard-trial">
+  <div class="onboard-wrap">
+    <div class="onboard-card">
+      <div class="onboard-progress"><div class="prog-step done"></div><div class="prog-step done"></div><div class="prog-step done"></div></div>
+      <div class="onboard-icon">👑</div>
+      <div class="onboard-title">Try Pro free for 14 days</div>
+      <div class="onboard-sub">No credit card required. Cancel anytime.</div>
+      <div class="trial-features">
+        <div class="trial-feat"><span>✓</span><span>Budget module — category-wise spending limits</span></div>
+        <div class="trial-feat"><span>✓</span><span>Formal loan tracking with amortization schedule</span></div>
+        <div class="trial-feat"><span>✓</span><span>Net worth dashboard — assets vs liabilities</span></div>
+        <div class="trial-feat"><span>✓</span><span>Recurring transactions — auto-entry & reminders</span></div>
+        <div class="trial-feat"><span>✓</span><span>Credit card cycle tracking & due date alerts</span></div>
+        <div class="trial-feat"><span>✓</span><span>Unlimited accounts, history & advanced reports</span></div>
+      </div>
+      <button class="btn-primary" style="margin-bottom:10px" onclick="show('dashboard')">🚀 Start 14-Day Free Trial</button>
+      <button class="btn-skip" style="width:100%" onclick="show('dashboard')">Continue with Basic (Free)</button>
+      <div style="text-align:center;margin-top:12px;font-size:11px;color:var(--text3)">After trial: ₹99/month or ₹799/year</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ DASHBOARD ═══════════════════════════════════════ -->
+<div class="screen" id="screen-dashboard">
+  <div class="app-layout">
+    <!-- sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-logo"><div class="logo-wrap"><div class="logo-box">ai</div><div><div class="logo-text">aiexpenser</div><div class="logo-sub">Smart Finance</div></div></div></div>
+      <nav class="sidebar-nav">
+        <a class="nav-item active" onclick="show('dashboard')"><span class="nav-icon">📊</span>Dashboard</a>
+        <a class="nav-item" onclick="show('transactions')"><span class="nav-icon">↔️</span>Transactions</a>
+        <a class="nav-item" onclick="show('accounts')"><span class="nav-icon">🏦</span>Accounts</a>
+        <div class="nav-section">Finance</div>
+        <a class="nav-item" onclick="show('budget')"><span class="nav-icon">💰</span>Budget</a>
+        <a class="nav-item" onclick="show('recurring')"><span class="nav-icon">🔄</span>Recurring</a>
+        <a class="nav-item" onclick="show('loans-personal')"><span class="nav-icon">🤝</span>Loans</a>
+        <a class="nav-item" onclick="show('networth')"><span class="nav-icon">📈</span>Net Worth</a>
+        <div class="nav-section">Insights</div>
+        <a class="nav-item" onclick="show('reports')"><span class="nav-icon">📋</span>Reports</a>
+        <a class="nav-item" onclick="show('settings')"><span class="nav-icon">⚙️</span>Settings</a>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="plan-badge"><div class="plan-name">Pro Trial</div><div class="plan-sub">12 days remaining</div><button class="btn-upgrade">Upgrade ₹99/mo</button></div>
+        <a class="nav-item"><span class="nav-icon">🚪</span>Logout</a>
+      </div>
+    </div>
+    <!-- main -->
+    <div class="main-content">
+      <div class="topbar">
+        <div><div class="topbar-title">Dashboard</div><div class="topbar-sub">Global overview · Last 30 days</div></div>
+        <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+          <button class="btn-outline">📅 Apr 1 – Apr 30</button>
+          <button class="btn-new" onclick="show('modal-txn')">+ New Transaction</button>
+          <div class="avatar">AK</div>
+        </div>
+      </div>
+      <div class="page-body">
+        <!-- KPI Cards -->
+        <div class="stat-row">
+          <div class="kpi-card blue"><div class="kpi-icon blue">🏛️</div><div class="kpi-label">Total Balance</div><div class="kpi-val">₹1,68,320</div><div class="kpi-change up">↑ +8.2% from last month</div></div>
+          <div class="kpi-card green"><div class="kpi-icon green">💵</div><div class="kpi-label">Monthly Income</div><div class="kpi-val">₹48,500</div><div class="kpi-change up">↑ ₹1,500 vs last month</div></div>
+          <div class="kpi-card red"><div class="kpi-icon red">🛒</div><div class="kpi-label">Monthly Expense</div><div class="kpi-val">₹24,320</div><div class="kpi-change down">↑ ₹2,100 vs last month</div></div>
+        </div>
+        <!-- Charts row -->
+        <div class="grid-3">
+          <div class="card">
+            <div class="card-header"><div><div class="card-title">Cash Flow</div><div class="card-sub">Income vs Expenses · Last 6 months</div></div><div style="display:flex;gap:8px;font-size:11px;align-items:center"><span style="color:var(--accent)">■</span>Income <span style="color:var(--red)">■</span>Expense</div></div>
+            <div class="chart-area">
+              <div class="bar income" style="height:60%"></div><div class="bar expense" style="height:45%"></div>
+              <div class="bar income" style="height:70%"></div><div class="bar expense" style="height:50%"></div>
+              <div class="bar income" style="height:55%"></div><div class="bar expense" style="height:40%"></div>
+              <div class="bar income" style="height:80%"></div><div class="bar expense" style="height:55%"></div>
+              <div class="bar income" style="height:65%"></div><div class="bar expense" style="height:48%"></div>
+              <div class="bar income" style="height:75%"></div><div class="bar expense" style="height:52%"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-top:4px"><span>Nov</span><span>Dec</span><span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Spending by Category</div></div>
+            <div class="donut-wrap" style="flex-direction:column;gap:12px">
+              <svg viewBox="0 0 100 100" width="100" height="100">
+                <circle cx="50" cy="50" r="35" fill="none" stroke="var(--bg4)" stroke-width="14"/>
+                <circle cx="50" cy="50" r="35" fill="none" stroke="var(--red)" stroke-width="14" stroke-dasharray="66 154" stroke-dashoffset="0" transform="rotate(-90 50 50)"/>
+                <circle cx="50" cy="50" r="35" fill="none" stroke="var(--accent)" stroke-width="14" stroke-dasharray="44 176" stroke-dashoffset="-66" transform="rotate(-90 50 50)"/>
+                <circle cx="50" cy="50" r="35" fill="none" stroke="var(--green)" stroke-width="14" stroke-dasharray="33 187" stroke-dashoffset="-110" transform="rotate(-90 50 50)"/>
+                <circle cx="50" cy="50" r="35" fill="none" stroke="var(--amber)" stroke-width="14" stroke-dasharray="27 193" stroke-dashoffset="-143" transform="rotate(-90 50 50)"/>
+                <text x="50" y="50" text-anchor="middle" dominant-baseline="central" fill="var(--text)" font-size="10" font-weight="700" font-family="JetBrains Mono">₹24K</text>
+              </svg>
+              <div class="donut-legend" style="width:100%">
+                <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>Food <span style="margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--text)">₹8,200</span></div>
+                <div class="legend-item"><div class="legend-dot" style="background:var(--accent)"></div>Transport <span style="margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--text)">₹5,400</span></div>
+                <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>Bills <span style="margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--text)">₹4,100</span></div>
+                <div class="legend-item"><div class="legend-dot" style="background:var(--amber)"></div>Others <span style="margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--text)">₹6,620</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Bottom row -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+          <!-- Recent Txns -->
+          <div class="card">
+            <div class="card-header"><div><div class="card-title">Recent Transactions</div></div><span class="card-link" onclick="show('transactions')">View all →</span></div>
+            <div class="mini-txn"><div class="mini-txn-icon" style="background:var(--red-bg);color:var(--red)">🍕</div><div class="mini-txn-desc">Dominos Pizza<div class="mini-txn-sub">HDFC · Food</div></div><div class="mini-txn-amt" style="color:var(--red)">-₹649</div></div>
+            <div class="mini-txn"><div class="mini-txn-icon" style="background:var(--green-bg);color:var(--green)">💼</div><div class="mini-txn-desc">Salary April<div class="mini-txn-sub">HDFC · Work</div></div><div class="mini-txn-amt" style="color:var(--green)">+₹48,500</div></div>
+            <div class="mini-txn"><div class="mini-txn-icon" style="background:var(--accent-glow);color:var(--accent)">⛽</div><div class="mini-txn-desc">Petrol<div class="mini-txn-sub">Cash · Transport</div></div><div class="mini-txn-amt" style="color:var(--red)">-₹1,200</div></div>
+            <div class="mini-txn"><div class="mini-txn-icon" style="background:var(--purple-bg);color:var(--purple)">🔄</div><div class="mini-txn-desc">ATM Withdrawal<div class="mini-txn-sub">HDFC → Cash</div></div><div class="mini-txn-amt" style="color:var(--text2)">₹5,000</div></div>
+            <div class="mini-txn"><div class="mini-txn-icon" style="background:var(--amber-bg);color:var(--amber)">🤝</div><div class="mini-txn-desc">Lent to Rahul<div class="mini-txn-sub">Cash · Debt</div></div><div class="mini-txn-amt" style="color:var(--amber)">-₹2,000</div></div>
+          </div>
+          <!-- Budget Mini -->
+          <div class="card">
+            <div class="card-header"><div><div class="card-title">Budget Overview</div></div><span class="card-link" onclick="show('budget')">Manage →</span></div>
+            <div class="budget-mini-row"><span class="budget-mini-label">🍕 Food</span><div class="budget-mini-bar"><div class="budget-mini-fill" style="width:82%;background:var(--amber)"></div></div><span class="budget-mini-pct" style="color:var(--amber)">82%</span></div>
+            <div class="budget-mini-row"><span class="budget-mini-label">🚗 Transport</span><div class="budget-mini-bar"><div class="budget-mini-fill" style="width:54%;background:var(--green)"></div></div><span class="budget-mini-pct" style="color:var(--green)">54%</span></div>
+            <div class="budget-mini-row"><span class="budget-mini-label">🛒 Shopping</span><div class="budget-mini-bar"><div class="budget-mini-fill" style="width:110%;background:var(--red)"></div></div><span class="budget-mini-pct" style="color:var(--red)">110%</span></div>
+            <div class="budget-mini-row"><span class="budget-mini-label">⚡ Bills</span><div class="budget-mini-bar"><div class="budget-mini-fill" style="width:41%;background:var(--green)"></div></div><span class="budget-mini-pct" style="color:var(--green)">41%</span></div>
+            <div class="budget-mini-row"><span class="budget-mini-label">🏥 Health</span><div class="budget-mini-bar"><div class="budget-mini-fill" style="width:20%;background:var(--green)"></div></div><span class="budget-mini-pct" style="color:var(--green)">20%</span></div>
+            <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--text2)">Total spent</span><span style="font-family:var(--mono);font-weight:600">₹24,320 <span style="color:var(--text2)">/ ₹35,000</span></span></div>
+          </div>
+          <!-- Upcoming -->
+          <div class="card">
+            <div class="card-header"><div class="card-title">Upcoming Payments</div></div>
+            <div class="upcoming-item"><div><div style="font-size:13px;font-weight:500">HDFC Credit Card</div><div style="font-size:11px;color:var(--text2)">Bill due · ₹23,400</div></div><div class="due-chip urgent">3 days</div></div>
+            <div class="upcoming-item"><div><div style="font-size:13px;font-weight:500">Car Loan EMI</div><div style="font-size:11px;color:var(--text2)">HDFC Bank · ₹14,385</div></div><div class="due-chip soon">8 days</div></div>
+            <div class="upcoming-item"><div><div style="font-size:13px;font-weight:500">Netflix</div><div style="font-size:11px;color:var(--text2)">Recurring · ₹649</div></div><div class="due-chip ok">15 days</div></div>
+            <div class="upcoming-item"><div><div style="font-size:13px;font-weight:500">Personal Loan EMI</div><div style="font-size:11px;color:var(--text2)">SBI · ₹43,446</div></div><div class="due-chip ok">22 days</div></div>
+            <div class="upcoming-item"><div><div style="font-size:13px;font-weight:500">Spotify</div><div style="font-size:11px;color:var(--text2)">Recurring · ₹119</div></div><div class="due-chip ok">28 days</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ TRANSACTIONS ═══════════════════════════════════════ -->
+<div class="screen" id="screen-transactions">
+  <div class="app-layout">
+    <div class="sidebar">
+      <div class="sidebar-logo"><div class="logo-wrap"><div class="logo-box">ai</div><div><div class="logo-text">aiexpenser</div></div></div></div>
+      <nav class="sidebar-nav">
+        <a class="nav-item" onclick="show('dashboard')"><span class="nav-icon">📊</span>Dashboard</a>
+        <a class="nav-item active" onclick="show('transactions')"><span class="nav-icon">↔️</span>Transactions</a>
+        <a class="nav-item" onclick="show('accounts')"><span class="nav-icon">🏦</span>Accounts</a>
+        <div class="nav-section">Finance</div>
+        <a class="nav-item" onclick="show('budget')"><span class="nav-icon">💰</span>Budget</a>
+        <a class="nav-item" onclick="show('recurring')"><span class="nav-icon">🔄</span>Recurring</a>
+        <a class="nav-item" onclick="show('loans-personal')"><span class="nav-icon">🤝</span>Loans</a>
+        <a class="nav-item" onclick="show('networth')"><span class="nav-icon">📈</span>Net Worth</a>
+        <div class="nav-section">Insights</div>
+        <a class="nav-item" onclick="show('reports')"><span class="nav-icon">📋</span>Reports</a>
+        <a class="nav-item" onclick="show('settings')"><span class="nav-icon">⚙️</span>Settings</a>
+      </nav>
+      <div class="sidebar-bottom"><div class="plan-badge"><div class="plan-name">Pro Trial</div><div class="plan-sub">12 days remaining</div><button class="btn-upgrade">Upgrade ₹99/mo</button></div></div>
+    </div>
+    <div class="main-content">
+      <div class="topbar">
+        <div><div class="topbar-title">Transactions</div><div class="topbar-sub">Asset Ledger · All movements</div></div>
+        <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+          <button class="btn-outline">⬇ Export</button>
+          <button class="btn-new" onclick="show('modal-txn')">+ New Transaction</button>
+          <div class="avatar">AK</div>
+        </div>
+      </div>
+      <div class="page-body">
+        <!-- Summary -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px">
+          <div class="kpi-card green"><div class="kpi-label">Total Inflow</div><div class="kpi-val" style="font-size:20px">₹56,800</div><div class="kpi-change up">↑ +12% vs last month</div></div>
+          <div class="kpi-card red"><div class="kpi-label">Total Outflow</div><div class="kpi-val" style="font-size:20px">₹24,320</div><div class="kpi-change down">↓ -5% vs last month</div></div>
+          <div class="kpi-card blue"><div class="kpi-label">Net Precision</div><div class="kpi-val" style="font-size:20px">₹32,480</div><div class="kpi-change up">↑ +2.4% vs last month</div></div>
+        </div>
+        <!-- Filters -->
+        <div class="filter-bar">
+          <div class="filter-group search-wrap"><label>Search</label><span class="search-icon">🔍</span><input class="filter-input" placeholder="Find by description, category…"></div>
+          <div class="filter-group"><label>Date Range</label><input class="filter-input" value="Apr 01 – Apr 30, 2026" style="min-width:180px"></div>
+          <div class="filter-group"><label>Flow Type</label><select class="filter-input"><option>All Flows</option><option>Expense</option><option>Income</option><option>Transfer</option><option>Debt</option></select></div>
+          <div class="filter-group"><label>Account</label><select class="filter-input"><option>All Accounts</option><option>HDFC</option><option>Cash</option></select></div>
+        </div>
+        <div class="card" style="padding:0;overflow:hidden">
+          <div class="txn-head"><div>Type</div><div>Description</div><div>Category</div><div>Date</div><div>Amount</div></div>
+          <div class="txn-row"><div><span class="txn-type-badge income">↓ Income</span></div><div><div class="txn-desc">Salary April 2026</div><div class="txn-account">HDFC Savings</div></div><div><span class="txn-cat">💼 Work</span></div><div class="txn-date">06-04-2026</div><div class="txn-amount credit">+₹48,500</div></div>
+          <div class="txn-row"><div><span class="txn-type-badge expense">↑ Expense</span></div><div><div class="txn-desc">Dominos Pizza</div><div class="txn-account">HDFC Savings</div></div><div><span class="txn-cat">🍕 Food</span></div><div class="txn-date">06-04-2026</div><div class="txn-amount debit">-₹649</div></div>
+          <div class="txn-row"><div><span class="txn-type-badge transfer">⇄ Transfer</span></div><div><div class="txn-desc">ATM Withdrawal</div><div class="txn-account">HDFC → Cash</div></div><div><span class="txn-cat">🏧 Self</span></div><div class="txn-date">06-04-2026</div><div class="txn-amount" style="color:var(--text2)">₹5,000</div></div>
+          <div class="txn-row"><div><span class="txn-type-badge debt">↓ Debt</span></div><div><div class="txn-desc">Lent to Rahul Bhai</div><div class="txn-account">Cash</div></div><div><span class="txn-cat">🤝 Udhar</span></div><div class="txn-date">05-04-2026</div><div class="txn-amount debit">-₹2,000</div></div>
+          <div class="txn-row"><div><span class="txn-type-badge repayment">↑ Repayment</span></div><div><div class="txn-desc">Rahul bhai repayment</div><div class="txn-account">Cash</div></div><div><span class="txn-cat">🤝 Udhar</span></div><div class="txn-date">04-04-2026</div><div class="txn-amount credit">+₹5,000</div></div>
+          <div class="txn-row"><div><span class="txn-type-badge expense">↑ Expense</span></div><div><div class="txn-desc">Petrol<div class="txn-account" style="font-style:italic;color:var(--text3)">pending confirmation</div></div><div class="txn-account">Cash</div></div><div><span class="txn-cat">⛽ Transport</span></div><div class="txn-date">04-04-2026</div><div class="txn-amount debit">-₹1,200</div></div>
+          <div class="txn-row"><div><span class="txn-type-badge income">↓ Income</span></div><div><div class="txn-desc">Freelance Project</div><div class="txn-account">HDFC Savings</div></div><div><span class="txn-cat">💻 Work</span></div><div class="txn-date">03-04-2026</div><div class="txn-amount credit">+₹8,000</div></div>
+          <div class="txn-row"><div><span class="txn-type-badge expense">↑ Expense</span></div><div><div class="txn-desc">Big Bazaar Grocery</div><div class="txn-account">HDFC Savings</div></div><div><span class="txn-cat">🛒 Shopping</span></div><div class="txn-date">02-04-2026</div><div class="txn-amount debit">-₹3,240</div></div>
+          <div style="padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);font-size:11px;color:var(--text3)">
+            <span>Showing 1–8 of 47 records</span>
+            <div style="display:flex;gap:4px">
+              <button class="icon-btn">⟨⟨</button><button class="icon-btn">⟨</button><button style="width:28px;height:28px;border-radius:var(--r2);background:var(--accent);border:none;color:#fff;font-size:12px;cursor:pointer">1</button><button class="icon-btn">2</button><button class="icon-btn">3</button><button class="icon-btn">⟩</button><button class="icon-btn">⟩⟩</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ ACCOUNTS ═══════════════════════════════════════ -->
+<div class="screen" id="screen-accounts">
+  <div class="app-layout">
+    <div class="sidebar">
+      <div class="sidebar-logo"><div class="logo-wrap"><div class="logo-box">ai</div><div><div class="logo-text">aiexpenser</div></div></div></div>
+      <nav class="sidebar-nav">
+        <a class="nav-item" onclick="show('dashboard')"><span class="nav-icon">📊</span>Dashboard</a>
+        <a class="nav-item" onclick="show('transactions')"><span class="nav-icon">↔️</span>Transactions</a>
+        <a class="nav-item active"><span class="nav-icon">🏦</span>Accounts</a>
+        <div class="nav-section">Finance</div>
+        <a class="nav-item" onclick="show('budget')"><span class="nav-icon">💰</span>Budget</a>
+        <a class="nav-item" onclick="show('recurring')"><span class="nav-icon">🔄</span>Recurring</a>
+        <a class="nav-item" onclick="show('loans-personal')"><span class="nav-icon">🤝</span>Loans</a>
+        <a class="nav-item" onclick="show('networth')"><span class="nav-icon">📈</span>Net Worth</a>
+        <div class="nav-section">Insights</div>
+        <a class="nav-item" onclick="show('reports')"><span class="nav-icon">📋</span>Reports</a>
+        <a class="nav-item" onclick="show('settings')"><span class="nav-icon">⚙️</span>Settings</a>
+      </nav>
+      <div class="sidebar-bottom"><div class="plan-badge"><div class="plan-name">Pro Trial</div><div class="plan-sub">12 days remaining</div><button class="btn-upgrade">Upgrade ₹99/mo</button></div></div>
+    </div>
+    <div class="main-content">
+      <div class="topbar">
+        <div><div class="topbar-title">Accounts</div><div class="topbar-sub">Financial Ecosystem · All platforms</div></div>
+        <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+          <button class="btn-new" onclick="show('modal-account')">+ Initialize Account</button>
+          <div class="avatar">AK</div>
+        </div>
+      </div>
+      <div class="page-body">
+        <div style="background:var(--amber-bg);border:1px solid var(--amber-border);border-radius:var(--r);padding:10px 14px;margin-bottom:16px;font-size:12px;color:var(--amber);display:flex;align-items:center;gap:8px">⭐ <b>Basic Plan:</b> 1 bank account limit. <a href="#" class="form-link" style="margin-left:4px">Upgrade to Pro for unlimited →</a></div>
+        <div class="accounts-grid">
+          <div class="account-card">
+            <div style="display:flex;align-items:center;justify-content:space-between"><span class="acc-type-badge bank">🏛 Bank</span><div class="acc-menu">⋮</div></div>
+            <div class="acc-name">HDFC Savings <span class="acc-default">★ Default</span></div>
+            <div class="acc-num">•••• •••• •••• 4521</div>
+            <div class="acc-balance" style="color:var(--accent)">₹13,600.00</div>
+          </div>
+          <div class="account-card">
+            <div style="display:flex;align-items:center;justify-content:space-between"><span class="acc-type-badge cash">💵 Cash</span><div style="font-size:10px;color:var(--text3);border:1px solid var(--border);border-radius:4px;padding:2px 6px">Protected</div></div>
+            <div class="acc-name">Cash</div>
+            <div class="acc-num">Always available</div>
+            <div class="acc-balance" style="color:var(--green)">₹3,200.00</div>
+          </div>
+          <div class="account-card" style="border:1px dashed var(--border2);opacity:0.6">
+            <div style="text-align:center;padding:20px 0">
+              <div style="font-size:28px;margin-bottom:8px">+</div>
+              <div style="font-size:13px;font-weight:600">Add Account</div>
+              <div style="font-size:11px;color:var(--text3);margin-top:4px">Pro required for more accounts</div>
+            </div>
+          </div>
+        </div>
+        <div class="net-liquidity">
+          <div>
+            <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;margin-bottom:8px">Net Liquidity</div>
+            <div style="font-size:36px;font-weight:700;font-family:var(--mono);color:var(--accent);letter-spacing:-1px">₹16,800.50</div>
+            <div style="font-size:12px;color:var(--green);margin-top:6px;display:flex;align-items:center;gap:4px">↑ Active Portfolio</div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;margin-bottom:12px">Allocation Breakdown</div>
+            <div class="alloc-row"><span class="alloc-label">Total Banking</span><div class="alloc-bar-wrap"><div class="alloc-bar" style="width:81%;background:var(--accent)"></div></div><span class="alloc-pct">80.9%</span></div>
+            <div class="alloc-row"><span class="alloc-label">Investments</span><div class="alloc-bar-wrap"><div class="alloc-bar" style="width:0%;background:var(--purple)"></div></div><span class="alloc-pct">0.0%</span></div>
+            <div class="alloc-row"><span class="alloc-label">Liquid Cash</span><div class="alloc-bar-wrap"><div class="alloc-bar" style="width:19%;background:var(--green)"></div></div><span class="alloc-pct">19.1%</span></div>
+            <div class="alloc-row"><span class="alloc-label">Other</span><div class="alloc-bar-wrap"><div class="alloc-bar" style="width:0%;background:var(--amber)"></div></div><span class="alloc-pct">0.0%</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ BUDGET ═══════════════════════════════════════ -->
+<div class="screen" id="screen-budget">
+  <div class="app-layout">
+    <div class="sidebar">
+      <div class="sidebar-logo"><div class="logo-wrap"><div class="logo-box">ai</div><div><div class="logo-text">aiexpenser</div></div></div></div>
+      <nav class="sidebar-nav">
+        <a class="nav-item" onclick="show('dashboard')"><span class="nav-icon">📊</span>Dashboard</a>
+        <a class="nav-item" onclick="show('transactions')"><span class="nav-icon">↔️</span>Transactions</a>
+        <a class="nav-item" onclick="show('accounts')"><span class="nav-icon">🏦</span>Accounts</a>
+        <div class="nav-section">Finance</div>
+        <a class="nav-item active"><span class="nav-icon">💰</span>Budget</a>
+        <a class="nav-item" onclick="show('recurring')"><span class="nav-icon">🔄</span>Recurring</a>
+        <a class="nav-item" onclick="show('loans-personal')"><span class="nav-icon">🤝</span>Loans</a>
+        <a class="nav-item" onclick="show('networth')"><span class="nav-icon">📈</span>Net Worth</a>
+        <div class="nav-section">Insights</div>
+        <a class="nav-item" onclick="show('reports')"><span class="nav-icon">📋</span>Reports</a>
+        <a class="nav-item" onclick="show('settings')"><span class="nav-icon">⚙️</span>Settings</a>
+      </nav>
+      <div class="sidebar-bottom"><div class="plan-badge"><div class="plan-name">Pro Trial</div><div class="plan-sub">12 days remaining</div><button class="btn-upgrade">Upgrade ₹99/mo</button></div></div>
+    </div>
+    <div class="main-content">
+      <div class="topbar">
+        <div><div class="topbar-title">Budget</div><div class="topbar-sub">April 2026 · Monthly</div></div>
+        <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+          <button class="btn-outline">📅 April 2026</button>
+          <button class="btn-new" onclick="show('modal-budget')">+ Add Budget</button>
+          <div class="avatar">AK</div>
+        </div>
+      </div>
+      <div class="page-body">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
+          <div class="kpi-card blue"><div class="kpi-label">Total Budgeted</div><div class="kpi-val" style="font-size:20px">₹35,000</div></div>
+          <div class="kpi-card red"><div class="kpi-label">Total Spent</div><div class="kpi-val" style="font-size:20px">₹24,320</div></div>
+          <div class="kpi-card green"><div class="kpi-label">Remaining</div><div class="kpi-val" style="font-size:20px">₹10,680</div></div>
+          <div class="kpi-card amber"><div class="kpi-label">Over Budget</div><div class="kpi-val" style="font-size:20px">1 item</div><div class="kpi-change down">Shopping exceeded</div></div>
+        </div>
+        <div class="budget-grid">
+          <div class="budget-card">
+            <div class="budget-header"><div class="budget-cat"><div class="budget-cat-icon" style="background:var(--red-bg)">🍕</div><div><div style="font-size:13px;font-weight:600">Food</div><div style="font-size:11px;color:var(--text2)">Monthly · Rollover off</div></div></div><button class="icon-btn" style="width:28px;height:28px;font-size:12px">⋮</button></div>
+            <div class="budget-amounts"><span class="budget-spent">₹8,200</span><span class="budget-total">of ₹10,000</span></div>
+            <div class="progress-bar"><div class="progress-fill warn" style="width:82%"></div></div>
+            <div class="budget-footer"><span>82% used</span><span style="color:var(--amber)">⚠ ₹1,800 left</span></div>
+          </div>
+          <div class="budget-card">
+            <div class="budget-header"><div class="budget-cat"><div class="budget-cat-icon" style="background:var(--accent-glow)">🚗</div><div><div style="font-size:13px;font-weight:600">Transport</div><div style="font-size:11px;color:var(--text2)">Monthly · Rollover off</div></div></div><button class="icon-btn" style="width:28px;height:28px;font-size:12px">⋮</button></div>
+            <div class="budget-amounts"><span class="budget-spent">₹2,700</span><span class="budget-total">of ₹5,000</span></div>
+            <div class="progress-bar"><div class="progress-fill safe" style="width:54%"></div></div>
+            <div class="budget-footer"><span>54% used</span><span style="color:var(--green)">✓ ₹2,300 left</span></div>
+          </div>
+          <div class="budget-card" style="border-color:var(--red-border)">
+            <div class="budget-header"><div class="budget-cat"><div class="budget-cat-icon" style="background:var(--red-bg)">🛒</div><div><div style="font-size:13px;font-weight:600">Shopping</div><div style="font-size:11px;color:var(--red)">⚡ Budget exceeded!</div></div></div><button class="icon-btn" style="width:28px;height:28px;font-size:12px">⋮</button></div>
+            <div class="budget-amounts"><span class="budget-spent" style="color:var(--red)">₹6,600</span><span class="budget-total">of ₹6,000</span></div>
+            <div class="progress-bar"><div class="progress-fill over" style="width:100%"></div></div>
+            <div class="budget-footer"><span style="color:var(--red)">110% — Over by ₹600</span><span>🚨</span></div>
+          </div>
+          <div class="budget-card">
+            <div class="budget-header"><div class="budget-cat"><div class="budget-cat-icon" style="background:var(--amber-bg)">⚡</div><div><div style="font-size:13px;font-weight:600">Bills & Utilities</div><div style="font-size:11px;color:var(--text2)">Monthly · Rollover off</div></div></div><button class="icon-btn" style="width:28px;height:28px;font-size:12px">⋮</button></div>
+            <div class="budget-amounts"><span class="budget-spent">₹2,870</span><span class="budget-total">of ₹7,000</span></div>
+            <div class="progress-bar"><div class="progress-fill safe" style="width:41%"></div></div>
+            <div class="budget-footer"><span>41% used</span><span style="color:var(--green)">✓ ₹4,130 left</span></div>
+          </div>
+          <div class="budget-card">
+            <div class="budget-header"><div class="budget-cat"><div class="budget-cat-icon" style="background:var(--green-bg)">🏥</div><div><div style="font-size:13px;font-weight:600">Health</div><div style="font-size:11px;color:var(--text2)">Monthly · Rollover on</div></div></div><button class="icon-btn" style="width:28px;height:28px;font-size:12px">⋮</button></div>
+            <div class="budget-amounts"><span class="budget-spent">₹600</span><span class="budget-total">of ₹3,000</span></div>
+            <div class="progress-bar"><div class="progress-fill safe" style="width:20%"></div></div>
+            <div class="budget-footer"><span>20% used</span><span style="color:var(--green)">✓ ₹2,400 left</span></div>
+          </div>
+          <div class="budget-card" style="border:1px dashed var(--border2);display:flex;align-items:center;justify-content:center;cursor:pointer;min-height:140px" onclick="show('modal-budget')">
+            <div style="text-align:center"><div style="font-size:24px;margin-bottom:8px">+</div><div style="font-size:13px;font-weight:600">Add Budget</div><div style="font-size:11px;color:var(--text3);margin-top:4px">Set a new category limit</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ RECURRING ═══════════════════════════════════════ -->
+<div class="screen" id="screen-recurring">
+  <div class="app-layout">
+    <div class="sidebar">
+      <div class="sidebar-logo"><div class="logo-wrap"><div class="logo-box">ai</div><div><div class="logo-text">aiexpenser</div></div></div></div>
+      <nav class="sidebar-nav">
+        <a class="nav-item" onclick="show('dashboard')"><span class="nav-icon">📊</span>Dashboard</a>
+        <a class="nav-item" onclick="show('transactions')"><span class="nav-icon">↔️</span>Transactions</a>
+        <a class="nav-item" onclick="show('accounts')"><span class="nav-icon">🏦</span>Accounts</a>
+        <div class="nav-section">Finance</div>
+        <a class="nav-item" onclick="show('budget')"><span class="nav-icon">💰</span>Budget</a>
+        <a class="nav-item active"><span class="nav-icon">🔄</span>Recurring</a>
+        <a class="nav-item" onclick="show('loans-personal')"><span class="nav-icon">🤝</span>Loans</a>
+        <a class="nav-item" onclick="show('networth')"><span class="nav-icon">📈</span>Net Worth</a>
+        <div class="nav-section">Insights</div>
+        <a class="nav-item" onclick="show('reports')"><span class="nav-icon">📋</span>Reports</a>
+        <a class="nav-item" onclick="show('settings')"><span class="nav-icon">⚙️</span>Settings</a>
+      </nav>
+      <div class="sidebar-bottom"><div class="plan-badge"><div class="plan-name">Pro Trial</div><div class="plan-sub">12 days remaining</div><button class="btn-upgrade">Upgrade ₹99/mo</button></div></div>
+    </div>
+    <div class="main-content">
+      <div class="topbar">
+        <div><div class="topbar-title">Recurring</div><div class="topbar-sub">Scheduled transactions · Auto & Reminders</div></div>
+        <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+          <button class="btn-new" onclick="show('modal-recurring')">+ Add Recurring</button>
+          <div class="avatar">AK</div>
+        </div>
+      </div>
+      <div class="page-body">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
+          <div class="kpi-card red"><div class="kpi-label">Monthly Cost</div><div class="kpi-val" style="font-size:20px">₹3,217</div><div class="kpi-change neutral">6 active recurring</div></div>
+          <div class="kpi-card amber"><div class="kpi-label">Annual Cost</div><div class="kpi-val" style="font-size:20px">₹38,604</div><div class="kpi-change down">Subscriptions only</div></div>
+          <div class="kpi-card blue"><div class="kpi-label">Next Due</div><div class="kpi-val" style="font-size:20px">Netflix</div><div class="kpi-change neutral">Due in 3 days · ₹649</div></div>
+        </div>
+        <div class="card" style="padding:0;overflow:hidden;margin-bottom:16px">
+          <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:grid;grid-template-columns:36px 1fr 100px 100px 90px 60px;gap:12px;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;align-items:center">
+            <div></div><div>Name</div><div>Frequency</div><div>Amount</div><div>Next Due</div><div>Active</div>
+          </div>
+          <div class="recurring-list" style="padding:8px">
+            <div class="recurring-row"><div class="rec-icon" style="background:#1a1f2e">🎬</div><div><div class="rec-name">Netflix</div><div class="rec-sub">HDFC · Auto-entry · Expense</div></div><div class="rec-freq">Monthly</div><div class="rec-amount debit" style="text-align:right">-₹649</div><div class="rec-next">01 May</div><div class="toggle-wrap"><div class="toggle on"></div></div></div>
+            <div class="recurring-row"><div class="rec-icon" style="background:#1a1f2e">🎵</div><div><div class="rec-name">Spotify</div><div class="rec-sub">HDFC · Auto-entry · Expense</div></div><div class="rec-freq">Monthly</div><div class="rec-amount debit" style="text-align:right">-₹119</div><div class="rec-next">05 May</div><div class="toggle-wrap"><div class="toggle on"></div></div></div>
+            <div class="recurring-row"><div class="rec-icon" style="background:#1a1f2e">🏠</div><div><div class="rec-name">Rent</div><div class="rec-sub">Cash · Reminder · Expense</div></div><div class="rec-freq">Monthly</div><div class="rec-amount debit" style="text-align:right">~₹12,000</div><div class="rec-next">01 May</div><div class="toggle-wrap"><div class="toggle on"></div></div></div>
+            <div class="recurring-row"><div class="rec-icon" style="background:#1a1f2e">📈</div><div><div class="rec-name">SIP — Mutual Fund</div><div class="rec-sub">HDFC · Auto-entry · Expense</div></div><div class="rec-freq">Monthly</div><div class="rec-amount debit" style="text-align:right">-₹5,000</div><div class="rec-next">10 May</div><div class="toggle-wrap"><div class="toggle on"></div></div></div>
+            <div class="recurring-row" style="opacity:0.5"><div class="rec-icon" style="background:#1a1f2e">🌐</div><div><div class="rec-name">Domain Renewal</div><div class="rec-sub">HDFC · Auto-entry · Expense</div></div><div class="rec-freq">Yearly</div><div class="rec-amount debit" style="text-align:right">-₹899</div><div class="rec-next">Mar 2027</div><div class="toggle-wrap"><div class="toggle off"></div></div></div>
+            <div class="recurring-row"><div class="rec-icon" style="background:#1a1f2e">💼</div><div><div class="rec-name">Salary</div><div class="rec-sub">HDFC · Reminder · Income</div></div><div class="rec-freq">Monthly</div><div class="rec-amount credit" style="text-align:right;color:var(--green)">+₹48,500</div><div class="rec-next">30 Apr</div><div class="toggle-wrap"><div class="toggle on"></div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ LOANS: PERSONAL ═══════════════════════════════════════ -->
+<div class="screen" id="screen-loans-personal">
+  <div class="app-layout">
+    <div class="sidebar">
+      <div class="sidebar-logo"><div class="logo-wrap"><div class="logo-box">ai</div><div><div class="logo-text">aiexpenser</div></div></div></div>
+      <nav class="sidebar-nav">
+        <a class="nav-item" onclick="show('dashboard')"><span class="nav-icon">📊</span>Dashboard</a>
+        <a class="nav-item" onclick="show('transactions')"><span class="nav-icon">↔️</span>Transactions</a>
+        <a class="nav-item" onclick="show('accounts')"><span class="nav-icon">🏦</span>Accounts</a>
+        <div class="nav-section">Finance</div>
+        <a class="nav-item" onclick="show('budget')"><span class="nav-icon">💰</span>Budget</a>
+        <a class="nav-item" onclick="show('recurring')"><span class="nav-icon">🔄</span>Recurring</a>
+        <a class="nav-item active"><span class="nav-icon">🤝</span>Loans</a>
+        <a class="nav-item" onclick="show('networth')"><span class="nav-icon">📈</span>Net Worth</a>
+        <div class="nav-section">Insights</div>
+        <a class="nav-item" onclick="show('reports')"><span class="nav-icon">📋</span>Reports</a>
+        <a class="nav-item" onclick="show('settings')"><span class="nav-icon">⚙️</span>Settings</a>
+      </nav>
+      <div class="sidebar-bottom"><div class="plan-badge"><div class="plan-name">Pro Trial</div><div class="plan-sub">12 days remaining</div><button class="btn-upgrade">Upgrade ₹99/mo</button></div></div>
+    </div>
+    <div class="main-content">
+      <div class="topbar">
+        <div><div class="topbar-title">Loans</div><div class="topbar-sub">Commitment & Liability Ledger</div></div>
+        <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+          <button class="btn-new" onclick="show('modal-debt')">+ Record Commitment</button>
+          <div class="avatar">AK</div>
+        </div>
+      </div>
+      <div class="page-body">
+        <div class="loan-tabs">
+          <div class="loan-tab active">👥 Personal Debt</div>
+          <div class="loan-tab" onclick="show('loans-formal')">🏦 Formal Loans</div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
+          <div class="kpi-card green"><div class="kpi-label">Total Lent</div><div class="kpi-val" style="font-size:18px">₹12,000</div><div class="kpi-change neutral">3 active</div></div>
+          <div class="kpi-card red"><div class="kpi-label">Total Borrowed</div><div class="kpi-val" style="font-size:18px">₹5,500</div><div class="kpi-change neutral">2 active</div></div>
+          <div class="kpi-card blue"><div class="kpi-label">Net Position</div><div class="kpi-val" style="font-size:18px">+₹6,500</div><div class="kpi-change up">You are owed more</div></div>
+          <div class="kpi-card amber"><div class="kpi-label">Active Debts</div><div class="kpi-val" style="font-size:18px">5</div><div class="kpi-change neutral">0 overdue</div></div>
+        </div>
+        <div class="card" style="padding:0;overflow:hidden">
+          <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between"><div class="card-title">Active Ledger</div><div style="display:flex;gap:6px"><div style="padding:5px 12px;background:var(--accent);border-radius:var(--r2);font-size:11px;font-weight:700;color:#fff;cursor:pointer">ALL</div><div style="padding:5px 12px;background:var(--bg4);border-radius:var(--r2);font-size:11px;font-weight:500;color:var(--text2);cursor:pointer">PENDING</div><div style="padding:5px 12px;background:var(--bg4);border-radius:var(--r2);font-size:11px;font-weight:500;color:var(--text2);cursor:pointer">SETTLED</div></div></div>
+          <div class="debt-head"><div>Party</div><div>Direction</div><div>Principal</div><div>Remaining</div><div>Status</div><div>Action</div></div>
+          <div class="debt-row"><div style="display:flex;align-items:center"><div class="party-avatar" style="background:#5B8DEF">R</div><div><div style="font-size:13px;font-weight:600">Rahul Bhai</div><div style="font-size:11px;color:var(--text2)">Family · No deadline</div></div></div><div><span class="direction-badge lent">Lent</span></div><div style="font-family:var(--mono);font-weight:600">₹5,000</div><div style="font-family:var(--mono);font-weight:600;color:var(--green)">₹5,000</div><div><span class="status-badge active">Active</span></div><div><button class="btn-outline" style="font-size:11px;padding:5px 10px">Settle</button></div></div>
+          <div class="debt-row"><div style="display:flex;align-items:center"><div class="party-avatar" style="background:#2DD4A0">A</div><div><div style="font-size:13px;font-weight:600">Amit Friend</div><div style="font-size:11px;color:var(--text2)">Friend · Due 15 May</div></div></div><div><span class="direction-badge lent">Lent</span></div><div style="font-family:var(--mono);font-weight:600">₹3,000</div><div style="font-family:var(--mono);font-weight:600;color:var(--amber)">₹1,500</div><div><span class="status-badge partial">Partial</span></div><div><button class="btn-outline" style="font-size:11px;padding:5px 10px">Settle</button></div></div>
+          <div class="debt-row"><div style="display:flex;align-items:center"><div class="party-avatar" style="background:#F5A623">S</div><div><div style="font-size:13px;font-weight:600">Sahil Colleague</div><div style="font-size:11px;color:var(--text2)">Colleague · No deadline</div></div></div><div><span class="direction-badge lent">Lent</span></div><div style="font-family:var(--mono);font-weight:600">₹4,000</div><div style="font-family:var(--mono);font-weight:600;color:var(--green)">₹4,000</div><div><span class="status-badge active">Active</span></div><div><button class="btn-outline" style="font-size:11px;padding:5px 10px">Settle</button></div></div>
+          <div class="debt-row"><div style="display:flex;align-items:center"><div class="party-avatar" style="background:#A78BFA">M</div><div><div style="font-size:13px;font-weight:600">Maa</div><div style="font-size:11px;color:var(--text2)">Family · No deadline</div></div></div><div><span class="direction-badge borrowed">Borrowed</span></div><div style="font-family:var(--mono);font-weight:600">₹3,000</div><div style="font-family:var(--mono);font-weight:600;color:var(--red)">₹3,000</div><div><span class="status-badge active">Active</span></div><div><button class="btn-outline" style="font-size:11px;padding:5px 10px">Pay</button></div></div>
+          <div class="debt-row" style="opacity:0.5"><div style="display:flex;align-items:center"><div class="party-avatar" style="background:#22D3EE">H</div><div><div style="font-size:13px;font-weight:600">Hafiz Ji</div><div style="font-size:11px;color:var(--text3)">Friend</div></div></div><div><span class="direction-badge borrowed">Borrowed</span></div><div style="font-family:var(--mono)">₹2,500</div><div style="font-family:var(--mono);color:var(--green)">₹0</div><div><span class="status-badge settled">Settled</span></div><div style="font-size:11px;color:var(--text3)">—</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ LOANS: FORMAL ═══════════════════════════════════════ -->
+<div class="screen" id="screen-loans-formal">
+  <div class="app-layout">
+    <div class="sidebar">
+      <div class="sidebar-logo"><div class="logo-wrap"><div class="logo-box">ai</div><div><div class="logo-text">aiexpenser</div></div></div></div>
+      <nav class="sidebar-nav">
+        <a class="nav-item" onclick="show('dashboard')"><span class="nav-icon">📊</span>Dashboard</a>
+        <a class="nav-item" onclick="show('transactions')"><span class="nav-icon">↔️</span>Transactions</a>
+        <a class="nav-item" onclick="show('accounts')"><span class="nav-icon">🏦</span>Accounts</a>
+        <div class="nav-section">Finance</div>
+        <a class="nav-item" onclick="show('budget')"><span class="nav-icon">💰</span>Budget</a>
+        <a class="nav-item" onclick="show('recurring')"><span class="nav-icon">🔄</span>Recurring</a>
+        <a class="nav-item active"><span class="nav-icon">🤝</span>Loans</a>
+        <a class="nav-item" onclick="show('networth')"><span class="nav-icon">📈</span>Net Worth</a>
+        <div class="nav-section">Insights</div>
+        <a class="nav-item" onclick="show('reports')"><span class="nav-icon">📋</span>Reports</a>
+        <a class="nav-item" onclick="show('settings')"><span class="nav-icon">⚙️</span>Settings</a>
+      </nav>
+      <div class="sidebar-bottom"><div class="plan-badge"><div class="plan-name">Pro Trial</div><div class="plan-sub">12 days remaining</div><button class="btn-upgrade">Upgrade ₹99/mo</button></div></div>
+    </div>
+    <div class="main-content">
+      <div class="topbar">
+        <div><div class="topbar-title">Loans</div><div class="topbar-sub">Commitment & Liability Ledger</div></div>
+        <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+          <button class="btn-new" onclick="show('modal-loan')">+ Add Formal Loan</button>
+          <div class="avatar">AK</div>
+        </div>
+      </div>
+      <div class="page-body">
+        <div class="loan-tabs">
+          <div class="loan-tab" onclick="show('loans-personal')">👥 Personal Debt</div>
+          <div class="loan-tab active">🏦 Formal Loans</div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
+          <div class="kpi-card red"><div class="kpi-label">Total Outstanding</div><div class="kpi-val" style="font-size:18px">₹11,20,000</div></div>
+          <div class="kpi-card amber"><div class="kpi-label">Monthly EMI</div><div class="kpi-val" style="font-size:18px">₹57,831</div></div>
+          <div class="kpi-card blue"><div class="kpi-label">Interest Paid</div><div class="kpi-val" style="font-size:18px">₹89,420</div></div>
+          <div class="kpi-card purple"><div class="kpi-label">Active Loans</div><div class="kpi-val" style="font-size:18px">2</div></div>
+        </div>
+        <div class="formal-loan-card">
+          <div class="loan-card-header">
+            <div><div style="display:flex;align-items:center;gap:10px;margin-bottom:4px"><span class="loan-type-badge">🚗 Car Loan</span><span style="font-size:11px;color:var(--text3)">HDFC Bank</span></div><div style="font-size:18px;font-weight:700">Car Loan — Maruti Suzuki</div></div>
+            <div style="display:flex;gap:8px">
+              <button class="btn-outline" style="font-size:12px" onclick="show('modal-prepay')">Prepay Calc</button>
+              <button class="btn-new" style="font-size:12px">Pay EMI →</button>
+            </div>
+          </div>
+          <div class="loan-progress-wrap">
+            <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:6px"><span>23 EMIs paid of 60</span><span>38.3% complete</span></div>
+            <div class="loan-progress-bar"><div class="loan-progress-fill" style="width:38%"></div></div>
+          </div>
+          <div class="loan-stats">
+            <div class="loan-stat"><div class="loan-stat-val" style="color:var(--red)">₹4,23,600</div><div class="loan-stat-label">Outstanding</div></div>
+            <div class="loan-stat"><div class="loan-stat-val" style="color:var(--accent)">₹14,385</div><div class="loan-stat-label">Monthly EMI</div></div>
+            <div class="loan-stat"><div class="loan-stat-val" style="color:var(--amber)">8.5%</div><div class="loan-stat-label">Interest Rate</div></div>
+            <div class="loan-stat"><div class="loan-stat-val" style="color:var(--green)">37 left</div><div class="loan-stat-label">EMIs Remaining</div></div>
+          </div>
+          <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);display:flex;gap:16px;font-size:12px;color:var(--text2)"><span>Principal: ₹7,00,000</span><span>Interest paid: ₹56,820</span><span>Next EMI: 01 May 2026</span><span><a href="#" class="form-link" onclick="show('loan-detail')">View Schedule →</a></span></div>
+        </div>
+        <div class="formal-loan-card">
+          <div class="loan-card-header">
+            <div><div style="display:flex;align-items:center;gap:10px;margin-bottom:4px"><span class="loan-type-badge" style="background:var(--purple-bg);color:var(--purple)">💼 Personal Loan</span><span style="font-size:11px;color:var(--text3)">SBI Bank</span></div><div style="font-size:18px;font-weight:700">Personal Loan</div></div>
+            <div style="display:flex;gap:8px">
+              <button class="btn-outline" style="font-size:12px">Prepay Calc</button>
+              <button class="btn-new" style="font-size:12px">Pay EMI →</button>
+            </div>
+          </div>
+          <div class="loan-progress-wrap">
+            <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:6px"><span>3 EMIs paid of 12</span><span>25% complete</span></div>
+            <div class="loan-progress-bar"><div class="loan-progress-fill" style="width:25%;background:var(--purple)"></div></div>
+          </div>
+          <div class="loan-stats">
+            <div class="loan-stat"><div class="loan-stat-val" style="color:var(--red)">₹3,37,500</div><div class="loan-stat-label">Outstanding</div></div>
+            <div class="loan-stat"><div class="loan-stat-val" style="color:var(--accent)">₹43,446</div><div class="loan-stat-label">Monthly EMI</div></div>
+            <div class="loan-stat"><div class="loan-stat-val" style="color:var(--amber)">13%</div><div class="loan-stat-label">Interest Rate</div></div>
+            <div class="loan-stat"><div class="loan-stat-val" style="color:var(--green)">9 left</div><div class="loan-stat-label">EMIs Remaining</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ LOAN DETAIL ═══════════════════════════════════════ -->
+<div class="screen" id="screen-loan-detail">
+  <div class="app-layout">
+    <div class="sidebar">
+      <div class="sidebar-logo"><div class="logo-wrap"><div class="logo-box">ai</div><div><div class="logo-text">aiexpenser</div></div></div></div>
+      <nav class="sidebar-nav">
+        <a class="nav-item" onclick="show('dashboard')"><span class="nav-icon">📊</span>Dashboard</a>
+        <a class="nav-item" onclick="show('transactions')"><span class="nav-icon">↔️</span>Transactions</a>
+        <a class="nav-item" onclick="show('accounts')"><span class="nav-icon">🏦</span>Accounts</a>
+        <div class="nav-section">Finance</div>
+        <a class="nav-item" onclick="show('budget')"><span class="nav-icon">💰</span>Budget</a>
+        <a class="nav-item" onclick="show('recurring')"><span class="nav-icon">🔄</span>Recurring</a>
+        <a class="nav-item active"><span class="nav-icon">🤝</span>Loans</a>
+        <a class="nav-item" onclick="show('networth')"><span class="nav-icon">📈</span>Net Worth</a>
+      </nav>
+      <div class="sidebar-bottom"><div class="plan-badge"><div class="plan-name">Pro Trial</div><div class="plan-sub">12 days remaining</div><button class="btn-upgrade">Upgrade ₹99/mo</button></div></div>
+    </div>
+    <div class="main-content">
+      <div class="topbar">
+        <div><button class="btn-outline" onclick="show('loans-formal')" style="margin-right:12px;font-size:12px">← Back</button><div class="topbar-title">Car Loan — Amortization Schedule</div></div>
+        <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+          <button class="btn-outline">⬇ Export</button>
+          <button class="btn-new">Pay EMI →</button>
+          <div class="avatar">AK</div>
+        </div>
+      </div>
+      <div class="page-body">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
+          <div class="kpi-card red"><div class="kpi-label">Outstanding</div><div class="kpi-val" style="font-size:18px">₹4,23,600</div></div>
+          <div class="kpi-card green"><div class="kpi-label">Principal Paid</div><div class="kpi-val" style="font-size:18px">₹2,76,400</div></div>
+          <div class="kpi-card amber"><div class="kpi-label">Interest Paid</div><div class="kpi-val" style="font-size:18px">₹56,820</div></div>
+          <div class="kpi-card blue"><div class="kpi-label">Total Interest</div><div class="kpi-val" style="font-size:18px">₹1,63,100</div></div>
+        </div>
+        <div class="card" style="padding:0;overflow:hidden">
+          <div style="padding:14px 16px;border-bottom:1px solid var(--border)"><div class="card-title">Full Amortization Schedule</div><div class="card-sub">60 EMIs · ₹14,385/month · 8.5% p.a.</div></div>
+          <div style="overflow-x:auto">
+            <table class="amort-table" style="width:100%">
+              <thead><tr><th>#</th><th>Due Date</th><th>EMI</th><th>Principal</th><th>Interest</th><th>Opening Bal</th><th>Closing Bal</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr class="amort-table"><td class="paid-row">1</td><td class="paid-row">01 May 2024</td><td class="paid-row">₹14,385</td><td class="principal">₹9,427</td><td class="interest">₹4,958</td><td class="paid-row">₹7,00,000</td><td class="paid-row">₹6,90,573</td><td><span class="status-badge settled" style="font-size:10px">Paid</span></td></tr>
+                <tr><td class="paid-row">2</td><td class="paid-row">01 Jun 2024</td><td class="paid-row">₹14,385</td><td class="principal">₹9,494</td><td class="interest">₹4,891</td><td class="paid-row">₹6,90,573</td><td class="paid-row">₹6,81,079</td><td><span class="status-badge settled" style="font-size:10px">Paid</span></td></tr>
+                <tr><td class="paid-row">3</td><td class="paid-row">01 Jul 2024</td><td class="paid-row">₹14,385</td><td class="principal">₹9,561</td><td class="interest">₹4,824</td><td class="paid-row">₹6,81,079</td><td class="paid-row">₹6,71,518</td><td><span class="status-badge settled" style="font-size:10px">Paid</span></td></tr>
+                <tr style="background:var(--accent-glow)"><td style="color:var(--accent);font-weight:700">23</td><td style="color:var(--accent)">01 Apr 2026</td><td>₹14,385</td><td class="principal">₹10,882</td><td class="interest">₹3,503</td><td>₹4,34,482</td><td>₹4,23,600</td><td><span class="status-badge active" style="font-size:10px">Due</span></td></tr>
+                <tr><td>24</td><td>01 May 2026</td><td>₹14,385</td><td class="principal">₹10,958</td><td class="interest">₹3,427</td><td>₹4,23,600</td><td>₹4,12,642</td><td><span style="font-size:10px;color:var(--text3)">Upcoming</span></td></tr>
+                <tr><td>25</td><td>01 Jun 2026</td><td>₹14,385</td><td class="principal">₹11,035</td><td class="interest">₹3,350</td><td>₹4,12,642</td><td>₹4,01,607</td><td><span style="font-size:10px;color:var(--text3)">Upcoming</span></td></tr>
+                <tr><td>60</td><td>01 Mar 2029</td><td>₹14,385</td><td class="principal">₹14,284</td><td class="interest">₹101</td><td>₹14,284</td><td>₹0</td><td><span style="font-size:10px;color:var(--text3)">Upcoming</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ NET WORTH ═══════════════════════════════════════ -->
+<div class="screen" id="screen-networth">
+  <div class="app-layout">
+    <div class="sidebar">
+      <div class="sidebar-logo"><div class="logo-wrap"><div class="logo-box">ai</div><div><div class="logo-text">aiexpenser</div></div></div></div>
+      <nav class="sidebar-nav">
+        <a class="nav-item" onclick="show('dashboard')"><span class="nav-icon">📊</span>Dashboard</a>
+        <a class="nav-item" onclick="show('transactions')"><span class="nav-icon">↔️</span>Transactions</a>
+        <a class="nav-item" onclick="show('accounts')"><span class="nav-icon">🏦</span>Accounts</a>
+        <div class="nav-section">Finance</div>
+        <a class="nav-item" onclick="show('budget')"><span class="nav-icon">💰</span>Budget</a>
+        <a class="nav-item" onclick="show('recurring')"><span class="nav-icon">🔄</span>Recurring</a>
+        <a class="nav-item" onclick="show('loans-personal')"><span class="nav-icon">🤝</span>Loans</a>
+        <a class="nav-item active"><span class="nav-icon">📈</span>Net Worth</a>
+        <div class="nav-section">Insights</div>
+        <a class="nav-item" onclick="show('reports')"><span class="nav-icon">📋</span>Reports</a>
+        <a class="nav-item" onclick="show('settings')"><span class="nav-icon">⚙️</span>Settings</a>
+      </nav>
+      <div class="sidebar-bottom"><div class="plan-badge"><div class="plan-name">Pro Trial</div><div class="plan-sub">12 days remaining</div><button class="btn-upgrade">Upgrade ₹99/mo</button></div></div>
+    </div>
+    <div class="main-content">
+      <div class="topbar">
+        <div><div class="topbar-title">Net Worth</div><div class="topbar-sub">Total Assets − Total Liabilities</div></div>
+        <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+          <button class="btn-new">+ Add Asset</button>
+          <div class="avatar">AK</div>
+        </div>
+      </div>
+      <div class="page-body">
+        <div class="nw-hero">
+          <div class="nw-label">Net Worth — April 2026</div>
+          <div class="nw-val negative">−₹9,46,680</div>
+          <div class="nw-change" style="color:var(--red)">↑ Liabilities exceed assets · Growing loans</div>
+          <div style="margin-top:16px;display:flex;justify-content:center;gap:32px;font-size:13px"><div style="text-align:center"><div style="color:var(--green);font-family:var(--mono);font-weight:700;font-size:18px">₹1,73,320</div><div style="color:var(--text2)">Total Assets</div></div><div style="text-align:center;font-size:20px;color:var(--text3);display:flex;align-items:center">−</div><div style="text-align:center"><div style="color:var(--red);font-family:var(--mono);font-weight:700;font-size:18px">₹12,20,000</div><div style="color:var(--text2)">Total Liabilities</div></div></div>
+        </div>
+        <div class="nw-grid">
+          <div class="card">
+            <div class="card-header"><div class="card-title" style="color:var(--green)">📈 Assets</div><button class="btn-outline" style="font-size:11px">+ Add Asset</button></div>
+            <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;margin-bottom:10px">Liquid</div>
+            <div class="asset-list">
+              <div class="asset-row"><div><div class="asset-name">HDFC Savings</div><div class="asset-type">Bank Account</div></div><div class="asset-val" style="color:var(--accent)">₹13,600</div></div>
+              <div class="asset-row"><div><div class="asset-name">Cash in Hand</div><div class="asset-type">Cash</div></div><div class="asset-val" style="color:var(--accent)">₹3,200</div></div>
+            </div>
+            <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;margin:12px 0 10px">Investments</div>
+            <div class="asset-list">
+              <div class="asset-row"><div><div class="asset-name">Mirae Asset ELSS</div><div class="asset-type">Mutual Fund</div></div><div class="asset-val" style="color:var(--green)">₹45,000</div></div>
+              <div class="asset-row"><div><div class="asset-name">Zerodha — Stocks</div><div class="asset-type">Equity</div></div><div class="asset-val" style="color:var(--green)">₹28,000</div></div>
+              <div class="asset-row"><div><div class="asset-name">SBI FD</div><div class="asset-type">Fixed Deposit</div></div><div class="asset-val" style="color:var(--green)">₹80,000</div></div>
+            </div>
+            <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;margin:12px 0 10px">Receivables</div>
+            <div class="asset-list">
+              <div class="asset-row"><div><div class="asset-name">Personal Debts — Lent</div><div class="asset-type">Outstanding</div></div><div class="asset-val" style="color:var(--amber)">₹12,000</div></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title" style="color:var(--red)">📉 Liabilities</div></div>
+            <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;margin-bottom:10px">Formal Loans</div>
+            <div class="asset-list">
+              <div class="asset-row"><div><div class="asset-name">Car Loan — HDFC</div><div class="asset-type">8.5% · 37 EMIs left</div></div><div class="asset-val" style="color:var(--red)">₹4,23,600</div></div>
+              <div class="asset-row"><div><div class="asset-name">Personal Loan — SBI</div><div class="asset-type">13% · 9 EMIs left</div></div><div class="asset-val" style="color:var(--red)">₹3,37,500</div></div>
+            </div>
+            <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;margin:12px 0 10px">Credit Cards</div>
+            <div class="asset-list">
+              <div class="asset-row"><div><div class="asset-name">HDFC Credit Card</div><div class="asset-type">Current cycle due</div></div><div class="asset-val" style="color:var(--red)">₹23,400</div></div>
+            </div>
+            <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;margin:12px 0 10px">Personal Debt</div>
+            <div class="asset-list">
+              <div class="asset-row"><div><div class="asset-name">Borrowed — Family</div><div class="asset-type">No deadline</div></div><div class="asset-val" style="color:var(--amber)">₹5,500</div></div>
+            </div>
+            <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:13px;font-weight:700"><span>Total Liabilities</span><span style="color:var(--red);font-family:var(--mono)">₹12,20,000</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ REPORTS ═══════════════════════════════════════ -->
+<div class="screen" id="screen-reports">
+  <div class="app-layout">
+    <div class="sidebar">
+      <div class="sidebar-logo"><div class="logo-wrap"><div class="logo-box">ai</div><div><div class="logo-text">aiexpenser</div></div></div></div>
+      <nav class="sidebar-nav">
+        <a class="nav-item" onclick="show('dashboard')"><span class="nav-icon">📊</span>Dashboard</a>
+        <a class="nav-item" onclick="show('transactions')"><span class="nav-icon">↔️</span>Transactions</a>
+        <a class="nav-item" onclick="show('accounts')"><span class="nav-icon">🏦</span>Accounts</a>
+        <div class="nav-section">Finance</div>
+        <a class="nav-item" onclick="show('budget')"><span class="nav-icon">💰</span>Budget</a>
+        <a class="nav-item" onclick="show('recurring')"><span class="nav-icon">🔄</span>Recurring</a>
+        <a class="nav-item" onclick="show('loans-personal')"><span class="nav-icon">🤝</span>Loans</a>
+        <a class="nav-item" onclick="show('networth')"><span class="nav-icon">📈</span>Net Worth</a>
+        <div class="nav-section">Insights</div>
+        <a class="nav-item active"><span class="nav-icon">📋</span>Reports</a>
+        <a class="nav-item" onclick="show('settings')"><span class="nav-icon">⚙️</span>Settings</a>
+      </nav>
+      <div class="sidebar-bottom"><div class="plan-badge"><div class="plan-name">Pro Trial</div><div class="plan-sub">12 days remaining</div><button class="btn-upgrade">Upgrade ₹99/mo</button></div></div>
+    </div>
+    <div class="main-content">
+      <div class="topbar">
+        <div><div class="topbar-title">Reports & Analytics</div></div>
+        <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+          <button class="btn-outline">📅 FY 2025–26</button>
+          <button class="btn-outline">⬇ Export</button>
+          <div class="avatar">AK</div>
+        </div>
+      </div>
+      <div class="page-body">
+        <div class="report-tabs">
+          <div class="report-tab active">Overview</div>
+          <div class="report-tab">Income</div>
+          <div class="report-tab">Expense</div>
+          <div class="report-tab">Savings</div>
+          <div class="report-tab">Cash Flow</div>
+        </div>
+        <div class="insight-cards">
+          <div class="insight-card"><div class="insight-label">Total Income</div><div class="insight-val" style="color:var(--green)">₹5,82,000</div><div class="insight-sub">↑ +15% vs last FY</div></div>
+          <div class="insight-card"><div class="insight-label">Total Expenses</div><div class="insight-val" style="color:var(--red)">₹3,14,200</div><div class="insight-sub">↑ +8% vs last FY</div></div>
+          <div class="insight-card"><div class="insight-label">Net Savings</div><div class="insight-val" style="color:var(--accent)">₹2,67,800</div><div class="insight-sub">46% savings rate</div></div>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header"><div class="card-title">Monthly Trend</div></div>
+            <div class="chart-area" style="height:160px">
+              <div style="display:flex;align-items:flex-end;gap:6px;width:100%;height:100%">
+                <div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1"><div class="bar income" style="height:55%;width:100%"></div><div class="bar expense" style="height:42%;width:100%"></div></div>
+                <div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1"><div class="bar income" style="height:62%;width:100%"></div><div class="bar expense" style="height:38%;width:100%"></div></div>
+                <div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1"><div class="bar income" style="height:58%;width:100%"></div><div class="bar expense" style="height:45%;width:100%"></div></div>
+                <div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1"><div class="bar income" style="height:70%;width:100%"></div><div class="bar expense" style="height:50%;width:100%"></div></div>
+                <div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1"><div class="bar income" style="height:65%;width:100%"></div><div class="bar expense" style="height:48%;width:100%"></div></div>
+                <div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1"><div class="bar income" style="height:75%;width:100%"></div><div class="bar expense" style="height:52%;width:100%"></div></div>
+              </div>
+            </div>
+            <div style="display:flex;justify-content:space-around;font-size:10px;color:var(--text3);margin-top:4px"><span>Nov</span><span>Dec</span><span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Top Spending Categories</div></div>
+            <div class="top-cats">
+              <div class="top-cat-row"><span class="top-cat-rank">01</span><div style="flex:1"><div class="top-cat-name">🍕 Food</div><div class="top-cat-bar" style="width:85%"></div></div><span class="top-cat-amt" style="color:var(--red)">₹78,200</span></div>
+              <div class="top-cat-row"><span class="top-cat-rank">02</span><div style="flex:1"><div class="top-cat-name">🏠 Rent</div><div class="top-cat-bar" style="width:72%;background:var(--amber)"></div></div><span class="top-cat-amt" style="color:var(--amber)">₹1,44,000</span></div>
+              <div class="top-cat-row"><span class="top-cat-rank">03</span><div style="flex:1"><div class="top-cat-name">🚗 Transport</div><div class="top-cat-bar" style="width:45%;background:var(--purple)"></div></div><span class="top-cat-amt" style="color:var(--purple)">₹32,400</span></div>
+              <div class="top-cat-row"><span class="top-cat-rank">04</span><div style="flex:1"><div class="top-cat-name">🛒 Shopping</div><div class="top-cat-bar" style="width:38%;background:var(--green)"></div></div><span class="top-cat-amt" style="color:var(--green)">₹28,600</span></div>
+              <div class="top-cat-row"><span class="top-cat-rank">05</span><div style="flex:1"><div class="top-cat-name">⚡ Bills</div><div class="top-cat-bar" style="width:25%;background:var(--teal)"></div></div><span class="top-cat-amt" style="color:var(--teal)">₹18,400</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ SETTINGS ═══════════════════════════════════════ -->
+<div class="screen" id="screen-settings">
+  <div class="app-layout">
+    <div class="sidebar">
+      <div class="sidebar-logo"><div class="logo-wrap"><div class="logo-box">ai</div><div><div class="logo-text">aiexpenser</div></div></div></div>
+      <nav class="sidebar-nav">
+        <a class="nav-item" onclick="show('dashboard')"><span class="nav-icon">📊</span>Dashboard</a>
+        <a class="nav-item" onclick="show('transactions')"><span class="nav-icon">↔️</span>Transactions</a>
+        <a class="nav-item" onclick="show('accounts')"><span class="nav-icon">🏦</span>Accounts</a>
+        <div class="nav-section">Finance</div>
+        <a class="nav-item" onclick="show('budget')"><span class="nav-icon">💰</span>Budget</a>
+        <a class="nav-item" onclick="show('recurring')"><span class="nav-icon">🔄</span>Recurring</a>
+        <a class="nav-item" onclick="show('loans-personal')"><span class="nav-icon">🤝</span>Loans</a>
+        <a class="nav-item" onclick="show('networth')"><span class="nav-icon">📈</span>Net Worth</a>
+        <div class="nav-section">Insights</div>
+        <a class="nav-item" onclick="show('reports')"><span class="nav-icon">📋</span>Reports</a>
+        <a class="nav-item active"><span class="nav-icon">⚙️</span>Settings</a>
+      </nav>
+      <div class="sidebar-bottom"><div class="plan-badge"><div class="plan-name">Pro Trial</div><div class="plan-sub">12 days remaining</div><button class="btn-upgrade">Upgrade ₹99/mo</button></div></div>
+    </div>
+    <div class="main-content">
+      <div class="topbar">
+        <div><div class="topbar-title">Settings</div><div class="topbar-sub">Configuration · Identity · Preferences</div></div>
+        <div style="margin-left:auto;display:flex;gap:8px;align-items:center"><div style="width:8px;height:8px;border-radius:50%;background:var(--green)"></div><span style="font-size:11px;color:var(--text2)">System Operational</span><div class="avatar">AK</div></div>
+      </div>
+      <div class="page-body">
+        <div class="settings-layout">
+          <div>
+            <div class="settings-card">
+              <div class="settings-section-title"><div class="icon">👤</div>User Identity</div>
+              <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">
+                <div style="width:56px;height:56px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff;position:relative"><span>AK</span><div style="position:absolute;bottom:0;right:0;width:18px;height:18px;background:var(--bg3);border-radius:50%;border:2px solid var(--bg2);display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer">✏️</div></div>
+                <div><div style="font-size:15px;font-weight:600">Aijaz Khan</div><div style="font-size:12px;color:var(--text2)">aijaz@example.com</div><div style="display:flex;gap:6px;margin-top:6px"><span style="font-size:10px;padding:2px 8px;background:var(--green-bg);color:var(--green);border-radius:4px;font-weight:600">Level 4 Encryption</span><span style="font-size:10px;padding:2px 8px;background:var(--accent-glow);color:var(--accent);border-radius:4px;font-weight:600">Active Session</span></div></div>
+              </div>
+              <button class="btn-outline" style="width:100%;justify-content:center">🔒 Change Password</button>
+            </div>
+            <div class="settings-card">
+              <div class="settings-section-title"><div class="icon">🎨</div>Appearance</div>
+              <div class="settings-row"><div><div class="settings-key">Theme</div></div><div class="theme-opts"><div class="theme-opt active">🌙 Dark</div><div class="theme-opt">☀️ Light</div><div class="theme-opt">💻 System</div></div></div>
+              <div class="settings-row"><div><div class="settings-key">Accent Color</div></div><div class="accent-opts"><div class="accent-opt active" style="background:#5B8DEF"></div><div class="accent-opt" style="background:#2DD4A0"></div><div class="accent-opt" style="background:#F5A623"></div><div class="accent-opt" style="background:#A78BFA"></div><div class="accent-opt" style="background:#FF6B6B"></div></div></div>
+              <div class="settings-row"><div><div class="settings-key">Language</div></div><select class="filter-input" style="width:auto"><option>English</option><option>हिंदी</option></select></div>
+            </div>
+            <div class="settings-card">
+              <div class="settings-section-title"><div class="icon">🌐</div>Regional Specs</div>
+              <div class="settings-row"><div><div class="settings-key">Base Currency</div><div class="settings-val">Used across all calculations</div></div><select class="filter-input" style="width:auto"><option>₹ INR — Indian Rupee</option></select></div>
+              <div class="settings-row"><div><div class="settings-key">Date Format</div></div><select class="filter-input" style="width:auto"><option>DD/MM/YYYY</option><option>MM/DD/YYYY</option><option>YYYY/MM/DD</option></select></div>
+              <div class="settings-row"><div><div class="settings-key">Decimal Places</div></div><div style="display:flex;gap:4px">
+                <div style="width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border2);background:var(--bg4)">0</div>
+                <div style="width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border2);background:var(--bg4)">1</div>
+                <div style="width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;cursor:pointer;border:1px solid var(--accent);background:var(--accent-glow);color:var(--accent)">2</div>
+                <div style="width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border2);background:var(--bg4)">3</div>
+                <div style="width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border2);background:var(--bg4)">4</div>
+              </div></div>
+              <div class="settings-row"><div><div class="settings-key">Fiscal Year</div></div><select class="filter-input" style="width:auto"><option>April – March (India)</option><option>January – December</option></select></div>
+              <div style="margin-top:12px"><button class="btn-primary">Save Preferences</button></div>
+            </div>
+          </div>
+          <div>
+            <div class="settings-card">
+              <div class="settings-section-title"><div class="icon">🏷️</div>Categories</div>
+              <div class="cat-row"><div class="cat-icon-wrap" style="background:var(--amber-bg)">⭐</div><div style="flex:1"><div style="font-size:12px;font-weight:600">Opening Balance</div><div style="font-size:10px;color:var(--text3)">INCOME</div></div><div style="display:flex;gap:6px"><button class="icon-btn" style="width:26px;height:26px;font-size:11px">✏️</button><button class="icon-btn" style="width:26px;height:26px;font-size:11px">🗑</button></div></div>
+              <div class="cat-row"><div class="cat-icon-wrap" style="background:var(--green-bg)">💼</div><div style="flex:1"><div style="font-size:12px;font-weight:600">Work / Salary</div><div style="font-size:10px;color:var(--text3)">INCOME</div></div><div style="display:flex;gap:6px"><button class="icon-btn" style="width:26px;height:26px;font-size:11px">✏️</button><button class="icon-btn" style="width:26px;height:26px;font-size:11px">🗑</button></div></div>
+              <div class="cat-row"><div class="cat-icon-wrap" style="background:var(--red-bg)">🍕</div><div style="flex:1"><div style="font-size:12px;font-weight:600">Food</div><div style="font-size:10px;color:var(--text3)">EXPENSE</div></div><div style="display:flex;gap:6px"><button class="icon-btn" style="width:26px;height:26px;font-size:11px">✏️</button><button class="icon-btn" style="width:26px;height:26px;font-size:11px">🗑</button></div></div>
+              <div class="cat-row"><div class="cat-icon-wrap" style="background:var(--accent-glow)">🚗</div><div style="flex:1"><div style="font-size:12px;font-weight:600">Transport</div><div style="font-size:10px;color:var(--text3)">EXPENSE</div></div><div style="display:flex;gap:6px"><button class="icon-btn" style="width:26px;height:26px;font-size:11px">✏️</button><button class="icon-btn" style="width:26px;height:26px;font-size:11px">🗑</button></div></div>
+              <button class="btn-outline" style="width:100%;justify-content:center;margin-top:8px">+ New Category</button>
+            </div>
+            <div class="settings-card">
+              <div class="settings-section-title"><div class="icon">👥</div>Counterparties</div>
+              <div class="cat-row"><div class="party-avatar" style="background:#5B8DEF;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;margin-right:10px">R</div><div style="flex:1"><div style="font-size:12px;font-weight:600">Rahul Bhai</div><div style="font-size:10px;color:var(--text3)">FAMILY</div></div><div style="display:flex;gap:6px"><button class="icon-btn" style="width:26px;height:26px;font-size:11px">✏️</button><button class="icon-btn" style="width:26px;height:26px;font-size:11px">🗑</button></div></div>
+              <div class="cat-row"><div class="party-avatar" style="background:#2DD4A0;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;margin-right:10px">A</div><div style="flex:1"><div style="font-size:12px;font-weight:600">Amit Friend</div><div style="font-size:10px;color:var(--text3)">FRIEND</div></div><div style="display:flex;gap:6px"><button class="icon-btn" style="width:26px;height:26px;font-size:11px">✏️</button><button class="icon-btn" style="width:26px;height:26px;font-size:11px">🗑</button></div></div>
+              <button class="btn-outline" style="width:100%;justify-content:center;margin-top:8px">+ Add Counterparty</button>
+            </div>
+            <div class="settings-card">
+              <div class="settings-section-title"><div class="icon">⬇️</div>Data Export</div>
+              <div style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.6">Download a complete snapshot of your financial data. CSV works in Excel & Google Sheets.</div>
+              <div class="export-btns">
+                <div class="export-btn"><div class="export-btn-icon">📊</div><div class="export-btn-label">Export CSV</div><div class="export-btn-sub">Spreadsheet format</div></div>
+                <div class="export-btn"><div class="export-btn-icon">{}</div><div class="export-btn-label">Export JSON</div><div class="export-btn-sub">Complete data dump</div></div>
+              </div>
+            </div>
+            <div class="settings-card">
+              <div class="settings-section-title"><div class="icon">📊</div>System Metrics</div>
+              <div style="font-size:11px;color:var(--text3);margin-bottom:6px">STORAGE USAGE <span style="float:right;color:var(--accent)">1%</span></div>
+              <div style="height:4px;background:var(--bg4);border-radius:2px;margin-bottom:14px;overflow:hidden"><div style="width:1%;height:100%;background:var(--accent);border-radius:2px"></div></div>
+              <div class="metrics-grid">
+                <div class="metric-box"><div class="metric-val" style="color:var(--accent)">47</div><div class="metric-label">Transactions</div></div>
+                <div class="metric-box"><div class="metric-val" style="color:var(--green)">2</div><div class="metric-label">Accounts</div></div>
+                <div class="metric-box"><div class="metric-val" style="color:var(--amber)">8</div><div class="metric-label">Categories</div></div>
+                <div class="metric-box"><div class="metric-val" style="color:var(--purple)">3</div><div class="metric-label">Parties</div></div>
+              </div>
+            </div>
+            <div class="danger-zone">
+              <div class="danger-title">⚠️ Protocol Override</div>
+              <div class="danger-desc">Executing a hard reset will permanently purge all ledger entries, taxonomies, accounts, and counterparty metadata. This action is <b>irreversible</b>. Password verification required.</div>
+              <button class="btn-danger" onclick="show('modal-delete')">Reset All Data Modules</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ MODAL: TRANSACTION ═══════════════════════════════════════ -->
+<div class="screen" id="screen-modal-txn">
+  <div class="app-layout">
+    <div class="sidebar">
+      <div class="sidebar-logo"><div class="logo-wrap"><div class="logo-box">ai</div><div><div class="logo-text">aiexpenser</div></div></div></div>
+      <nav class="sidebar-nav"><a class="nav-item active"><span class="nav-icon">📊</span>Dashboard</a></nav>
+    </div>
+    <div class="main-content" style="position:relative">
+      <div style="position:absolute;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:10">
+        <div class="modal">
+          <div class="modal-close">✕</div>
+          <div class="modal-title">Smart Transaction</div>
+          <div class="modal-sub">Input data precisely to update ledgers.</div>
+          <div class="modal-tabs">
+            <div class="modal-tab expense active">💸 Expense</div>
+            <div class="modal-tab income">💵 Income</div>
+            <div class="modal-tab transfer">⇄ Transfer</div>
+            <div class="modal-tab debt">🤝 Debt</div>
+          </div>
+          <div class="amount-wrap"><span class="currency-sym">₹</span><input class="amount-input" placeholder="0.00"></div>
+          <div class="modal-grid">
+            <div class="form-group"><label class="form-label">Process Date</label><input class="form-input" value="07 Apr 2026"></div>
+            <div class="form-group"><label class="form-label">Status</label><select class="form-input"><option>Cleared</option><option>Pending</option></select></div>
+            <div class="form-group"><label class="form-label">Source Account <span class="acc-bal-hint">Bal: ₹13,600</span></label><div class="acc-chip">🏛️ hdfcc <span class="star">★</span></div></div>
+            <div class="form-group"><label class="form-label">Classification <a href="#" class="form-link" style="float:right">+ New</a></label><select class="form-input"><option>Select category…</option><option>🍕 Food</option><option>🚗 Transport</option><option>🛒 Shopping</option></select></div>
+          </div>
+          <div class="form-group"><label class="form-label">Internal Reference</label><textarea class="form-input" rows="3" placeholder="Describe the purpose of this transaction…" style="resize:none"></textarea></div>
+          <div class="form-group"><label class="form-label">Tags (optional)</label><input class="form-input" placeholder="e.g. groceries, weekend, work-expense"></div>
+          <div class="modal-actions"><button class="btn-cancel">Cancel</button><button class="btn-save">Save Transaction</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ MODAL: ACCOUNT ═══════════════════════════════════════ -->
+<div class="screen" id="screen-modal-account">
+  <div class="app-layout">
+    <div class="sidebar"><div class="sidebar-logo"><div class="logo-wrap"><div class="logo-box">ai</div><div><div class="logo-text">aiexpenser</div></div></div></div><nav class="sidebar-nav"><a class="nav-item active"><span class="nav-icon">🏦</span>Accounts</a></nav></div>
+    <div class="main-content" style="position:relative">
+      <div style="position:absolute;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:10">
+        <div class="modal modal-sm">
+          <div class="modal-close">✕</div>
+          <div class="modal-title">Initialize Account</div>
+          <div class="modal-sub">Add a new financial hub to your ecosystem.</div>
+          <div class="modal-grid">
+            <div class="form-group"><label class="form-label">Account Type</label><select class="form-input"><option>Bank Account</option><option>Credit Card</option><option>Investment</option><option>E-Wallet</option></select></div>
+            <div class="form-group"><label class="form-label">Account Name</label><input class="form-input" placeholder="e.g. HDFC Savings"></div>
+            <div class="form-group"><label class="form-label">Account Number *</label><input class="form-input" placeholder="Last 4 digits"></div>
+            <div class="form-group"><label class="form-label">Opening Balance</label><input class="form-input" placeholder="₹ 0"></div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);padding:12px;display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><div style="display:flex;align-items:center;gap:8px"><span>⭐</span><div><div style="font-size:13px;font-weight:600">Set as Default</div><div style="font-size:11px;color:var(--text2)">Auto-selected in new transaction popup</div></div></div><div class="toggle on"></div></div>
+          <div class="modal-actions"><button class="btn-cancel">Cancel</button><button class="btn-save">Initialize Account</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ MODAL: FORMAL LOAN ═══════════════════════════════════════ -->
+<div class="screen" id="screen-modal-loan">
+  <div class="app-layout">
+    <div class="sidebar"><div class="sidebar-logo"><div class="logo-wrap"><div class="logo-box">ai</div><div><div class="logo-text">aiexpenser</div></div></div></div><nav class="sidebar-nav"><a class="nav-item active"><span class="nav-icon">🤝</span>Loans</a></nav></div>
+    <div class="main-content" style="position:relative">
+      <div style="position:absolute;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:10">
+        <div class="modal modal-lg">
+          <div class="modal-close">✕</div>
+          <div class="modal-title">Add Formal Loan</div>
+          <div class="modal-sub">Bank/NBFC loan with amortization tracking.</div>
+          <div class="modal-grid">
+            <div class="form-group"><label class="form-label">Loan Type</label><select class="form-input"><option>Car Loan</option><option>Home Loan</option><option>Personal Loan</option><option>Education Loan</option><option>Other</option></select></div>
+            <div class="form-group"><label class="form-label">Lender Name</label><input class="form-input" placeholder="e.g. HDFC Bank, SBI"></div>
+            <div class="form-group"><label class="form-label">Principal Amount</label><input class="form-input" placeholder="₹ 7,00,000"></div>
+            <div class="form-group"><label class="form-label">Interest Rate (% p.a.)</label><input class="form-input" placeholder="e.g. 8.5"></div>
+            <div class="form-group"><label class="form-label">Tenure (months)</label><input class="form-input" placeholder="e.g. 60"></div>
+            <div class="form-group"><label class="form-label">Start Date</label><input class="form-input" value="01 Apr 2024"></div>
+            <div class="form-group"><label class="form-label">Processing Fee (optional)</label><input class="form-input" placeholder="₹ 0"></div>
+            <div class="form-group"><label class="form-label">Disbursement Account</label><select class="form-input"><option>HDFC Savings</option><option>Cash</option></select></div>
+          </div>
+          <div style="background:var(--accent-glow);border:1px solid rgba(91,141,239,0.2);border-radius:var(--r);padding:14px;margin-top:4px">
+            <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;margin-bottom:8px">Calculated EMI</div>
+            <div style="font-size:28px;font-weight:700;font-family:var(--mono);color:var(--accent)">₹14,385 <span style="font-size:13px;color:var(--text2);font-weight:400">/month</span></div>
+            <div style="font-size:11px;color:var(--text2);margin-top:4px">Total payable: ₹8,63,100 · Total interest: ₹1,63,100</div>
+          </div>
+          <div class="modal-actions"><button class="btn-cancel">Cancel</button><button class="btn-save">Add Loan & Generate Schedule</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ MODAL: BUDGET ═══════════════════════════════════════ -->
+<div class="screen" id="screen-modal-budget">
+  <div class="app-layout">
+    <div class="sidebar"><div class="sidebar-logo"><div class="logo-wrap"><div class="logo-box">ai</div><div><div class="logo-text">aiexpenser</div></div></div></div><nav class="sidebar-nav"><a class="nav-item active"><span class="nav-icon">💰</span>Budget</a></nav></div>
+    <div class="main-content" style="position:relative">
+      <div style="position:absolute;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;z-index:100">
+        <div class="modal" style="max-width:520px;padding:32px;border-radius:24px;border-color:rgba(255,255,255,0.1);box-shadow:0 24px 48px rgba(0,0,0,0.4)">
+          <div class="modal-close">✕</div>
+          <div style="margin-bottom:28px">
+            <div style="width:48px;height:48px;border-radius:14px;background:var(--accent-glow);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:16px">💰</div>
+            <div class="modal-title" style="font-size:24px">Establish New Budget</div>
+            <div class="modal-sub" style="margin-bottom:0">Input precise parameters to regulate financial outflows.</div>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label" style="color:var(--text3)">Budget Categorization</label>
+            <select class="form-input" style="padding:12px 14px;border-radius:12px;background:var(--bg3)"><option>🍕 Food</option><option>🚗 Transport</option><option>🛒 Shopping</option><option>⚡ Bills</option><option>🏥 Health</option></select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" style="color:var(--text3)">Financial Limit</label>
+            <div style="display:flex;align-items:center;gap:12px;padding:16px;background:var(--bg3);border:1px solid var(--border2);border-radius:16px;margin-bottom:14px">
+              <span style="font-size:28px;font-weight:700;color:var(--text3);font-family:var(--mono)">₹</span>
+              <input class="amount-input" placeholder="0.00" style="font-size:32px">
+            </div>
+          </div>
+
+          <div class="modal-grid">
+            <div class="form-group">
+              <label class="form-label" style="color:var(--text3)">Cycle Period</label>
+              <select class="form-input" style="padding:10px;border-radius:10px;background:var(--bg3)"><option>Monthly</option><option>Weekly</option><option>Yearly</option></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" style="color:var(--text3)">Notification Threshold</label>
+              <div style="display:flex;gap:6px">
+                <div style="flex:1;padding:8px;text-align:center;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;border:1px solid var(--border2);color:var(--text2)">50%</div>
+                <div style="flex:1;padding:8px;text-align:center;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;border:1px solid var(--accent);background:var(--accent-glow);color:var(--accent)">80%</div>
+                <div style="flex:1;padding:8px;text-align:center;border-radius:8px;cursor:pointer;font-size:11px;font-weight:700;border:1px solid var(--border2);color:var(--text2)">95%</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:14px;padding:14px;display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+            <div style="display:flex;align-items:center;gap:12px">
+              <span style="font-size:18px">🔄</span>
+              <div>
+                <div style="font-size:12px;font-weight:700">Rollover Balance</div>
+                <div style="font-size:10px;color:var(--text3)">Carry unused funds to next cycle</div>
+              </div>
+            </div>
+            <div class="toggle off"></div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" style="color:var(--text3)">Internal Notes / Reference</label>
+            <textarea class="form-input" rows="2" placeholder="Operational context for this budget limit..." style="padding:12px;border-radius:12px;background:var(--bg3);resize:none"></textarea>
+          </div>
+
+          <div class="modal-actions" style="margin-top:28px">
+            <button class="btn-cancel" style="flex:1;padding:14px;border-radius:16px">Cancel</button>
+            <button class="btn-save" style="flex:2;padding:14px;border-radius:16px;background:var(--accent);font-weight:700">Establish Protocol →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ MODAL: RECURRING ═══════════════════════════════════════ -->
+<div class="screen" id="screen-modal-recurring">
+  <div class="app-layout">
+    <div class="sidebar"><div class="sidebar-logo"><div class="logo-wrap"><div class="logo-box">ai</div><div><div class="logo-text">aiexpenser</div></div></div></div><nav class="sidebar-nav"><a class="nav-item active"><span class="nav-icon">🔄</span>Recurring</a></nav></div>
+    <div class="main-content" style="position:relative">
+      <div style="position:absolute;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:10">
+        <div class="modal">
+          <div class="modal-close">✕</div>
+          <div class="modal-title">Add Recurring Transaction</div>
+          <div class="modal-sub">Set it once, track it forever.</div>
+          <div class="modal-tabs">
+            <div class="modal-tab expense active">Expense</div>
+            <div class="modal-tab income">Income</div>
+            <div class="modal-tab transfer">Transfer</div>
+          </div>
+          <div class="modal-grid">
+            <div class="form-group"><label class="form-label">Name</label><input class="form-input" placeholder="e.g. Netflix, SIP, Rent"></div>
+            <div class="form-group"><label class="form-label">Amount</label><input class="form-input" placeholder="₹ 649"></div>
+            <div class="form-group"><label class="form-label">Account</label><select class="form-input"><option>HDFC Savings</option><option>Cash</option></select></div>
+            <div class="form-group"><label class="form-label">Category</label><select class="form-input"><option>🎬 Entertainment</option><option>📈 Investment</option><option>🏠 Rent</option></select></div>
+            <div class="form-group"><label class="form-label">Frequency</label><select class="form-input"><option>Monthly</option><option>Weekly</option><option>Quarterly</option><option>Yearly</option></select></div>
+            <div class="form-group"><label class="form-label">Start Date</label><input class="form-input" value="01 May 2026"></div>
+          </div>
+          <div class="form-group"><label class="form-label">Entry Type</label>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px">
+              <div style="padding:12px;border:1px solid var(--accent);border-radius:var(--r);background:var(--accent-glow);cursor:pointer"><div style="font-size:12px;font-weight:600;color:var(--accent)">🤖 Auto-entry</div><div style="font-size:11px;color:var(--text2);margin-top:3px">App adds entry automatically</div></div>
+              <div style="padding:12px;border:1px solid var(--border2);border-radius:var(--r);cursor:pointer"><div style="font-size:12px;font-weight:600">🔔 Reminder</div><div style="font-size:11px;color:var(--text2);margin-top:3px">App reminds, you confirm</div></div>
+            </div>
+          </div>
+          <div class="modal-actions"><button class="btn-cancel">Cancel</button><button class="btn-save">Save Recurring</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ MODAL: DEBT SETTLEMENT ═══════════════════════════════════════ -->
+<div class="screen" id="screen-modal-debt">
+  <div class="app-layout">
+    <div class="sidebar"><div class="sidebar-logo"><div class="logo-wrap"><div class="logo-box">ai</div><div><div class="logo-text">aiexpenser</div></div></div></div><nav class="sidebar-nav"><a class="nav-item active"><span class="nav-icon">🤝</span>Loans</a></nav></div>
+    <div class="main-content" style="position:relative">
+      <div style="position:absolute;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:10">
+        <div class="modal modal-sm">
+          <div class="modal-close">✕</div>
+          <div class="modal-title">Record Commitment</div>
+          <div class="modal-sub">Track personal lending & borrowing.</div>
+          <div class="modal-tabs">
+            <div class="modal-tab active" style="color:var(--green)">💸 Money Lent</div>
+            <div class="modal-tab">💰 Money Borrowed</div>
+          </div>
+          <div class="form-group"><label class="form-label">Principal Amount</label><input class="form-input" placeholder="₹ 5,000"></div>
+          <div class="form-group"><label class="form-label">Counterparty</label><select class="form-input"><option>Rahul Bhai</option><option>Amit Friend</option><option>+ Add New</option></select></div>
+          <div class="form-group"><label class="form-label">Funding Account</label><select class="form-input"><option>Cash</option><option>HDFC Savings</option></select></div>
+          <div class="form-group"><label class="form-label">Settlement Deadline (optional)</label><input class="form-input" placeholder="Select date…"></div>
+          <div class="form-group"><label class="form-label">Notes</label><input class="form-input" placeholder="e.g. For Eid shopping"></div>
+          <div class="modal-actions"><button class="btn-cancel">Cancel</button><button class="btn-save" style="background:var(--green)">Record Commitment</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ MODAL: DELETE CONFIRM ═══════════════════════════════════════ -->
+<div class="screen" id="screen-modal-delete">
+  <div class="app-layout">
+    <div class="sidebar"><div class="sidebar-logo"><div class="logo-wrap"><div class="logo-box">ai</div><div><div class="logo-text">aiexpenser</div></div></div></div><nav class="sidebar-nav"><a class="nav-item active"><span class="nav-icon">⚙️</span>Settings</a></nav></div>
+    <div class="main-content" style="position:relative">
+      <div style="position:absolute;inset:0;background:rgba(0,0,0,0.75);display:flex;align-items:center;justify-content:center;z-index:10">
+        <div class="modal modal-sm">
+          <div class="modal-title" style="color:var(--red)">⚠️ Critical Action</div>
+          <div style="margin:12px 0 20px;font-size:13px;color:var(--text2);line-height:1.7">This will permanently remove <b style="color:var(--text)">"HDFC Savings"</b> and <b style="color:var(--red)">ALWAYS</b> hide its transactions and ledger history. This action <b>cannot be undone</b>.</div>
+          <div class="form-group"><label class="form-label">Type <span style="font-family:var(--mono);color:var(--red)">"DELETE"</span> to confirm:</label><input class="form-input" placeholder="Type DELETE here…" style="border-color:var(--red-border)"></div>
+          <div class="modal-actions"><button class="btn-cancel">Cancel</button><button class="btn-save" style="background:var(--red)">Confirm Deletion</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ MODAL: PREPAYMENT ═══════════════════════════════════════ -->
+<div class="screen" id="screen-modal-prepay">
+  <div class="app-layout">
+    <div class="sidebar"><div class="sidebar-logo"><div class="logo-wrap"><div class="logo-box">ai</div><div><div class="logo-text">aiexpenser</div></div></div></div><nav class="sidebar-nav"><a class="nav-item active"><span class="nav-icon">🤝</span>Loans</a></nav></div>
+    <div class="main-content" style="position:relative">
+      <div style="position:absolute;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:10">
+        <div class="modal">
+          <div class="modal-close">✕</div>
+          <div class="modal-title">Prepayment Calculator</div>
+          <div class="modal-sub">Car Loan · HDFC Bank · Outstanding ₹4,23,600</div>
+          <div class="form-group"><label class="form-label">Extra Amount to Pay</label><input class="form-input" placeholder="₹ 50,000" value="₹ 50,000"></div>
+          <div style="background:var(--accent-glow);border:1px solid rgba(91,141,239,0.2);border-radius:var(--r);padding:16px;margin:12px 0">
+            <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;margin-bottom:12px">Prepayment Impact</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div style="text-align:center;padding:12px;background:var(--bg3);border-radius:var(--r2)"><div style="font-size:18px;font-weight:700;font-family:var(--mono);color:var(--green)">4</div><div style="font-size:11px;color:var(--text2);margin-top:3px">EMIs saved</div></div>
+              <div style="text-align:center;padding:12px;background:var(--bg3);border-radius:var(--r2)"><div style="font-size:18px;font-weight:700;font-family:var(--mono);color:var(--green)">₹18,240</div><div style="font-size:11px;color:var(--text2);margin-top:3px">Interest saved</div></div>
+              <div style="text-align:center;padding:12px;background:var(--bg3);border-radius:var(--r2)"><div style="font-size:18px;font-weight:700;font-family:var(--mono);color:var(--accent)">₹3,73,600</div><div style="font-size:11px;color:var(--text2);margin-top:3px">New outstanding</div></div>
+              <div style="text-align:center;padding:12px;background:var(--bg3);border-radius:var(--r2)"><div style="font-size:18px;font-weight:700;font-family:var(--mono);color:var(--amber)">33</div><div style="font-size:11px;color:var(--text2);margin-top:3px">EMIs remaining</div></div>
+            </div>
+          </div>
+          <div class="form-group"><label class="form-label">Pay From Account</label><select class="form-input"><option>HDFC Savings (Bal: ₹13,600)</option><option>Cash (Bal: ₹3,200)</option></select></div>
+          <div class="modal-actions"><button class="btn-cancel">Cancel</button><button class="btn-save">Confirm Prepayment</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  const screen = document.getElementById('screen-' + id);
+  if (screen) screen.classList.add('active');
+  const btn = [...document.querySelectorAll('.nav-btn')].find(b => b.getAttribute('onclick') === `show('${id}')`);
+  if (btn) btn.classList.add('active');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+{
+  "common": {
+    "add_expense": "Add Expense",
+    "total_balance": "Total Balance",
+    "dashboard": "Dashboard",
+    "transactions": "Transactions",
+    "accounts": "Accounts",
+    "categories": "Categories",
+    "settings": "Settings",
+    "loans": "Loans",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "search": "Search"
+  },
+  "onboarding": {
+    "welcome": "Welcome to AI Expenser",
+    "preferences": "Setup Preferences",
+    "currency": "Select Currency",
+    "language": "Select Language",
+    "first_account": "Setup First Account",
+    "pro_trial": "Pro Trial Offer",
+    "start_journey": "Start Your Journey"
+  }
+}

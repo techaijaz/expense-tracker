@@ -45,9 +45,19 @@ export default {
             // Build tree structure
             const tree = buildCategoryTree(categories)
 
+            const grouped = categories.reduce(
+                (acc, cat) => {
+                    acc[cat.type].push(cat)
+                    return acc
+                },
+                { INCOME: [], EXPENSE: [], TRANSFER: [] }
+            )
+
             httpResponse(req, res, 200, 'Categories retrieved successfully', {
-                flat: categories,
-                tree: tree,
+                grouped,
+                // flat: categories,
+                // tree: tree,
+                // grouped: grouped,
             })
         } catch (error) {
             httpError(next, error, req, 500)

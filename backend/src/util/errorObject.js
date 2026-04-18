@@ -17,10 +17,10 @@ export default (error, req, errorStatusCode = 500) => {
         trace: error instanceof Error ? { error: error.stack } : null,
     }
 
-    //Log
-    logger.info('CONTROLLER_RESPONSE', {
-        meta: errorObj,
-    })
+    // Log (Sanitized for BSON/MongoDB constraints)
+    // logger.info('CONTROLLER_RESPONSE', {
+    //     meta: JSON.parse(JSON.stringify(errorObj)),
+    // })
 
     //Production env check
     if (config.ENV === EApplicationEnvionment.PRODUCTION) {

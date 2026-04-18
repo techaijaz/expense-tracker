@@ -53,39 +53,53 @@ const userSchema = new Schema(
             type: Date,
             default: null,
         },
-        subscriptionTier: {
+        plan: {
             type: String,
-            default: 'BASIC',
-            enum: ['BASIC', 'PRO'],
+            default: 'basic',
+            enum: ['basic', 'pro'],
         },
-        preferences: {
-            _id: false,
-            currency: {
-                type: String,
-                default: 'INR',
-                enum: ['INR', 'USD', 'EUR', 'GBP', 'JPY', 'AUD', 'CAD', 'SGD'],
-            },
-            decimalPlaces: {
-                type: Number,
-                default: 2,
-                min: 0,
-                max: 4,
-            },
-            theme: {
-                type: String,
-                default: 'dark',
-                enum: ['dark', 'light', 'system'],
-            },
-            accentColor: {
-                type: String,
-                default: 'lightblue',
-                enum: ['lightblue', 'tomato', 'orange', 'mint', 'brown'],
-            },
+        trialStart: {
+            type: Date,
+            default: null,
+        },
+        trialEnd: {
+            type: Date,
+            default: null,
+        },
+        isTrialUsed: {
+            type: Boolean,
+            default: false,
+        },
+        onboardingDone: {
+            type: Boolean,
+            default: false,
+        },
+        googleId: {
+            type: String,
+            default: null,
         },
     },
     {
         timestamps: true,
     }
 )
+
+userSchema.pre('save', function (next) {
+    this._isNewUser = this.isNew
+    next()
+})
+
+
+userSchema.post('save', async function (doc, next) {
+    try {
+        if (this._isNewUser) {
+            // Logic moved to databaseService.setDefaultData to prevent duplication
+        }
+        next()
+    } catch (error) {
+        console.error('Error in userModel post-save hook:', error)
+        next(error)
+    }
+})
 
 export default mongoose.model('User', userSchema)

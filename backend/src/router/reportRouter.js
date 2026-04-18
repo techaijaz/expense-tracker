@@ -9,5 +9,6 @@ router.route('/categories').get(authentication, reportController.getCategorySpen
 router.route('/trend').get(authentication, reportController.getTrend)
 router.route('/accounts-distribution').get(authentication, reportController.getAccountDistribution)
 router.route('/recent').get(authentication, reportController.getRecentActivity)
+router.route('/export').post(authentication, reportController.exportReport)
 
 export default router

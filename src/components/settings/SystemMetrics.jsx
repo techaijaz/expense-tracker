@@ -1,15 +1,19 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useSelector } from 'react-redux';
-import { toast } from 'sonner';
 import api from '@/utils/httpMethods';
-import { SectionCard, SectionTitle, FieldLabel, PasswordConfirmModal } from '../SharedComponents';
 
 export default function SystemMetrics() {
   const { user } = useSelector(s => s.auth);
   const currentUser = user?.user;
+  
+  // Real-time counts from Redux
+  const { categories } = useSelector(s => s.category);
+  const { accounts } = useSelector(s => s.accounts);
+
+  const catCount = Object.values(categories || {}).reduce((acc, list) => acc + (list?.length || 0), 0);
+  const accCount = accounts?.length || 0;
 
   const [storageStats, setStorageStats] = useState(null);
-  const [showResetModal, setShowResetModal] = useState(false);
 
   const fetchStats = useCallback(async () => {
     try {
@@ -22,82 +26,61 @@ export default function SystemMetrics() {
 
   useEffect(() => {
     fetchStats();
+    window.addEventListener('refetch-system-metrics', fetchStats);
+    return () => window.removeEventListener('refetch-system-metrics', fetchStats);
   }, [fetchStats]);
 
-  const handleHardReset = async (password) => {
-    try {
-      await api.delete('/user/hard-reset', { data: { password } });
-      toast.success('All data has been permanently deleted');
-      setShowResetModal(false);
-      // Wait a moment then refresh the app to reload fresh state
-      setTimeout(() => window.location.reload(), 1000);
-    } catch (err) {
-      toast.error(err?.response?.data?.message || 'Reset failed. Check your password.');
-    }
+  const formatLargeNum = (num) => {
+    if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
+    return num;
   };
 
   return (
-    <>
-      <SectionCard>
-        <SectionTitle icon="storage">System Metrics</SectionTitle>
-        <div className="mb-4.5">
-          <div className="flex justify-between mb-1.5">
-            <FieldLabel>Storage Usage</FieldLabel>
-            <span className="text-[11px] text-primary font-bold">{storageStats?.usagePercent ?? 0}%</span>
-          </div>
-          <div className="h-1.5 bg-secondary-container rounded-full overflow-hidden">
-            <div className="h-full bg-primary rounded-full transition-all duration-1000 ease-in-out" style={{ width: `${storageStats?.usagePercent ?? 0}%` }} />
-          </div>
-          {storageStats && (
-            <div className="grid grid-cols-3 gap-2 mt-3.5">
-              {[
-                { label:'Transactions', val: storageStats.transactions, icon:'receipt' },
-                { label:'Accounts',     val: storageStats.accounts,     icon:'account_balance_wallet' },
-                { label:'Categories',   val: storageStats.categories,   icon:'category' },
-              ].map(({ label, val, icon }) => (
-                <div key={label} className="p-2.5 bg-secondary-container rounded-[10px] text-center border border-secondary-container">
-                  <span className="material-symbols-outlined text-[18px] text-on-surface-variant" style={{ fontVariationSettings: "'FILL' 0" }}>{icon}</span>
-                  <p className="text-base font-extrabold text-on-surface mt-1">{val}</p>
-                  <p className="text-[10px] text-on-surface-variant">{label}</p>
-                </div>
-              ))}
-            </div>
-          )}
+    <div className="settings-card">
+      <div className="settings-section-title"><div className="icon">📊</div>System Metrics</div>
+      
+      {/* Storage Usage Progress */}
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+          <span style={{ fontSize: 12, color: 'var(--text2)' }}>Storage Usage</span>
+          <span style={{ fontSize: 12, fontWeight: 700 }}>{storageStats?.usagePercent ?? 0}%</span>
         </div>
-        <div className="pt-3.5 border-t border-secondary-container">
-          <FieldLabel>Last Synchronized</FieldLabel>
-          <p className="text-xs font-mono text-primary">
-            {currentUser?.lastLoginAt
-              ? new Date(currentUser.lastLoginAt).toISOString().replace('T',' ').substring(0,19) + ' UTC'
-              : 'No sync data'}
-          </p>
+        <div style={{ height: 6, background: 'var(--bg3)', borderRadius: 10, overflow: 'hidden' }}>
+          <div 
+            style={{ 
+              height: '100%', 
+              background: 'var(--accent)', 
+              width: `${storageStats?.usagePercent ?? 0}%`,
+              transition: 'width 1s ease-in-out'
+            }} 
+          />
         </div>
-      </SectionCard>
+      </div>
 
-      <SectionCard danger>
-        <div className="flex items-center gap-2.5 mb-3.5">
-          <span className="material-symbols-outlined text-xl text-error" style={{ fontVariationSettings: "'FILL' 0" }}>warning</span>
-          <h3 className="text-sm font-extrabold text-error uppercase tracking-[0.08em]">Protocol Override</h3>
-        </div>
-        <p className="text-xs text-on-surface-variant mb-4.5 leading-[1.7]">
-          Executing a hard reset will permanently purge all ledger entries, taxonomies, accounts, and counterparty metadata. This action is <strong className="text-error">irreversible</strong>. Password verification required.
-        </p>
-        <button onClick={() => setShowResetModal(true)}
-          className="w-full p-3 bg-error/5 border border-error/30 rounded-[10px] text-error text-[13px] font-bold cursor-pointer transition-all duration-200">
-          Reset All Data Modules
-        </button>
-      </SectionCard>
+      {/* Metrics Grid */}
+      <div className="metrics-grid">
+        {[
+          { label: 'Transactions', val: formatLargeNum(storageStats?.transactions || 0), color: 'var(--accent)', key: 'TXNS' },
+          { label: 'Accounts',     val: accCount,                  color: 'var(--green)',  key: 'ACCOUNTS' },
+          { label: 'Categories',   val: catCount,                  color: 'var(--amber)',  key: 'CATS' },
+          { label: 'Parties',      val: storageStats?.parties || 0, color: 'var(--purple)', key: 'PARTIES' },
+        ].map(m => (
+          <div key={m.key} className="metric-box">
+            <div className="metric-val" style={{ color: m.color }}>{m.val}</div>
+            <div className="metric-label">{m.key}</div>
+          </div>
+        ))}
+      </div>
 
-      {showResetModal && (
-        <PasswordConfirmModal
-          title="Confirm Hard Reset"
-          description="This will permanently delete ALL your transactions, accounts, categories, and parties. Enter your password to confirm."
-          confirmLabel="Delete All My Data"
-          danger
-          onConfirm={handleHardReset}
-          onCancel={() => setShowResetModal(false)}
-        />
-      )}
-    </>
+      {/* Sync Status */}
+      <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
+        <div style={{ fontSize: 11, color: 'var(--text2)', marginBottom: 4 }}>Last Synchronized</div>
+        <div style={{ fontSize: 11, fontFamily: 'var(--mono)', color: 'var(--accent)', fontWeight: 600 }}>
+          {currentUser?.lastLoginAt
+            ? new Date(currentUser.lastLoginAt).toISOString().replace('T',' ').substring(0,19) + ' UTC'
+            : 'No sync data available'}
+        </div>
+      </div>
+    </div>
   );
 }

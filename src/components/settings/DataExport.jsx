@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import api from '@/utils/httpMethods';
-import { SectionCard, SectionTitle } from '../SharedComponents';
 
 export default function DataExport() {
   const [exportingCsv, setExportingCsv] = useState(false);
@@ -20,7 +19,7 @@ export default function DataExport() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `expense_tracker_export_${dateStr}.${format}`;
+      a.download = `ledger_export_${dateStr}.${format}`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -34,29 +33,31 @@ export default function DataExport() {
   };
 
   return (
-    <SectionCard>
-      <SectionTitle icon="download">Data Export</SectionTitle>
-      <p className="text-[13px] text-on-surface-variant mb-5 leading-[1.7]">
-        Download a complete snapshot of your financial data. CSV works in Excel and Google Sheets. JSON provides a full structured dump.
+    <div className="settings-card">
+      <div className="settings-section-title"><div className="icon">📥</div>Data Export</div>
+      <p style={{ fontSize: 12, color: 'var(--text2)', marginBottom: 16, lineHeight: 1.6 }}>
+        Download a complete snapshot of your financial ledger. All exports are encrypted using your session token.
       </p>
-      <div className="grid grid-cols-2 gap-3">
-        <button onClick={() => handleExport('csv')} disabled={exportingCsv}
-          className={`p-3.5 bg-[rgba(168,237,202,0.07)] border border-[rgba(168,237,202,0.2)] rounded-xl flex flex-col items-center gap-2.5 transition-all duration-200 ${exportingCsv ? 'cursor-not-allowed opacity-70' : 'cursor-pointer hover:border-[#a8edca]'}`}>
-          <span className="material-symbols-outlined text-[28px] text-[#a8edca]" style={{ fontVariationSettings: "'FILL' 0" }}>table_chart</span>
-          <div>
-            <p className="text-[13px] font-bold text-[#a8edca] mb-0.5">{exportingCsv ? 'Exporting…' : 'Export CSV'}</p>
-            <p className="text-[11px] text-on-surface-variant">Spreadsheet format</p>
-          </div>
-        </button>
-        <button onClick={() => handleExport('json')} disabled={exportingJson}
-          className={`p-3.5 bg-surface-variant border border-surface-variant rounded-xl flex flex-col items-center gap-2.5 transition-all duration-200 ${exportingJson ? 'cursor-not-allowed opacity-70' : 'cursor-pointer hover:border-primary'}`}>
-          <span className="material-symbols-outlined text-[28px] text-primary" style={{ fontVariationSettings: "'FILL' 0" }}>data_object</span>
-          <div>
-            <p className="text-[13px] font-bold text-primary mb-0.5">{exportingJson ? 'Exporting…' : 'Export JSON'}</p>
-            <p className="text-[11px] text-on-surface-variant">Complete data dump</p>
-          </div>
-        </button>
+      
+      <div className="export-btns">
+        <div 
+          className={`export-btn ${exportingCsv ? 'opacity-50 cursor-not-allowed' : ''}`}
+          onClick={() => !exportingCsv && handleExport('csv')}
+        >
+          <div className="export-btn-icon">📊</div>
+          <div className="export-btn-label">{exportingCsv ? 'Exporting...' : 'Export CSV'}</div>
+          <div className="export-btn-sub">Spreadsheet format</div>
+        </div>
+        
+        <div 
+          className={`export-btn ${exportingJson ? 'opacity-50 cursor-not-allowed' : ''}`}
+          onClick={() => !exportingJson && handleExport('json')}
+        >
+          <div className="export-btn-icon">{"{}"}</div>
+          <div className="export-btn-label">{exportingJson ? 'Exporting...' : 'Export JSON'}</div>
+          <div className="export-btn-sub">Complete data dump</div>
+        </div>
       </div>
-    </SectionCard>
+    </div>
   );
 }

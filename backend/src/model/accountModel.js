@@ -18,6 +18,10 @@ const accountSchema = new mongoose.Schema(
             enum: ['BANK', 'CASH', 'CREDIT_CARD', 'INVESTMENT', 'WALLET'],
             required: true,
         },
+        isCash: {
+            type: Boolean,
+            default: false,
+        },
         accountNumber: {
             type: String,
             trim: true,
@@ -31,6 +35,18 @@ const accountSchema = new mongoose.Schema(
         creditLimit: {
             type: Number,
             default: 0,
+        },
+        statementDay: {
+            type: Number,
+            default: null,
+        },
+        dueDay: {
+            type: Number,
+            default: null,
+        },
+        minPaymentPercent: {
+            type: Number,
+            default: 5,
         },
         currency: {
             type: String,

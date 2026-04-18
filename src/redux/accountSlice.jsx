@@ -25,9 +25,9 @@ const accountsSlice = createSlice({
       if (updated.isDefault) {
         state.accounts.forEach(a => { a.isDefault = false; });
       }
-      const index = state.accounts.findIndex(a => a._id === updated._id);
+      const index = state.accounts.findIndex(a => (a._id || a.id) === (updated._id || updated.id));
       if (index !== -1) {
-        state.accounts[index] = updated;
+        state.accounts[index] = { ...state.accounts[index], ...updated };
       }
     },
     removeAccount: (state, action) => {

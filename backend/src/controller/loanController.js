@@ -3,6 +3,7 @@ import httpError from '../util/httpError.js'
 import Loan from '../model/loanModel.js'
 import Account from '../model/accountModel.js'
 import Party from '../model/partiesModel.js'
+import databseService from '../service/databseService.js'
 import { validateJoiSchema, validationLoanBody } from '../service/validationService.js'
 
 export default {
@@ -18,36 +19,37 @@ export default {
 
             const userId = req.authenticatedUser._id
 
-            // Validate account belongs to user
-            const account = await Account.findOne({ _id: value.accountId, userId, isDeleted: false })
-            if (!account) return httpError(next, 'Account not found', req, 404)
-
-            // Validate party belongs to user
-            const party = await Party.findOne({ _id: value.party, userId, isDeleted: false })
-            if (!party) return httpError(next, 'Party not found', req, 404)
-
-            // Balance check for LENT (money going out)
-            if (value.type === 'LENT' && account.balance < value.amount) {
-                return httpError(next, 'Insufficient balance to lend this amount', req, 400)
+            // Create Transaction via databseService to ensure ledger sync
+            const transactionPayload = {
+                userId,
+                amount: value.amount,
+                accountId: value.accountId,
+                partyId: value.party,
+                title: `${value.type === 'LENT' ? 'Money Lent to' : 'Money Borrowed from'} Party`,
+                type: 'debt',
+                debtType: value.type, // Pass LENT/BORROWED to service
+                date: value.date || new Date(),
+                interestRate: value.interestRate || 0,
+                dueDate: value.dueDate || null,
             }
 
-            // Update Account balance
-            const balanceChange = value.type === 'BORROWED' ? value.amount : -value.amount
-            await Account.findByIdAndUpdate(value.accountId, { $inc: { balance: balanceChange } })
+            const result = await databseService.createTransaction(transactionPayload)
 
-            // Update Party netDebt
-            // BORROWED: I owe them → netDebt decreases (negative = I owe)
-            // LENT: They owe me → netDebt increases (positive = they owe)
-            const debtChange = value.type === 'LENT' ? value.amount : -value.amount
-            await Party.findByIdAndUpdate(value.party, { $inc: { netDebt: debtChange } })
-
-            // Create loan record
-            const loan = await Loan.create({ ...value, user: userId })
+            // Create loan record linked to this transaction entry
+            const loan = await Loan.create({
+                ...value,
+                user: userId,
+                transactionId: result.transaction._id,
+            })
 
             // Populate for response
             const populated = await Loan.findById(loan._id).populate('party', 'name relation').populate('accountId', 'name type')
 
-            httpResponse(req, res, 201, 'Loan created successfully', populated)
+            httpResponse(req, res, 201, 'Loan created successfully', {
+                loan: populated,
+                transaction: result.transaction,
+                updatedAccounts: result.updatedAccounts,
+            })
         } catch (error) {
             httpError(next, error, req, 500)
         }
@@ -77,23 +79,43 @@ export default {
      */
     updateLoan: async (req, res, next) => {
         try {
-            const { amount, dueDate, interestRate, status } = req.body
-            const updateFields = {}
-            if (amount !== undefined) updateFields.amount = amount
-            if (dueDate !== undefined) updateFields.dueDate = dueDate
-            if (interestRate !== undefined) updateFields.interestRate = interestRate
-            if (status !== undefined) updateFields.status = status
-
-            const loan = await Loan.findOneAndUpdate(
-                { _id: req.params.id, user: req.authenticatedUser._id, isDeleted: false },
-                { $set: updateFields },
-                { new: true, runValidators: true }
-            )
-                .populate('party', 'name relation')
-                .populate('accountId', 'name type')
-
+            const { amount, dueDate, interestRate, status, accountId, party, date, type } = req.body
+            
+            const loan = await Loan.findOne({ 
+                _id: req.params.id, 
+                user: req.authenticatedUser._id, 
+                isDeleted: false 
+            })
             if (!loan) return httpError(next, 'Loan not found', req, 404)
-            httpResponse(req, res, 200, 'Loan updated successfully', loan)
+
+            // Sync with Transaction if significant fields changed
+            if (loan.transactionId) {
+                const txPayload = {
+                    accountId: accountId || loan.accountId,
+                    partyId: party || loan.party,
+                    amount: amount !== undefined ? amount : loan.amount,
+                    date: date || loan.date,
+                    type: 'debt',
+                    debtType: type || loan.type,
+                    title: `${(type || loan.type) === 'LENT' ? 'Money Lent to' : 'Money Borrowed from'} Party`,
+                }
+                await databseService.editTransaction(loan.transactionId, req.authenticatedUser._id, txPayload)
+            }
+
+            // Update Loan record
+            if (amount !== undefined) loan.amount = amount
+            if (dueDate !== undefined) loan.dueDate = dueDate
+            if (interestRate !== undefined) loan.interestRate = interestRate
+            if (status !== undefined) loan.status = status
+            if (accountId !== undefined) loan.accountId = accountId
+            if (party !== undefined) loan.party = party
+            if (date !== undefined) loan.date = date
+            if (type !== undefined) loan.type = type
+
+            await loan.save()
+            const populated = await Loan.findById(loan._id).populate('party', 'name relation').populate('accountId', 'name type')
+
+            httpResponse(req, res, 200, 'Loan updated successfully', populated)
         } catch (error) {
             httpError(next, error, req, 500)
         }
@@ -104,12 +126,22 @@ export default {
      */
     deleteLoan: async (req, res, next) => {
         try {
-            const loan = await Loan.findOneAndUpdate(
-                { _id: req.params.id, user: req.authenticatedUser._id, isDeleted: false },
-                { $set: { isDeleted: true } },
-                { new: true }
-            )
+            const userId = req.authenticatedUser._id
+            const loan = await Loan.findOne({ 
+                _id: req.params.id, 
+                user: userId, 
+                isDeleted: false 
+            })
             if (!loan) return httpError(next, 'Loan not found', req, 404)
+
+            // Reverse transaction if exists
+            if (loan.transactionId) {
+                await databseService.deleteTransaction(loan.transactionId, userId)
+            }
+
+            loan.isDeleted = true
+            await loan.save()
+
             httpResponse(req, res, 200, 'Loan deleted successfully', loan)
         } catch (error) {
             httpError(next, error, req, 500)
@@ -118,32 +150,30 @@ export default {
 
     /**
      * POST /loans/:id/settle — Settle (repay) a loan
-     * Reverses the original balance/debt changes and marks status = PAID
      */
     settleLoan: async (req, res, next) => {
         try {
             const userId = req.authenticatedUser._id
-            const loan = await Loan.findOne({ _id: req.params.id, user: userId, isDeleted: false })
+            const loan = await Loan.findOne({ _id: req.params.id, user: userId, isDeleted: false }).populate('party')
             if (!loan) return httpError(next, 'Loan not found', req, 404)
             if (loan.status === 'PAID') return httpError(next, 'Loan is already settled', req, 400)
 
-            // Reverse the original balance change
-            // BORROWED originally added money → now subtract it back
-            // LENT originally subtracted money → now add it back
-            const reverseBalance = loan.type === 'BORROWED' ? -loan.amount : loan.amount
-            const account = await Account.findById(loan.accountId)
-            if (!account) return httpError(next, 'Associated account not found', req, 404)
-
-            // Balance check for BORROWED settlement (money going out)
-            if (loan.type === 'BORROWED' && account.balance < loan.amount) {
-                return httpError(next, 'Insufficient balance to settle this debt', req, 400)
+            // Create Transaction to reverse the balance effect
+            // If BORROWED originally (money in), settlement is an EXPENSE (money out)
+            // If LENT originally (money out), settlement is an INCOME (money in)
+            const transactionPayload = {
+                userId,
+                amount: loan.amount, // Full settlement
+                accountId: loan.accountId,
+                partyId: loan.party._id,
+                title: `Settled: ${loan.type === 'LENT' ? 'Repayment Received' : 'Repayment Paid'}`,
+                type: 'debt', // Still a debt type transaction
+                debtType: loan.type === 'BORROWED' ? 'REPAYMENT_OUT' : 'REPAYMENT_IN', // Custom flow
+                date: new Date(),
+                loanId: loan._id
             }
 
-            await Account.findByIdAndUpdate(loan.accountId, { $inc: { balance: reverseBalance } })
-
-            // Reverse the original debt change
-            const reverseDebt = loan.type === 'LENT' ? -loan.amount : loan.amount
-            await Party.findByIdAndUpdate(loan.party, { $inc: { netDebt: reverseDebt } })
+            const result = await databseService.createTransaction(transactionPayload)
 
             // Mark as PAID
             loan.status = 'PAID'
@@ -151,9 +181,14 @@ export default {
 
             const populated = await Loan.findById(loan._id).populate('party', 'name relation').populate('accountId', 'name type')
 
-            httpResponse(req, res, 200, 'Loan settled successfully', populated)
+            httpResponse(req, res, 200, 'Loan settled successfully', {
+                loan: populated,
+                transaction: result.transaction,
+                updatedAccounts: result.updatedAccounts,
+            })
         } catch (error) {
             httpError(next, error, req, 500)
         }
     },
 }
+

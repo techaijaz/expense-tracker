@@ -1,0 +1,26 @@
+{
+  "common": {
+    "add_expense": "खर्च जोड़ें",
+    "total_balance": "कुल शेष",
+    "dashboard": "डैशबोर्ड",
+    "transactions": "लेनदेन",
+    "accounts": "खाते",
+    "categories": "श्रेणियां",
+    "settings": "सेटिंग्स",
+    "loans": "ऋण",
+    "save": "सहेजें",
+    "cancel": "रद्द करें",
+    "delete": "हटाएं",
+    "edit": "संपादन",
+    "search": "खोजें"
+  },
+  "onboarding": {
+    "welcome": "AI Expenser में आपका स्वागत है",
+    "preferences": "पसंद सेटअप करें",
+    "currency": "मुद्रा चुनें",
+    "language": "भाषा चुनें",
+    "first_account": "पहला खाता सेटअप करें",
+    "pro_trial": "प्रो ट्रायल ऑफर",
+    "start_journey": "अपनी यात्रा शुरू करें"
+  }
+}

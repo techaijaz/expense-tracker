@@ -15,12 +15,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 
-export function DateRangePicker({ className }) {
-  const [date, setDate] = React.useState({
-    from: new Date(),
-    to: addDays(new Date(), 10),
-  });
-
+export function DateRangePicker({ className, value, onChange }) {
   return (
     <div className={cn('grid gap-2', className)}>
       <Popover>
@@ -29,33 +24,51 @@ export function DateRangePicker({ className }) {
             id="date"
             variant={'outline'}
             className={cn(
-              'w-[230px] justify-start text-left font-normal',
-              !date && 'text-muted-foreground'
+              'w-full h-[40px] justify-start text-left font-normal px-3 rounded-[var(--r2)] border-none text-[var(--text)] hover:bg-surface-container-high transition-colors',
+              !value && 'text-[var(--text3)]',
             )}
+            style={{
+              backgroundColor: 'var(--bg4)',
+              color: !value?.from ? 'var(--text3)' : 'var(--text)',
+            }}
           >
-            <CalendarIcon />
-            {date?.from ? (
-              date.to ? (
+            <span
+              className="material-symbols-outlined mr-2 text-lg"
+              style={{ fontSize: '16px' }}
+            >
+              event
+            </span>
+            {value?.from ? (
+              value.to ? (
                 <>
-                  {format(date.from, 'LLL dd, y')} -{' '}
-                  {format(date.to, 'LLL dd, y')}
+                  {format(value.from, 'LLL dd, y')} -{' '}
+                  {format(value.to, 'LLL dd, y')}
                 </>
               ) : (
-                format(date.from, 'LLL dd, y')
+                format(value.from, 'LLL dd, y')
               )
             ) : (
-              <span>Pick a date</span>
+              <span>Pick a date range</span>
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
+        <PopoverContent
+          className="w-auto p-0 z-[100]"
+          align="start"
+          style={{
+            backgroundColor: 'var(--bg3)',
+            border: '1px solid var(--border)',
+            zIndex: 9999,
+          }}
+        >
           <Calendar
             initialFocus
             mode="range"
-            defaultMonth={date?.from}
-            selected={date}
-            onSelect={setDate}
-            numberOfMonths={2}
+            defaultMonth={value?.from}
+            selected={value}
+            onSelect={onChange}
+            numberOfMonths={1}
+            style={{ color: 'var(--text)' }}
           />
         </PopoverContent>
       </Popover>

@@ -18,7 +18,6 @@ import userModel from '../model/userModel.js'
 import accountModel from '../model/accountModel.js'
 import categoryModel from '../model/categoryModel.js'
 import partiesModel from '../model/partiesModel.js'
-import ledgerModel from '../model/ledgerModel.js'
 import transactionModel from '../model/transactionModel.js'
 import mongoose from 'mongoose'
 import fs from 'fs'
@@ -54,7 +53,7 @@ export default {
 
             const { email, password } = value
             const user = await databseService.findUserByEmail(email, '+password')
-            if (!user) return httpError(next, new Error(responceseMessage.NOT_FOUND('User')), req, 404)
+            if (!user) return httpError(next, new Error(responceseMessage.INVALID_CREDENTIALS), req, 401)
 
             const isPasswordMatch = await quiker.comparePassword(password, user.password)
             if (!isPasswordMatch) return httpError(next, new Error(responceseMessage.INVALID_CREDENTIALS), req, 401)
@@ -66,8 +65,19 @@ export default {
             user.refreshToken.token = refreshToken
             await user.save()
 
+            if (!user.setBasicDetails) {
+                await databseService.setDefaultData(user._id)
+            }
+
             const accounts = await databseService.getAccountsByUserId(user._id)
-            const categories = await databseService.getAllCategories(user._id)
+            const allCategories = await databseService.getAllCategories(user._id)
+            const categories = allCategories.reduce(
+                (acc, cat) => {
+                    acc[cat.type].push(cat)
+                    return acc
+                },
+                { INCOME: [], EXPENSE: [], TRANSFER: [] }
+            )
             const DOMAIN = quiker.getDomainFromUrl(config.SERVER_URL)
 
             res.cookie('accessToken', accessToken, {
@@ -84,10 +94,6 @@ export default {
                 secure: config.ENV === EApplicationEnvionment.PRODUCTION,
             })
 
-            if (!user.setBasicDetails) {
-                databseService.setDefaultData(user._id)
-            }
-
             httpResponse(req, res, 200, responceseMessage.SUCCESS, {
                 accessToken,
                 refreshToken,
@@ -101,7 +107,8 @@ export default {
                     setBasicDetails: user.setBasicDetails,
                     lastLoginAt: user.lastLoginAt,
                     preferences: user.preferences,
-                    subscriptionTier: user.subscriptionTier || 'BASIC',
+                    plan: user.plan || 'basic',
+                    onboardingDone: user.onboardingDone || false,
                 },
                 accounts,
                 categories,
@@ -236,30 +243,42 @@ export default {
         }
     },
 
+    completeOnboarding: async (req, res, next) => {
+        try {
+            const user = await userModel.findByIdAndUpdate(
+                req.authenticatedUser._id,
+                { $set: { onboardingDone: true } },
+                { new: true }
+            )
+            httpResponse(req, res, 200, 'Onboarding completed successfully', { onboardingDone: user.onboardingDone })
+        } catch (error) {
+            httpError(next, error, req, 500)
+        }
+    },
+
     getStorageStats: async (req, res, next) => {
         try {
             const userId = req.authenticatedUser._id
             const objectId = new mongoose.Types.ObjectId(userId)
+            const filter = { userId: objectId, isDeleted: false }
 
-            const [transactions, accounts, categories, parties, ledgers] = await Promise.all([
-                transactionModel.countDocuments({ userId: objectId }),
-                accountModel.countDocuments({ user: objectId }),
-                categoryModel.countDocuments({ userId: objectId }),
-                partiesModel.countDocuments({ userId: objectId }),
-                ledgerModel.countDocuments({ userId: objectId }),
+            const [accounts, categories, parties, transactions] = await Promise.all([
+                accountModel.countDocuments(filter),
+                categoryModel.countDocuments(filter),
+                partiesModel.countDocuments(filter),
+                transactionModel.countDocuments(filter),
             ])
 
-            const total = transactions + accounts + categories + parties + ledgers
+            const total = accounts + categories + parties + transactions
             // Estimate ~500 bytes per doc average
             const estimatedBytes = total * 500
             const usagePercent = Math.min(Math.round((total / 5000) * 100), 100) // assume 5000 docs = 100%
 
             httpResponse(req, res, 200, 'Storage stats retrieved', {
-                transactions,
+                transactions, // High-level entries
                 accounts,
                 categories,
                 parties,
-                ledgers,
                 totalDocuments: total,
                 estimatedBytes,
                 usagePercent,
@@ -282,15 +301,11 @@ export default {
 
             const userId = req.authenticatedUser._id
 
-            // Get all ledger IDs for this user
-            const ledgerIds = (await ledgerModel.find({ userId }).select('_id')).map((l) => l._id)
-
             await Promise.all([
                 transactionModel.deleteMany({ userId }),
-                ledgerModel.deleteMany({ userId }),
                 categoryModel.deleteMany({ userId }),
                 partiesModel.deleteMany({ userId }),
-                accountModel.deleteMany({ user: userId }),
+                accountModel.deleteMany({ userId }),
             ])
 
             // Reset the setBasicDetails flag so defaults get recreated on next login
@@ -310,24 +325,21 @@ export default {
             const dateStr = dayjs().format('YYYY-MM-DD')
 
             const [transactions, accounts, categories, parties] = await Promise.all([
-                transactionModel.find({ userId }).populate('accountId', 'name type').lean(),
-                accountModel.find({ user: userId }).lean(),
+                transactionModel.find({ userId }).populate('accountId', 'name type').populate('categoryId', 'name type').populate('partyId', 'name relation').lean(),
+                accountModel.find({ userId }).lean(),
                 categoryModel.find({ userId }).lean(),
                 partiesModel.find({ userId }).lean(),
             ])
 
-            // Also fetch ledgers for full context
-            const ledgers = await ledgerModel.find({ userId }).populate('categoryId', 'name type').populate('partyId', 'name relation').lean()
-
             if (format === 'csv') {
-                // Build CSV for ledger entries (the most human-readable export)
-                const rows = ledgers.map((l) => ({
-                    Date: dayjs(l.date).format('YYYY-MM-DD'),
-                    Title: l.title || '',
-                    Amount: l.totalAmount,
-                    Type: l.ledgerType,
-                    Category: l.categoryId?.name || '',
-                    Counterparty: l.partyId?.name || '',
+                // Build CSV for transaction entries
+                const rows = transactions.map((t) => ({
+                    Date: dayjs(t.date).format('YYYY-MM-DD'),
+                    Title: t.title || '',
+                    Amount: t.amount,
+                    Type: t.type,
+                    Category: t.categoryId?.name || '',
+                    Counterparty: t.partyId?.name || '',
                 }))
 
                 const headers = ['Date', 'Title', 'Amount', 'Type', 'Category', 'Counterparty']
@@ -353,12 +365,12 @@ export default {
                     accounts: accounts.length,
                     categories: categories.length,
                     parties: parties.length,
-                    transactions: ledgers.length,
+                    transactions: transactions.length,
                 },
                 accounts,
                 categories,
                 parties,
-                transactions: ledgers,
+                transactions,
             }
 
             res.setHeader('Content-Type', 'application/json')
@@ -369,4 +381,5 @@ export default {
         }
     },
 }
+
 

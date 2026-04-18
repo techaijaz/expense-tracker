@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useDispatch } from 'react-redux';
 import useApi from '@/hooks/useApi';
-import { addCatagory } from '@/redux/categorySlice';
+import { addCatagory, updateCategory } from '@/redux/categorySlice';
 import { toast } from 'sonner';
 
 const categorySchema = z.object({
@@ -22,7 +22,7 @@ const TYPE_CONFIG = {
   TRANSFER: { label: 'Transfer', icon: 'sync_alt',      color: 'var(--accent-color)', bg: 'var(--hover-bg)',  border: 'var(--hover-bg)' },
 };
 
-const AddCategoryPopup = ({ open, onClose, onSave, editCategory = null }) => {
+const AddCategoryPopup = ({ open, onClose, onSave, editCategory = null, defaultType = 'EXPENSE' }) => {
   const dispatch = useDispatch();
   const { data, error, loading, makeRequest } = useApi();
   const [selectedIcon, setSelectedIcon] = useState('🏷️');
@@ -30,7 +30,7 @@ const AddCategoryPopup = ({ open, onClose, onSave, editCategory = null }) => {
 
   const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm({
     resolver: zodResolver(categorySchema),
-    defaultValues: { name: '', type: 'EXPENSE', icon: '🏷️' },
+    defaultValues: { name: '', type: defaultType, icon: '🏷️' },
   });
 
   const selectedType = watch('type');
@@ -38,14 +38,14 @@ const AddCategoryPopup = ({ open, onClose, onSave, editCategory = null }) => {
   useEffect(() => {
     if (editCategory) {
       setValue('name', editCategory.name || '');
-      setValue('type', editCategory.type || 'EXPENSE');
+      setValue('type', editCategory.type || defaultType);
       setValue('icon', editCategory.icon || '🏷️');
       setSelectedIcon(editCategory.icon || '🏷️');
     } else {
-      reset({ name: '', type: 'EXPENSE', icon: '🏷️' });
+      reset({ name: '', type: defaultType, icon: '🏷️' });
       setSelectedIcon('🏷️');
     }
-  }, [editCategory, open, reset, setValue]);
+  }, [editCategory, open, reset, setValue, defaultType]);
 
   // Guard to prevent onSave from being called multiple times on re-renders
   const handledRef = useRef(false);
@@ -67,11 +67,15 @@ const AddCategoryPopup = ({ open, onClose, onSave, editCategory = null }) => {
   useEffect(() => {
     if (data && !handledRef.current) {
       handledRef.current = true;
-      dispatch(addCatagory(data));
+      if (editCategory) {
+        dispatch(updateCategory(data));
+      } else {
+        dispatch(addCatagory(data));
+      }
       toast.success(editCategory ? 'Category updated.' : 'Category added.');
       reset({ name: '', type: 'EXPENSE', icon: '🏷️' });
       setSelectedIcon('🏷️');
-      onSave();
+      if (onSave) onSave(data._id);
     }
   }, [data]); // eslint-disable-line react-hooks/exhaustive-deps
 

@@ -3,6 +3,7 @@ import app from './app.js'
 import logger from './util/loger.js'
 import databseService from './service/databseService.js'
 import { initRateLimiter } from './config/rateLimiter.js'
+import { initRecurringJob } from './job/recurringJob.js'
 const server = app.listen(config.PORT, () => {})
 
 ;(async () => {
@@ -16,6 +17,9 @@ const server = app.listen(config.PORT, () => {})
         })
         initRateLimiter(connection)
         logger.info('RATE LIMITER INITIATE')
+
+        initRecurringJob()
+        logger.info('RECURRING JOB INITIATE')
 
         logger.info('APPLICATION STARTED', {
             meta: {

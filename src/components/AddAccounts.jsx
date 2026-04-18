@@ -21,15 +21,7 @@ const ACCOUNT_TYPE_LABELS = {
   INVESTMENT: 'Investment',
 };
 
-// ── shared input styles matching TransectionPopup ──────────────────────────────
-const labelCx =
-  'text-[0.6875rem] font-bold uppercase tracking-[0.1em] text-outline ml-1';
-const inputCx =
-  'w-full bg-surface-container-low border-none rounded-lg px-4 py-3 text-sm text-on-surface focus:ring-1 focus:ring-primary/40 outline-none appearance-none placeholder:text-surface-variant transition-all';
-const selectCx =
-  'w-full bg-surface-container-low border-none rounded-lg px-4 py-3 text-sm text-on-surface focus:ring-1 focus:ring-primary/40 outline-none appearance-none cursor-pointer';
-const errorCx =
-  'text-[10px] text-error mt-1 ml-1 font-medium flex items-center gap-1';
+// ── old shared input styles removed (using global CSS classes now) ────────────
 
 function AccountModal({ onClose, onSaved, account = null, hasCash = false }) {
   const isEdit = !!account;
@@ -139,105 +131,104 @@ function AccountModal({ onClose, onSaved, account = null, hasCash = false }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md animate-in fade-in duration-300">
-      <div
-        className="w-full max-w-lg bg-surface-container-highest shadow-2xl shadow-black/80 border border-white/10 overflow-hidden rounded-2xl animate-in zoom-in-95 duration-300"
-        style={{ backdropFilter: 'blur(20px)' }}
-      >
-        {/* Header */}
-        <div className="pt-10 pl-10 pr-6 pb-6 flex justify-between items-start">
-          <div>
-            <h2 className="text-2xl font-black text-on-surface tracking-tight font-headline">
-              {isEdit ? 'Refine Account' : 'Initialize Account'}
-            </h2>
-            <p className="text-sm text-outline mt-1 font-body">
-              {isEdit
-                ? 'Update your account parameters.'
-                : 'Add a new financial hub to your ecosystem.'}
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-white/5 rounded-full text-outline transition-colors outline-none"
-          >
-            <span className="material-symbols-outlined">close</span>
-          </button>
+    <div
+      className="screen active"
+      style={{
+        zIndex: 100,
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(0,0,0,0.6)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <div className="modal modal-sm" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-close" onClick={onClose}>
+          ✕
+        </div>
+        <div className="modal-title">
+          {isEdit ? 'Refine Account' : 'Initialize Account'}
+        </div>
+        <div className="modal-sub">
+          {isEdit
+            ? 'Update your account parameters.'
+            : 'Add a new financial hub to your ecosystem.'}
         </div>
 
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="px-10 pb-10 space-y-6"
-        >
-          <div className="grid grid-cols-2 gap-6">
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <div className="modal-grid">
             {/* Account Type */}
-            <div className="col-span-2 sm:col-span-1 space-y-1.5">
-              <label className={labelCx}>Account Type</label>
-              <div className="relative">
-                <select
-                  {...register('type')}
-                  disabled={isEdit}
-                  className={
-                    selectCx + (isEdit ? ' opacity-60 cursor-not-allowed' : '')
-                  }
-                >
-                  {Object.entries(ACCOUNT_TYPE_LABELS)
-                    .filter(([v]) => !(v === 'CASH' && hasCash && !isEdit))
-                    .map(([v, l]) => (
-                      <option key={v} value={v}>
-                        {l}
-                      </option>
-                    ))}
-                </select>
-                {!isEdit && (
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline pointer-events-none text-sm">
-                    expand_more
-                  </span>
-                )}
-              </div>
+            <div className="form-group">
+              <label className="form-label">Account Type</label>
+              <select
+                {...register('type')}
+                disabled={isEdit}
+                className="form-input"
+              >
+                {Object.entries(ACCOUNT_TYPE_LABELS)
+                  .filter(([v]) => !(v === 'CASH' && hasCash && !isEdit))
+                  .map(([v, l]) => (
+                    <option key={v} value={v}>
+                      {l}
+                    </option>
+                  ))}
+              </select>
             </div>
 
             {/* Account Name */}
-            <div className="col-span-2 sm:col-span-1 space-y-1.5">
-              <label className={labelCx}>Account Name</label>
+            <div className="form-group">
+              <label className="form-label">Account Name</label>
               <input
                 {...register('name')}
                 placeholder="e.g. HDFC Savings"
-                className={inputCx}
+                className="form-input"
                 type="text"
               />
-              {errors.name && <p className={errorCx}>{errors.name.message}</p>}
+              {errors.name && (
+                <p style={{ fontSize: '10px', color: 'var(--red)', marginTop: '4px' }}>
+                  {errors.name.message}
+                </p>
+              )}
             </div>
 
             {/* Account Number */}
             <div
-              className={`col-span-2 sm:col-span-1 space-y-1.5 ${accountType === 'CASH' ? 'hidden' : ''}`}
+              className="form-group"
+              style={{ display: accountType === 'CASH' ? 'none' : 'block' }}
             >
-              <label className={labelCx}>
-                Account Number{' '}
-                {needsAccNum && <span className="text-error">*</span>}
+              <label className="form-label">
+                Account Number {needsAccNum && '*'}
               </label>
               <input
                 {...register('accountNumber')}
-                // ref={(e) => {
-                //   register('accountNumber').ref(e);
-                //   accNumRef.current = e;
-                // }}
                 placeholder={needsAccNum ? 'Last 4 digits' : 'Max 4 digits'}
-                className={inputCx}
+                className="form-input"
                 type="text"
                 maxLength={4}
               />
               {errors.accountNumber && (
-                <p className={errorCx}>{errors.accountNumber.message}</p>
+                <p style={{ fontSize: '10px', color: 'var(--red)', marginTop: '4px' }}>
+                  {errors.accountNumber.message}
+                </p>
               )}
             </div>
 
             {/* Opening Balance - Hidden for Credit Cards */}
             {accountType !== 'CREDIT_CARD' && (
-              <div className="col-span-2 sm:col-span-1 space-y-1.5 animate-in fade-in duration-300">
-                <label className={labelCx}>Opening Balance</label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-primary font-bold text-sm">
+              <div className="form-group">
+                <label className="form-label">Opening Balance</label>
+                <div style={{ position: 'relative' }}>
+                  <span
+                    style={{
+                      position: 'absolute',
+                      left: '12px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      color: 'var(--text)',
+                      fontWeight: 700,
+                    }}
+                  >
                     {currencySymbol}
                   </span>
                   <input
@@ -249,17 +240,27 @@ function AccountModal({ onClose, onSaved, account = null, hasCash = false }) {
                       );
                     }}
                     placeholder={`0.${'0'.repeat(decimalPlaces)}`}
-                    className={inputCx + ' pl-8'}
+                    className="form-input"
+                    style={{ paddingLeft: '28px' }}
                     step={1 / Math.pow(10, decimalPlaces)}
                     type="number"
                     disabled={initialBalanceLoading}
                   />
                 </div>
                 {errors.balance && (
-                  <p className={errorCx}>{errors.balance.message}</p>
+                  <p style={{ fontSize: '10px', color: 'var(--red)', marginTop: '4px' }}>
+                    {errors.balance.message}
+                  </p>
                 )}
                 {initialBalanceLoading && (
-                  <p className="text-[10px] text-primary/60 mt-1 ml-1 animate-pulse italic">
+                  <p
+                    style={{
+                      fontSize: '10px',
+                      color: 'var(--text3)',
+                      marginTop: '4px',
+                      fontStyle: 'italic',
+                    }}
+                  >
                     Retrieving initial balance...
                   </p>
                 )}
@@ -268,10 +269,19 @@ function AccountModal({ onClose, onSaved, account = null, hasCash = false }) {
 
             {/* Credit Limit */}
             {accountType === 'CREDIT_CARD' && (
-              <div className="col-span-2 sm:col-span-1 space-y-1.5 animate-in slide-in-from-top-2">
-                <label className={labelCx}>Credit Limit</label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-error font-bold text-sm">
+              <div className="form-group">
+                <label className="form-label">Credit Limit</label>
+                <div style={{ position: 'relative' }}>
+                  <span
+                    style={{
+                      position: 'absolute',
+                      left: '12px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      color: 'var(--red)',
+                      fontWeight: 700,
+                    }}
+                  >
                     {currencySymbol}
                   </span>
                   <input
@@ -283,61 +293,58 @@ function AccountModal({ onClose, onSaved, account = null, hasCash = false }) {
                       );
                     }}
                     placeholder={`0.${'0'.repeat(decimalPlaces)}`}
-                    className={inputCx + ' pl-8'}
+                    className="form-input"
+                    style={{ paddingLeft: '28px' }}
                     step={1 / Math.pow(10, decimalPlaces)}
                     type="number"
                   />
                 </div>
                 {errors.creditLimit && (
-                  <p className={errorCx}>{errors.creditLimit.message}</p>
+                  <p style={{ fontSize: '10px', color: 'var(--red)', marginTop: '4px' }}>
+                    {errors.creditLimit.message}
+                  </p>
                 )}
               </div>
             )}
           </div>
 
-          {/* Set as Default Toggle */}
           <div
+            style={{
+              background: 'var(--bg3)',
+              border: '1px solid var(--border2)',
+              borderRadius: 'var(--r)',
+              padding: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: '4px',
+              marginTop: '16px',
+              cursor: 'pointer',
+            }}
             onClick={() => setIsDefault(!isDefault)}
-            className="flex items-center justify-between p-4 rounded-xl bg-surface-container-low border border-outline-variant/10 cursor-pointer hover:bg-surface-container-high transition-colors group"
           >
-            <div className="space-y-0.5">
-              <p className="text-sm font-bold text-on-surface flex items-center gap-2">
-                <span
-                  className={`material-symbols-outlined text-lg ${isDefault ? 'text-amber-400' : 'text-outline'} group-hover:scale-110 transition-transform`}
-                  style={{
-                    fontVariationSettings: isDefault ? "'FILL' 1" : "'FILL' 0",
-                  }}
-                >
-                  star
-                </span>
-                Set as Default
-              </p>
-              <p className="text-[11px] text-outline ml-6 font-medium">
-                Auto-selected in new transaction popups.
-              </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>⭐</span>
+              <div>
+                <div style={{ fontSize: '13px', fontWeight: 600 }}>
+                  Set as Default
+                </div>
+                <div style={{ fontSize: '11px', color: 'var(--text2)' }}>
+                  Auto-selected in new transaction popup
+                </div>
+              </div>
             </div>
-            <div
-              className={`w-10 h-5 rounded-full transition-colors relative ${isDefault ? 'bg-primary' : 'bg-surface-container-highest'}`}
-            >
-              <div
-                className={`absolute top-1 w-3 h-3 rounded-full bg-white shadow transition-transform ${isDefault ? 'translate-x-6' : 'translate-x-1'}`}
-              />
-            </div>
+            <div className={`toggle ${isDefault ? 'on' : ''}`}></div>
           </div>
 
-          {/* Footer */}
-          <div className="pt-4 flex items-center justify-end gap-4">
-            <button
-              onClick={onClose}
-              type="button"
-              className="px-6 py-2.5 text-sm font-bold text-outline hover:bg-white/5 rounded-lg transition-colors outline-none"
-            >
+          <div className="modal-actions">
+            <button type="button" className="btn-cancel" onClick={onClose}>
               Cancel
             </button>
             <button
               type="submit"
+              className="btn-save"
               disabled={loading || initialBalanceLoading}
-              className="px-8 py-2.5 text-sm font-bold bg-gradient-to-br from-primary to-on-primary-container text-on-primary rounded-lg shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all outline-none disabled:opacity-50 disabled:scale-100"
             >
               {loading
                 ? isEdit
@@ -349,8 +356,6 @@ function AccountModal({ onClose, onSaved, account = null, hasCash = false }) {
             </button>
           </div>
         </form>
-
-        <div className="h-1 w-full bg-gradient-to-r from-transparent via-primary/20 to-transparent"></div>
       </div>
     </div>
   );

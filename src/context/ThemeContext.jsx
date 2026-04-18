@@ -35,9 +35,9 @@ export function ThemeProvider({ children }) {
     const isAuthRoute = location.pathname === '/' || location.pathname === '/signup';
 
     if (isAuthRoute) {
-      // Force 'light' theme on auth routes regardless of user preference
-      root.classList.add('light');
-      root.classList.remove('dark');
+      // Force 'dark' theme on auth routes to match redesign
+      root.classList.add('dark');
+      root.classList.remove('light');
     } else {
       // Apply user preference
       if (theme === 'dark') {

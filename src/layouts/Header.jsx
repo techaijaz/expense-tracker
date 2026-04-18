@@ -1,48 +1,97 @@
-/* eslint-disable react/prop-types */
-import ShortLogo from './ShortLogo';
+import { useLocation } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+
+const PAGE_META = {
+  '/dashboard':    { title: 'Dashboard',     sub: 'Global overview · Last 30 days' },
+  '/transactions': { title: 'Transactions',  sub: 'Asset Ledger · All movements' },
+  '/accounts':     { title: 'Accounts',      sub: 'All your accounts' },
+  '/loans':        { title: 'Loans',         sub: 'Debt & Lending tracker' },
+  '/reports':      { title: 'Reports',       sub: 'Financial analytics' },
+  '/budget':       { title: 'Budget',        sub: 'Monthly spending limits' },
+  '/recurring':    { title: 'Recurring',     sub: 'Subscriptions & fixed payments' },
+  '/net-worth':    { title: 'Net Worth',     sub: 'Assets vs Liabilities' },
+  '/categories':   { title: 'Categories',    sub: 'Transaction categories' },
+  '/settings':     { title: 'Settings',      sub: 'Configuration · Identity · Preferences' },
+};
 
 export default function Header({ onMenuToggle, onNewTransaction }) {
+  const location = useLocation();
+  const user = useSelector((state) => state.auth.user);
+
+  const isSettings = location.pathname === '/settings';
+  const meta = PAGE_META[location.pathname] || { title: 'Dashboard', sub: 'Global overview' };
+
+  // Build initials from user name
+  const initials = user
+    ? ((user.firstName?.[0] || '') + (user.lastName?.[0] || '')).toUpperCase() || 'JD'
+    : 'JD';
+
+  // Current month label for date range button
+  const now = new Date();
+  const monthLabel = now.toLocaleString('default', { month: 'short' });
+  const year = now.getFullYear();
+  const firstDay = `${monthLabel} 1`;
+  const lastDay = `${monthLabel} ${new Date(year, now.getMonth() + 1, 0).getDate()}`;
+
+  const backendBase = import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:5000';
+  const getAvatarUrl = (path) => {
+    if (!path) return null;
+    if (path.startsWith('http')) return path;
+    return `${backendBase.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
+  };
+  const avatarUrl = getAvatarUrl(user?.avatar);
+
   return (
-    <header className="fixed top-0 right-0 left-0 lg:left-64 h-16 z-30 bg-surface-container-low/80 backdrop-blur-xl border-b border-white/5 shadow-xl shadow-black/20 flex justify-between items-center px-4 md:px-8">
-      <div className="flex items-center flex-1 gap-4">
-        {/* Mobile Hamburger Toggle */}
-        <button
-          className="lg:hidden text-outline hover:text-primary transition-colors focus:outline-none"
-          onClick={onMenuToggle}
-        >
-          <span
-            className="material-symbols-outlined text-2xl"
-            style={{ fontVariationSettings: "'FILL' 0" }}
-          >
-            menu
-          </span>
-        </button>
-        {/* Mobile short logo – visible only when sidebar is hidden */}
-        <div className="lg:hidden">
-          <ShortLogo />
-        </div>
+    <header className="topbar">
+      {/* Mobile Hamburger */}
+      <button className="lg:hidden icon-btn mr-2" onClick={onMenuToggle}>
+        <span className="material-symbols-outlined">menu</span>
+      </button>
+
+      {/* Title block */}
+      <div>
+        <div className="topbar-title">{meta.title}</div>
+        <div className="topbar-sub">{meta.sub}</div>
       </div>
 
-      <div className="flex items-center space-x-4 md:space-x-6">
-        <button className="flex items-center space-x-2 text-outline hover:text-white transition-colors">
-          <span className="material-symbols-outlined">notifications</span>
+      {/* Right Actions */}
+      <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
+        {/* Date range — only on dashboard */}
+        {location.pathname === '/dashboard' && (
+          <button className="btn-outline hidden sm:flex">
+            📅 {firstDay} – {lastDay}
+          </button>
+        )}
+
+        {/* Export — only on transactions */}
+        {location.pathname === '/transactions' && (
+          <button className="btn-outline hidden sm:flex">
+            ⬇ Export
+          </button>
+        )}
+
+        {/* New Transaction */}
+        <button onClick={onNewTransaction} className="btn-new">
+          <span style={{ fontSize: 16 }}>+</span>
+          <span className="hidden sm:inline">New Transaction</span>
+          <span className="sm:hidden">New</span>
         </button>
 
-        <div className="hidden md:block h-6 w-[1px] bg-white/10"></div>
+        {/* System Status — only on settings */}
+        {isSettings && (
+          <div className="hidden sm:flex items-center gap-2">
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--green)' }}></div>
+            <span style={{ fontSize: 11, color: 'var(--text2)' }}>System Operational</span>
+          </div>
+        )}
 
-        <button
-          onClick={onNewTransaction}
-          className="hidden sm:block btn-primary-gradient text-on-primary px-4 py-2 rounded-md font-body text-sm font-bold shadow-lg shadow-primary/10 transition-transform active:scale-95"
-        >
-          New Transaction
-        </button>
-
-        <div className="flex items-center space-x-3 ml-2">
-          <img
-            className="w-8 h-8 rounded-full border border-primary/20 object-cover"
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuDGBNDhLJsxGn_V4NhiEPDRD8fCGdTAFlsNO0Qut7UaPUwzHmpgXMD0Dmsidu_yX1Kyv33nWgTr1IT2n5G10hi_ReVOFWJfJ8YwL3u1KeCXoSS_rjz49gu1pAN3GbyBVPLhT9VmzTj4aV6yGHuNrX4Y2mVCcB9wiBFqEPLCqTnkjA-spz66SA-PWe-sv4-N6-8V6dMawVJiGENPGKByIfIKhnez7Rt-xKQz20H5uxt6VPYD8njZ2kKiWTg0_HHH_4dAZ4izDRKf6K8"
-            alt="Profile"
-          />
+        {/* Avatar */}
+        <div className="avatar" style={{ overflow: 'hidden' }}>
+          {avatarUrl ? (
+            <img src={avatarUrl} alt="User Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          ) : (
+            initials
+          )}
         </div>
       </div>
     </header>

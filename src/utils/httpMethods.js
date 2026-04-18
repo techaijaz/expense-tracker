@@ -19,8 +19,8 @@ export default {
     return response.data;
   },
 
-  get: async (url) => {
-    const response = await instance.get(url, getRequestHeader());
+  get: async (url, params = {}) => {
+    const response = await instance.get(url, { ...getRequestHeader(), params });
     return response.data;
   },
   put: async (url, data = {}, file = false) => {

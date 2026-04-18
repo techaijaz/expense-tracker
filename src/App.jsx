@@ -9,6 +9,11 @@ import Transections from './components/Transections';
 import Accounts from './components/Accounts';
 import Settings from './components/Settings';
 import Loans from './components/Loans';
+import Categories from './components/Categories';
+import Reports from './components/Reports';
+import Budget from './components/Budget';
+import Recurring from './components/Recurring';
+import Onboarding from './components/onboarding/Onboarding';
 import { Toaster } from '@/components/ui/sonner';
 import { ThemeProvider } from './context/ThemeContext';
 
@@ -25,6 +30,9 @@ function App() {
               <Route path="/transactions" element={<MainLayout />}>
                 <Route index element={<Transections />} />
               </Route>
+              <Route path="/categories" element={<MainLayout />}>
+                <Route index element={<Categories />} />
+              </Route>
               <Route path="/accounts" element={<MainLayout />}>
                 <Route index element={<Accounts />} />
               </Route>
@@ -34,6 +42,16 @@ function App() {
               <Route path="/loans" element={<MainLayout />}>
                 <Route index element={<Loans />} />
               </Route>
+              <Route path="/reports" element={<MainLayout />}>
+                <Route index element={<Reports />} />
+              </Route>
+              <Route path="/budget" element={<MainLayout />}>
+                <Route index element={<Budget />} />
+              </Route>
+              <Route path="/recurring" element={<MainLayout />}>
+                <Route index element={<Recurring />} />
+              </Route>
+              <Route path="/onboarding" element={<Onboarding />} />
             </Route>
             <Route path="/" element={<SignIn />} />
             <Route path="/signup" element={<SignUp />} />

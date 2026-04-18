@@ -1,60 +1,42 @@
-import InfoCard from './InfoCard';
-import Piechart from './Piechart';
-import axiosInstance from '@/utils/axiosInstance';
-import { useEffect, useState } from 'react';
-import { useOutletContext } from 'react-router-dom';
-import { Linechart } from './Linechart';
-import { InvoiceTable } from './InvoiceTable';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { formatAmount, getCurrencySymbol } from '@/utils/format';
+import axiosInstance from '@/utils/axiosInstance';
+import { formatAmount } from '@/utils/format';
+
+// New Premium Components
+import DashboardStats from './dashboard/DashboardStats';
+import CashFlowChart from './dashboard/CashFlowChart';
+import SpendingDonut from './dashboard/SpendingDonut';
+import BudgetOverview from './dashboard/BudgetOverview';
+import UpcomingPayments from './dashboard/UpcomingPayments';
+import RecentTransactionsMini from './dashboard/RecentTransactionsMini';
 
 function Dashboard() {
-  const { openTransactionPopup } = useOutletContext();
+  const navigate = useNavigate();
   const [overview, setOverview] = useState(null);
   const [categories, setCategories] = useState([]);
   const [trend, setTrend] = useState([]);
-  const [accountsMode, setAccountsMode] = useState([]);
   const [recent, setRecent] = useState([]);
 
-  const preferences = useSelector(
-    (state) => state.auth.user?.user?.preferences,
-  );
-  const { currency = 'INR', decimalPlaces = 2 } = preferences || {};
-  const currencySymbol = getCurrencySymbol(currency);
+  const user = useSelector((state) => state.auth.user?.user);
+  const { currency = 'INR', decimalPlaces = 2 } = user?.preferences || {};
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const [overviewRes, categoriesRes, trendRes, distRes, recentRes] =
+        const [overviewRes, categoriesRes, trendRes, recentRes] =
           await Promise.all([
             axiosInstance.get('/reports/overview'),
             axiosInstance.get('/reports/categories'),
             axiosInstance.get('/reports/trend'),
-            axiosInstance.get('/reports/accounts-distribution'),
             axiosInstance.get('/reports/recent'),
           ]);
 
         setOverview(overviewRes.data.data);
-
-        if (categoriesRes.data.data) {
-          const formattedCats = categoriesRes.data.data.map((c) => ({
-            name: c.categoryName,
-            value: c.totalAmount,
-          }));
-          setCategories(formattedCats);
-        }
-
-        setTrend(trendRes.data.data);
-
-        if (distRes.data.data) {
-          const formattedAccts = distRes.data.data.map((a) => ({
-            name: a.accountName,
-            value: a.balance,
-          }));
-          setAccountsMode(formattedAccts);
-        }
-
-        setRecent(recentRes.data.data);
+        setCategories(categoriesRes.data.data || []);
+        setTrend(trendRes.data.data || []);
+        setRecent(recentRes.data.data || []);
       } catch (err) {
         console.error('Dashboard fetch error:', err);
       }
@@ -63,123 +45,105 @@ function Dashboard() {
     fetchDashboardData();
   }, []);
 
-  const totalBalance = overview?.currentMonth?.income
-    ? overview.currentMonth.income - overview.currentMonth.expense
-    : 0;
+  const statsData = {
+    totalBalance: formatAmount(
+      (overview?.currentMonth?.income || 0) -
+        (overview?.currentMonth?.expense || 0),
+      currency,
+      decimalPlaces,
+    ),
+    balanceTrend:
+      (overview?.comparison?.incomeChange || 0) >= 0 ? 'up' : 'down',
+    balanceTrendValue: Math.abs(overview?.comparison?.incomeChange || 0),
+
+    monthlyIncome: formatAmount(
+      overview?.currentMonth?.income || 0,
+      currency,
+      decimalPlaces,
+    ),
+    incomeTrend: (overview?.comparison?.incomeChange || 0) >= 0 ? 'up' : 'down',
+    incomeTrendValue: Math.abs(overview?.comparison?.incomeChange || 0),
+
+    monthlyExpense: formatAmount(
+      overview?.currentMonth?.expense || 0,
+      currency,
+      decimalPlaces,
+    ),
+    expenseTrend:
+      (overview?.comparison?.expenseChange || 0) <= 0 ? 'down' : 'up',
+    expenseTrendValue: Math.abs(overview?.comparison?.expenseChange || 0),
+  };
+
+  const donutData = categories.map((c) => ({
+    name: c.categoryName,
+    value: c.totalAmount,
+  }));
+  const totalSpending = categories
+    .reduce((acc, curr) => acc + curr.totalAmount, 0)
+    .toLocaleString();
+
+  const cashFlowData = trend.map((t) => ({
+    month: t.month,
+    income: t.income,
+    expense: t.expense,
+  }));
+
+  const mockBudgets = categories.slice(0, 5).map((c) => ({
+    categoryName: c.categoryName,
+    totalAmount: c.totalAmount,
+    limit: c.totalAmount * 1.2,
+  }));
+
+  const mockPayments = [
+    {
+      name: 'HDFC Credit Card',
+      subtitle: 'Bill due · ₹23,400',
+      amount: 23400,
+      dueDate: new Date(Date.now() + 86400000 * 3).toISOString(),
+    },
+    {
+      name: 'Car Loan EMI',
+      subtitle: 'HDFC Bank · ₹14,385',
+      amount: 14385,
+      dueDate: new Date(Date.now() + 86400000 * 8).toISOString(),
+    },
+    {
+      name: 'Netflix',
+      subtitle: 'Recurring · ₹649',
+      amount: 649,
+      dueDate: new Date(Date.now() + 86400000 * 15).toISOString(),
+    },
+    {
+      name: 'Personal Loan EMI',
+      subtitle: 'SBI · ₹43,446',
+      amount: 43446,
+      dueDate: new Date(Date.now() + 86400000 * 22).toISOString(),
+    },
+    {
+      name: 'Spotify',
+      subtitle: 'Recurring · ₹119',
+      amount: 119,
+      dueDate: new Date(Date.now() + 86400000 * 28).toISOString(),
+    },
+  ];
 
   return (
-    <div className="max-w-[1400px] mx-auto p-8 space-y-8 w-full">
-      {/* Header Section */}
-      <div className="flex justify-between items-end">
-        <div>
-          <h1 className="text-3xl font-bold font-headline text-on-surface tracking-tight">
-            aiexpenser
-          </h1>
-          <p className="text-outline text-sm mt-1">
-            Global liquidity overview for the last 30 days.
-          </p>
-        </div>
-        <div className="flex space-x-2">
-          <button className="bg-surface-container-high px-4 py-2 rounded-md text-sm font-medium text-outline hover:text-on-surface transition-colors flex items-center">
-            <span
-              className="material-symbols-outlined text-sm mr-2"
-              style={{ fontVariationSettings: "'FILL' 0" }}
-            >
-              calendar_today
-            </span>
-            Sept 1 - Sept 30
-          </button>
-          <button className="bg-surface-container-high px-3 py-2 rounded-md text-outline hover:text-on-surface transition-colors">
-            <span className="material-symbols-outlined text-sm">
-              filter_list
-            </span>
-          </button>
-        </div>
+    <div className="page-body">
+      {/* Row 1: Key Stats */}
+      <DashboardStats stats={statsData} />
+
+      {/* Row 2: Cash Flow + Spending Donut */}
+      <div className="grid-3">
+        <CashFlowChart data={cashFlowData} />
+        <SpendingDonut data={donutData} total={totalSpending} />
       </div>
 
-      {/* Stats Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <InfoCard
-          accentColor="tertiary"
-          icon="account_balance"
-          title="Total Balance"
-          amount={formatAmount(totalBalance, currency, decimalPlaces)}
-          trendText={
-            overview?.comparison?.incomeChange > 0
-              ? `+${overview.comparison.incomeChange}% from last month`
-              : `${overview?.comparison?.incomeChange || 0}% from last month`
-          }
-          trendUp={overview?.comparison?.incomeChange >= 0}
-        />
-        <InfoCard
-          accentColor="primary"
-          icon="payments"
-          title="Monthly Income"
-          amount={formatAmount(
-            overview?.currentMonth?.income || 0,
-            currency,
-            decimalPlaces,
-          )}
-          trendText={
-            overview?.comparison?.incomeChange > 0
-              ? `${formatAmount((overview?.currentMonth?.income || 0) - (overview?.previousMonth?.income || 0), currency, decimalPlaces)} higher than prev`
-              : 'Down from prev month'
-          }
-          trendUp={overview?.comparison?.incomeChange >= 0}
-        />
-        <InfoCard
-          accentColor="error"
-          icon="shopping_cart"
-          title="Monthly Expense"
-          amount={formatAmount(
-            overview?.currentMonth?.expense || 0,
-            currency,
-            decimalPlaces,
-          )}
-          trendText={
-            overview?.comparison?.expenseChange < 0
-              ? `Reduced by ${Math.abs(overview.comparison.expenseChange)}%`
-              : `+${overview?.comparison?.expenseChange || 0}% higher`
-          }
-          trendUp={overview?.comparison?.expenseChange <= 0}
-        />
+      {/* Row 3: Recent Txns | Budget Overview | Upcoming Payments */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+        <RecentTransactionsMini transactions={recent} onViewAll={() => navigate('/transactions')} />
+        <BudgetOverview budgets={mockBudgets} />
+        <UpcomingPayments payments={mockPayments} />
       </div>
-
-      {/* Main Chart Area */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <Linechart data={trend} />
-        </div>
-        <div className="lg:col-span-1">
-          <Piechart
-            title="Asset Distribution"
-            data={
-              accountsMode.length > 0
-                ? accountsMode
-                : [
-                    { name: 'Cash & Savings', value: 842000 },
-                    { name: 'Crypto Portfolio', value: 312592 },
-                    { name: 'Commodities', value: 130000 },
-                  ]
-            }
-          />
-        </div>
-      </div>
-
-      <InvoiceTable transactions={recent} />
-
-      {/* Contextual FAB */}
-      <button
-        onClick={openTransactionPopup}
-        className="fixed bottom-10 right-10 w-16 h-16 rounded-full btn-primary-gradient text-on-primary shadow-2xl shadow-primary/40 flex items-center justify-center transition-transform hover:scale-110 active:scale-90 z-50"
-      >
-        <span
-          className="material-symbols-outlined text-3xl"
-          style={{ fontVariationSettings: "'wght' 600" }}
-        >
-          add
-        </span>
-      </button>
     </div>
   );
 }

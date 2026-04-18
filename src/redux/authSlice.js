@@ -13,20 +13,25 @@ export const authSlice = createSlice({
       state.user = null;
     },
     updateAvatar: (state, action) => {
-      if (state.user?.user) {
-        state.user.user.avatar = action.payload;
+      if (state.user) {
+        state.user.avatar = action.payload;
       }
     },
     updatePreferences: (state, action) => {
-      if (state.user?.user) {
-        state.user.user.preferences = {
-          ...(state.user.user.preferences || {}),
+      if (state.user) {
+        state.user.preferences = {
+          ...(state.user.preferences || {}),
           ...action.payload,
         };
+      }
+    },
+    setOnboardingDone: (state, action) => {
+      if (state.user) {
+        state.user.onboardingDone = action.payload;
       }
     },
   },
 });
 
-export const { setAuthUser, logout, updateAvatar, updatePreferences } = authSlice.actions;
+export const { setAuthUser, logout, updateAvatar, updatePreferences, setOnboardingDone } = authSlice.actions;
 export default authSlice.reducer;

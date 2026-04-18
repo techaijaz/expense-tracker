@@ -22,13 +22,16 @@ export default {
                 if (cashCount >= 1) {
                     return httpError(next, new Error('Only one Cash account is allowed per user.'), req, 409)
                 }
+                value.isCash = true // Force isCash for CASH type
+            } else {
+                value.isCash = false // Ensure isCash is false for other types
             }
 
             // PRO subscription enforcement: BASIC users can only have 1 BANK account
             if (value.type === 'BANK') {
-                const user = await userModel.findById(userId).select('subscriptionTier')
-                const tier = user?.subscriptionTier || 'BASIC'
-                if (tier === 'BASIC') {
+                const user = await userModel.findById(userId).select('plan')
+                const plan = user?.plan || 'basic'
+                if (plan === 'basic') {
                     const bankCount = await Account.countDocuments({ userId, type: 'BANK', isDeleted: false })
                     if (bankCount >= 1) {
                         return httpError(next, new Error('PRO subscription required to add more than 1 bank account.'), req, 403)
@@ -68,25 +71,16 @@ export default {
                     })
                 }
 
-                // Create initial transaction using database service logic manual equivalent
-                // We'll use the existing createTransaction helper from databaseService if possible
-                // For simplicity here, we'll do it manually to ensure it's linked correctly
-                const ledger = await mongoose.model('Ledger').create({
-                    userId,
-                    title: 'Opening Balance',
-                    totalAmount: initialBalance,
-                    date: new Date(),
-                    categoryId: category._id,
-                    ledgerType: 'NORMAL',
-                })
-
+                // Create initial transaction directly
                 await mongoose.model('Transaction').create({
-                    ledgerId: ledger._id,
                     userId,
                     accountId: account._id,
-                    type: 'CREDIT',
+                    type: 'income',
                     amount: initialBalance,
-                    note: 'Initial balance at account creation',
+                    title: 'Opening Balance',
+                    date: new Date(),
+                    categoryId: category._id,
+                    notes: 'Initial balance at account creation',
                     balanceSnapshot: initialBalance,
                 })
 
@@ -150,13 +144,13 @@ export default {
             // Handle "Opening Balance" edit
             if (balance !== undefined) {
                 const Transaction = mongoose.model('Transaction')
-                const Ledger = mongoose.model('Ledger')
 
                 // Find the initial transaction
                 const initialTransaction = await Transaction.findOne({
                     accountId: req.params.id,
                     userId,
-                    note: 'Initial balance at account creation',
+                    title: 'Opening Balance',
+                    notes: 'Initial balance at account creation',
                 })
 
                 if (initialTransaction) {
@@ -164,12 +158,8 @@ export default {
 
                     // Update Transaction
                     initialTransaction.amount = Number(balance)
+                    initialTransaction.balanceSnapshot += diff
                     await initialTransaction.save()
-
-                    // Update associated Ledger
-                    if (initialTransaction.ledgerId) {
-                        await Ledger.findByIdAndUpdate(initialTransaction.ledgerId, { $set: { totalAmount: Number(balance) } })
-                    }
 
                     // Update Account Balance by diff
                     updateFields.balance = current.balance + diff
@@ -179,21 +169,16 @@ export default {
                     if (!category) {
                         category = await mongoose.model('Category').create({ userId, name: 'Opening Balance', type: 'INCOME' })
                     }
-                    const ledger = await Ledger.create({
-                        userId,
-                        title: 'Opening Balance',
-                        totalAmount: Number(balance),
-                        date: new Date(),
-                        categoryId: category._id,
-                        ledgerType: 'NORMAL',
-                    })
+                    
                     await Transaction.create({
-                        ledgerId: ledger._id,
                         userId,
                         accountId: req.params.id,
-                        type: 'CREDIT',
+                        type: 'income',
                         amount: Number(balance),
-                        note: 'Initial balance at account creation',
+                        title: 'Opening Balance',
+                        date: new Date(),
+                        categoryId: category._id,
+                        notes: 'Initial balance at account creation',
                         balanceSnapshot: current.balance + Number(balance),
                     })
                     updateFields.balance = current.balance + Number(balance)
@@ -228,26 +213,16 @@ export default {
 
             // Cascading soft-delete related data
             const Transaction = mongoose.model('Transaction')
-            const Ledger = mongoose.model('Ledger')
-
-            // Fetch related ledger IDs (via transactions) before marking them deleted
-            const relatedTransactions = await Transaction.find({ userId, accountId, isDeleted: false })
-            const ledgerIds = [...new Set(relatedTransactions.map((t) => t.ledgerId))]
 
             // 1. Mark transactions as deleted
             await Transaction.updateMany({ userId, accountId, isDeleted: false }, { $set: { isDeleted: true } })
 
-            // 2. Mark ledgers as deleted
-            if (ledgerIds.length > 0) {
-                await Ledger.updateMany({ _id: { $in: ledgerIds }, userId, isDeleted: false }, { $set: { isDeleted: true } })
-            }
-
-            // 3. Mark the account itself as deleted
+            // 2. Mark the account itself as deleted
             account.isDeleted = true
             account.isDefault = false
             await account.save()
 
-            httpResponse(req, res, 200, 'Account and all related transactions/ledgers deleted successfully', account)
+            httpResponse(req, res, 200, 'Account and all related transactions deleted successfully', account)
         } catch (error) {
             httpError(next, error, req, 500)
         }
@@ -259,7 +234,8 @@ export default {
             const transaction = await Transaction.findOne({
                 accountId: req.params.id,
                 userId: req.authenticatedUser._id,
-                note: 'Initial balance at account creation',
+                title: 'Opening Balance',
+                notes: 'Initial balance at account creation',
             })
             if (!transaction) return httpResponse(req, res, 200, 'No opening balance found', { amount: 0 })
             httpResponse(req, res, 200, 'Opening balance retrieved', { amount: transaction.amount })

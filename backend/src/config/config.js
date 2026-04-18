@@ -15,7 +15,14 @@ export default {
     FRONTEND_URL: process.env.FRONTEND_URL,
 
     //email service
-    EMAIL_SERVICE_API_KEY: process.env.EMAIL_SERVICE_API_KEY,
+    EMAIL: {
+        SERVICE: process.env.EMAIL_SERVICE, // e.g., 'gmail'
+        HOST: process.env.EMAIL_HOST,
+        PORT: process.env.EMAIL_PORT || 587,
+        USER: process.env.EMAIL_USER,
+        PASS: process.env.EMAIL_PASS,
+        FROM: process.env.EMAIL_FROM || 'aiexpenser@example.com',
+    },
 
     //ACCESS_TOKEN_SECRET
     ACCESS_TOKEN: {

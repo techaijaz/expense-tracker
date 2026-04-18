@@ -13,10 +13,8 @@ const loanSchema = new mongoose.Schema(
             enum: ['BORROWED', 'LENT'],
             required: true,
         },
-
-        dueDate: { type: Date },
-        interestRate: { type: Number, default: 0 },
-        status: { type: String, enum: ['PENDING', 'PAID'], default: 'PENDING' },
+        date: { type: Date, default: Date.now },
+        transactionId: { type: mongoose.Schema.Types.ObjectId, ref: 'Transaction' },
         isDeleted: { type: Boolean, default: false },
     },
     { timestamps: true }

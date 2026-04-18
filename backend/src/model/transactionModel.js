@@ -2,12 +2,6 @@ import mongoose from 'mongoose'
 
 const transactionSchema = new mongoose.Schema(
     {
-        ledgerId: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'Ledger',
-            required: true,
-            index: true,
-        },
         userId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'User',
@@ -20,22 +14,89 @@ const transactionSchema = new mongoose.Schema(
             required: true,
             index: true,
         },
+        targetAccountId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Account',
+            index: true,
+            required: false, // Only for transfers
+        },
         type: {
             type: String,
-            enum: ['DEBIT', 'CREDIT'],
+            enum: ['expense', 'income', 'transfer', 'debt', 'repayment'],
             required: true,
+            index: true,
         },
         amount: {
             type: Number,
             required: true,
             min: 0,
         },
+        title: {
+            type: String,
+            required: true,
+            trim: true,
+        },
+        date: {
+            type: Date,
+            default: Date.now,
+            index: true,
+        },
+        categoryId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Category',
+            index: true,
+            required: false,
+        },
+        partyId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Party',
+            index: true,
+            required: false,
+        },
         balanceSnapshot: {
             type: Number,
         },
-        note: {
+        targetBalanceSnapshot: {
+            type: Number,
+        },
+        notes: {
             type: String,
             trim: true,
+        },
+        tags: [
+            {
+                type: String,
+                trim: true,
+            },
+        ],
+        billUrl: {
+            type: String,
+        },
+        pendingStatus: {
+            type: Boolean,
+            default: false,
+        },
+        loanId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Loan',
+            index: true,
+        },
+        recurringId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Recurring',
+            index: true,
+        },
+        debtType: {
+            type: String,
+            enum: ['LENT', 'BORROWED', 'REPAYMENT_IN', 'REPAYMENT_OUT', null, ''],
+            default: null,
+        },
+        dueDate: {
+            type: Date,
+        },
+        interestRate: {
+            type: Number,
+            default: 0,
         },
         isDeleted: {
             type: Boolean,
@@ -54,7 +115,10 @@ const transactionSchema = new mongoose.Schema(
     }
 )
 
-// Compound Index on accountId + createdAt
-transactionSchema.index({ accountId: 1, createdAt: -1 })
+// Compound Index on accountId + date
+transactionSchema.index({ accountId: 1, date: -1 })
+// Index for finding transfers in target account
+transactionSchema.index({ targetAccountId: 1, date: -1 })
 
 export default mongoose.model('Transaction', transactionSchema)
+

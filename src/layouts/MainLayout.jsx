@@ -9,22 +9,25 @@ function MainLayout() {
   const [isTransactionOpen, setIsTransactionOpen] = useState(false);
 
   return (
-    <div className="antialiased selection:bg-primary selection:text-on-primary font-body text-on-surface bg-background">
-      {/* Responsive Sidebar */}
+    <div className="app-layout h-screen overflow-hidden">
+      {/* Premium Sidebar */}
       <SideMenu isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
 
-      {/* Top Navigation Bar */}
-      <Header
-        onMenuToggle={() => setIsSidebarOpen(true)}
-        onNewTransaction={() => setIsTransactionOpen(true)}
-      />
-
-      {/* Main Content Canvas */}
-      <main className="ml-0 lg:ml-64 pt-16 min-h-screen bg-background text-on-surface flex flex-col">
-        <Outlet
-          context={{ openTransactionPopup: () => setIsTransactionOpen(true) }}
+      {/* Main Content Area */}
+      <div className="main-content flex flex-col">
+        {/* Top Navbar */}
+        <Header
+          onMenuToggle={() => setIsSidebarOpen(true)}
+          onNewTransaction={() => setIsTransactionOpen(true)}
         />
-      </main>
+
+        {/* View Surface */}
+        <div className="flex-1 overflow-y-auto">
+          <Outlet
+            context={{ openTransactionPopup: () => setIsTransactionOpen(true) }}
+          />
+        </div>
+      </div>
 
       {/* Global Transaction Popup */}
       <TransactionPopup

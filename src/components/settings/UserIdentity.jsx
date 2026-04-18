@@ -3,14 +3,12 @@ import { useSelector, useDispatch } from 'react-redux';
 import { toast } from 'sonner';
 import api from '@/utils/httpMethods';
 import { updateAvatar } from '@/redux/authSlice';
-import { SectionCard, SectionTitle, FieldLabel } from '../SharedComponents';
 
-const BACKEND_URL = 'http://localhost:5000';
+const BACKEND_URL = import.meta.env.VITE_API_URL?.replace('/api/v1', '') || 'http://localhost:5000';
 
 export default function UserIdentity() {
   const dispatch = useDispatch();
-  const { user } = useSelector(s => s.auth);
-  const currentUser = user?.user;
+  const currentUser = useSelector(s => s.auth.user);
 
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -18,9 +16,35 @@ export default function UserIdentity() {
 
   const [showChangePwd, setShowChangePwd] = useState(false);
   const [pwdForm, setPwdForm] = useState({ current: '', newPwd: '', confirm: '' });
+  const [errors, setErrors] = useState({ current: '', newPwd: '', confirm: '' });
   const [changingPwd, setChangingPwd] = useState(false);
 
-  const avatarSrc = avatarPreview || (currentUser?.avatar ? `${BACKEND_URL}${currentUser.avatar}` : null);
+  const validate = (field, value, currentState = pwdForm) => {
+    let err = '';
+    if (field === 'current') {
+      if (!value) err = 'Current password is required';
+      else if (value.length < 8) err = 'Required min. 8 characters';
+    }
+    if (field === 'newPwd') {
+      if (!value) err = 'New password is required';
+      else if (value.length < 8) err = 'Min. 8 characters required';
+      else if (value === currentState.current) err = 'Must be different from current';
+    }
+    if (field === 'confirm') {
+      if (value !== currentState.newPwd) err = 'Passwords do not match';
+    }
+    setErrors(prev => ({ ...prev, [field]: err }));
+    return err;
+  };
+
+  const handlePwdInputChange = (field, value) => {
+    const nextState = { ...pwdForm, [field]: value };
+    setPwdForm(nextState);
+    validate(field, value, nextState);
+    if (field === 'newPwd' && nextState.confirm) validate('confirm', nextState.confirm, nextState);
+  };
+
+  const avatarSrc = avatarPreview || (currentUser?.avatar ? (currentUser.avatar.startsWith('http') ? currentUser.avatar : `${BACKEND_URL.replace(/\/$/, '')}/${currentUser.avatar.replace(/^\//, '')}`) : null);
   const getUserInitials = () => `${currentUser?.firstName?.charAt(0) || ''}${currentUser?.lastName?.charAt(0) || ''}`.toUpperCase() || 'AI';
 
   const handleAvatarChange = async (e) => {
@@ -42,77 +66,102 @@ export default function UserIdentity() {
 
   const handleChangePassword = async (e) => {
     e.preventDefault();
-    if (pwdForm.newPwd !== pwdForm.confirm) return toast.error('New passwords do not match');
-    if (pwdForm.newPwd.length < 8) return toast.error('Password must be at least 8 characters');
+    
+    // Final check
+    const e1 = validate('current', pwdForm.current);
+    const e2 = validate('newPwd', pwdForm.newPwd);
+    const e3 = validate('confirm', pwdForm.confirm);
+    if (e1 || e2 || e3) return;
+
     setChangingPwd(true);
     try {
-      await api.put('/user/change-password', { currentPassword: pwdForm.current, newPassword: pwdForm.newPwd });
-      toast.success('Password changed successfully!');
+      await api.put('/user/change-password', { 
+        currentPassword: pwdForm.current, 
+        newPassword: pwdForm.newPwd 
+      });
+      toast.success('Password updated successfully!');
       setPwdForm({ current: '', newPwd: '', confirm: '' });
+      setErrors({ current: '', newPwd: '', confirm: '' });
       setShowChangePwd(false);
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Failed to change password');
+      const msg = err?.response?.data?.message || 'Update failed';
+      if (msg.toLowerCase().includes('current password')) {
+        setErrors(prev => ({ ...prev, current: 'Incorrect current password' }));
+      } else if (msg.toLowerCase().includes('new password')) {
+         setErrors(prev => ({ ...prev, newPwd: msg }));
+      } else {
+        toast.error(msg);
+      }
     } finally { setChangingPwd(false); }
   };
 
-  const inputSx = "w-full py-[11px] px-3.5 bg-secondary-container border border-secondary-container rounded-[10px] text-on-surface text-[13px] outline-none font-body";
-
   return (
-    <SectionCard accent>
-      <SectionTitle icon="manage_accounts">User Identity</SectionTitle>
-      <div className="flex items-start gap-5 flex-wrap">
-        <div className="relative shrink-0">
-          <div className="w-20 h-20 rounded-2xl bg-surface-variant border-2 border-surface-variant overflow-hidden flex items-center justify-center text-[28px] font-extrabold text-primary">
-            {avatarSrc ? <img src={avatarSrc} alt="avatar" className="w-full h-full object-cover" /> : getUserInitials()}
+    <div className="settings-card">
+      <div className="settings-section-title"><div className="icon">👤</div>User Identity</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
+        <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 700, color: '#fff', position: 'relative', overflow: avatarSrc ? 'hidden' : 'visible' }}>
+          {avatarSrc ? <img src={avatarSrc} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span>{getUserInitials()}</span>}
+          <div 
+            onClick={() => avatarInputRef.current?.click()}
+            style={{ position: 'absolute', bottom: 0, right: 0, width: 18, height: 18, background: 'var(--bg3)', borderRadius: '50%', border: '2px solid var(--bg2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, cursor: 'pointer' }}
+          >
+            {uploadingAvatar ? <div className="loader-mini" /> : '✏️'}
           </div>
-          <button onClick={() => avatarInputRef.current?.click()} disabled={uploadingAvatar}
-            className="absolute -bottom-1 -right-1 w-7 h-7 rounded-lg bg-primary border-none cursor-pointer flex items-center justify-center">
-            {uploadingAvatar
-              ? <div className="w-3 h-3 border-2 border-[rgba(6,20,35,0.3)] border-t-background rounded-full animate-spin" />
-              : <span className="material-symbols-outlined text-[14px] text-background" style={{ fontVariationSettings: "'FILL' 0" }}>edit</span>}
-          </button>
           <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
         </div>
-
-        <div className="flex-1">
-          <p className="text-lg font-extrabold text-on-surface capitalize mb-1">
-            {currentUser?.firstName} {currentUser?.lastName}
-          </p>
-          <p className="text-[13px] text-on-surface-variant mb-3">{currentUser?.email}</p>
-          <div className="flex gap-2 flex-wrap">
-            <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-[rgba(168,237,202,0.08)] border border-[rgba(168,237,202,0.15)] text-[#a8edca] uppercase tracking-[0.08em]">Level 4 Encryption</span>
-            <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-surface-variant border border-surface-variant text-primary uppercase tracking-[0.08em]">Active Session</span>
+        <div>
+          <div style={{ fontSize: 15, fontWeight: 600 }}>{currentUser?.firstName} {currentUser?.lastName}</div>
+          <div style={{ fontSize: 12, color: 'var(--text2)' }}>{currentUser?.email}</div>
+          <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+            <span style={{ fontSize: 10, padding: '2px 8px', background: 'var(--green-bg)', color: 'var(--green)', borderRadius: 4, fontWeight: 600 }}>Level 4 Encryption</span>
+            <span style={{ fontSize: 10, padding: '2px 8px', background: 'var(--accent-glow)', color: 'var(--accent)', borderRadius: 4, fontWeight: 600 }}>Active Session</span>
           </div>
         </div>
-
-        <button onClick={() => setShowChangePwd(v => !v)}
-          className="px-4 py-2 bg-surface-variant border border-surface-variant rounded-[10px] text-primary text-xs font-bold cursor-pointer flex items-center gap-1.5">
-          <span className="material-symbols-outlined text-[15px]" style={{ fontVariationSettings: "'FILL' 0" }}>lock_reset</span>
-          Change Password
-        </button>
       </div>
-
-      {showChangePwd && (
-        <form onSubmit={handleChangePassword} className="mt-5 pt-5 border-t border-secondary-container flex flex-col gap-3">
-          {[
-            { key: 'current', label: 'Current Password', placeholder: '••••••••' },
-            { key: 'newPwd',  label: 'New Password',     placeholder: 'Min. 8 characters' },
-            { key: 'confirm', label: 'Confirm New Password', placeholder: '••••••••' },
-          ].map(({ key, label, placeholder }) => (
-            <div key={key}>
-              <FieldLabel>{label}</FieldLabel>
-              <input type="password" value={pwdForm[key]} onChange={e => setPwdForm(p => ({ ...p, [key]: e.target.value }))}
-                placeholder={placeholder} className={inputSx} />
-            </div>
-          ))}
-          <div className="flex gap-2.5">
-            <button type="button" onClick={() => setShowChangePwd(false)} className="flex-1 p-2.5 bg-secondary-container border border-secondary-container rounded-[10px] text-on-surface-variant text-[13px] font-semibold cursor-pointer">Cancel</button>
-            <button type="submit" disabled={changingPwd} className={`flex-[2] p-2.5 bg-primary border-none rounded-[10px] text-background text-[13px] font-bold ${changingPwd ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}>
-              {changingPwd ? 'Updating…' : 'Update Password'}
-            </button>
+      
+      {!showChangePwd ? (
+        <button onClick={() => setShowChangePwd(true)} className="btn-outline" style={{ width: '100%', justifyContent: 'center' }}>🔒 Change Password</button>
+      ) : (
+        <form onSubmit={handleChangePassword} style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div className="form-group">
+            <label className="form-label">Current Password</label>
+            <input 
+              type="password" 
+              value={pwdForm.current} 
+              onChange={e => handlePwdInputChange('current', e.target.value)} 
+              className={`form-input ${errors.current ? 'error' : ''}`}
+              placeholder="••••••••" 
+            />
+            {errors.current && <span className="error-msg">{errors.current}</span>}
+          </div>
+          <div className="form-group">
+            <label className="form-label">New Password</label>
+            <input 
+              type="password" 
+              value={pwdForm.newPwd} 
+              onChange={e => handlePwdInputChange('newPwd', e.target.value)} 
+              className={`form-input ${errors.newPwd ? 'error' : ''}`}
+              placeholder="Min. 8 characters" 
+            />
+            {errors.newPwd && <span className="error-msg">{errors.newPwd}</span>}
+          </div>
+          <div className="form-group">
+            <label className="form-label">Confirm New Password</label>
+            <input 
+              type="password" 
+              value={pwdForm.confirm} 
+              onChange={e => handlePwdInputChange('confirm', e.target.value)} 
+              className={`form-input ${errors.confirm ? 'error' : ''}`}
+              placeholder="••••••••" 
+            />
+            {errors.confirm && <span className="error-msg">{errors.confirm}</span>}
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button type="button" onClick={() => setShowChangePwd(false)} className="btn-cancel" style={{ flex: 1 }}>Cancel</button>
+            <button type="submit" disabled={changingPwd} className="btn-save" style={{ flex: 2 }}>{changingPwd ? 'Updating…' : 'Update Password'}</button>
           </div>
         </form>
       )}
-    </SectionCard>
+    </div>
   );
 }
