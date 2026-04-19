@@ -9,10 +9,21 @@ export default {
             const { error, value } = validateJoiSchema(validationPartyBody, req.body)
             if (error) return httpError(next, error, req, 422)
 
+            const userId = req.authenticatedUser._id
+            const user = await Party.db.model('User').findById(userId).select('plan')
+            const plan = user?.plan || 'basic'
+            const count = await Party.countDocuments({ userId, isDeleted: false })
+            const limit = plan === 'basic' ? 5 : 100
+
+            if (count >= limit) {
+                return httpError(next, new Error(`${plan.toUpperCase()} plan limit reached for parties (${limit}).`), req, 403)
+            }
+
             const party = await Party.create({
                 ...value,
                 userId: req.authenticatedUser._id,
             })
+
             httpResponse(req, res, 201, 'Party created successfully', party)
         } catch (error) {
             httpError(next, error, req, 500)

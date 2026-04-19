@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '@/utils/httpMethods';
+import useFormat from '@/hooks/useFormat';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -19,9 +20,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 const Reports = () => {
-  const { user } = useSelector(s => s.auth);
-  // Support nested or direct preferences
-  const preferences = user?.user?.preferences || user?.preferences || {};
+  const { formatAmount, preferences } = useFormat();
   const fyLabel = preferences.fiscalYear === 'January-December' ? 'FY (Jan-Dec)' : 'FY (Apr-Mar)';
 
   const [activeTab, setActiveTab] = useState('Overview');
@@ -89,13 +88,7 @@ const Reports = () => {
     }
   };
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: preferences.currency || 'INR',
-      maximumFractionDigits: 0
-    }).format(amount);
-  };
+  const formatCurrency = (amount) => formatAmount(amount, null, 0);
 
   if (loading && !data.overview) {
     return (
@@ -269,7 +262,7 @@ const Reports = () => {
                     contentStyle={{ backgroundColor: 'var(--bg2)', borderColor: 'var(--border)', borderRadius: '12px' }}
                     itemStyle={{ color: 'var(--text)' }}
                   />
-                  <Area type="monotone" dataKey={(val) => val.dailyIncome - val.dailyExpense} name="Savings" stroke="var(--purple)" fillOpacity={1} fill="url(#colorSavings)" />
+                  <Area type="monotone" dataKey={(val) => val.income - val.expense} name="Savings" stroke="var(--purple)" fillOpacity={1} fill="url(#colorSavings)" />
                 </AreaChart>
               ) : (
                 <BarChart data={data.trend} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
@@ -281,10 +274,10 @@ const Reports = () => {
                     contentStyle={{ backgroundColor: 'var(--bg2)', borderColor: 'var(--border)', borderRadius: '12px' }}
                   />
                   {(activeTab === 'Overview' || activeTab === 'Income' || activeTab === 'Cash Flow') && (
-                    <Bar dataKey="dailyIncome" name="Income" fill="var(--accent)" radius={[4, 4, 0, 0]} barSize={period === 'monthly' ? 12 : 30} />
+                    <Bar dataKey="income" name="Income" fill="var(--accent)" radius={[4, 4, 0, 0]} barSize={period === 'monthly' ? 12 : 30} />
                   )}
                   {(activeTab === 'Overview' || activeTab === 'Expense' || activeTab === 'Cash Flow') && (
-                    <Bar dataKey="dailyExpense" name="Expense" fill="var(--red)" fillOpacity={0.7} radius={[4, 4, 0, 0]} barSize={period === 'monthly' ? 12 : 30} />
+                    <Bar dataKey="expense" name="Expense" fill="var(--red)" fillOpacity={0.7} radius={[4, 4, 0, 0]} barSize={period === 'monthly' ? 12 : 30} />
                   )}
                 </BarChart>
               )}

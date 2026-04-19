@@ -10,6 +10,8 @@ router.post('/', formalLoanController.createLoan)
 router.get('/', formalLoanController.getLoans)
 router.get('/:id', formalLoanController.getLoanDetails)
 router.post('/pay-emi', formalLoanController.payEMI)
+router.post('/prepay', formalLoanController.prepayLoan)
+router.post('/simulate-prepayment', formalLoanController.simulatePrepayment)
 
 export default router
 

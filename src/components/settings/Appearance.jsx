@@ -5,7 +5,11 @@ import api from '@/utils/httpMethods';
 
 export default function Appearance() {
   const dispatch = useDispatch();
-  const { theme, setTheme, accentColor, setAccentColor } = useTheme();
+  const { 
+    theme, setTheme, 
+    accentColor, setAccentColor, 
+    language, setLanguage 
+  } = useTheme();
 
   const THEMES = [
     { key: 'dark', icon: '🌙', label: 'Dark' },
@@ -35,6 +39,14 @@ export default function Appearance() {
       const resData = await api.put('/user/preferences', { accentColor: newAccent });
       dispatch(updatePreferences(resData.data.preferences));
     } catch (err) { console.error('Failed to save accent in DB'); }
+  };
+
+  const handleLanguageChange = async (newLang) => {
+    setLanguage(newLang);
+    try {
+      const resData = await api.put('/user/preferences', { language: newLang });
+      dispatch(updatePreferences(resData.data.preferences));
+    } catch (err) { console.error('Failed to save language in DB'); }
   };
 
   return (
@@ -82,7 +94,12 @@ export default function Appearance() {
         <div>
           <div className="settings-key">Language</div>
         </div>
-        <select className="filter-input" style={{ width: 'auto' }}>
+        <select 
+          className="filter-input" 
+          style={{ width: 'auto' }}
+          value={language}
+          onChange={(e) => handleLanguageChange(e.target.value)}
+        >
           <option value="en">English</option>
           <option value="hi">हिंदी</option>
         </select>

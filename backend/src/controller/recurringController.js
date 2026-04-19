@@ -26,10 +26,22 @@ export default {
                 return httpError(next, error, req, 422)
             }
 
+            const user = await databseService.findUserById(userId)
+            const plan = user?.plan || 'basic'
+            const count = await databseService.countRecurringTasks(userId)
+            const limit = plan === 'basic' ? 1 : 100
+
+            if (count >= limit) {
+                return httpError(next, new Error(`${plan.toUpperCase()} plan limit reached for recurring tasks (${limit}).`), req, 403)
+            }
+
+
             const payload = {
                 ...value,
                 userId,
-                nextDueDate: value.startDate // Initialize nextDueDate as startDate
+                nextDueDate: value.startDate, // Initialize nextDueDate as startDate
+                categoryId: value.categoryId === '' ? null : value.categoryId,
+                toAccountId: value.toAccountId === '' ? null : value.toAccountId,
             }
 
             const task = await databseService.createRecurringTask(payload)
@@ -50,7 +62,13 @@ export default {
                 return httpError(next, error, req, 422)
             }
 
-            const task = await databseService.updateRecurringTask(taskId, userId, value)
+            const sanitizedValue = {
+                ...value,
+                categoryId: value.categoryId === '' ? null : value.categoryId,
+                toAccountId: value.toAccountId === '' ? null : value.toAccountId,
+            }
+
+            const task = await databseService.updateRecurringTask(taskId, userId, sanitizedValue)
             if (!task) {
                 return httpError(next, 'Task not found', req, 404)
             }

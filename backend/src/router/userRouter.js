@@ -16,6 +16,10 @@ router.route('/preferences').put(authentication, userController.updatePreference
 router.route('/complete-onboarding').put(authentication, userController.completeOnboarding)
 router.route('/storage-stats').get(authentication, userController.getStorageStats)
 router.route('/hard-reset').delete(authentication, userController.hardReset)
+router.route('/verify-email').get(userController.verifyEmail)
+router.route('/resend-verification').post(userController.resendVerification)
+router.route('/forgot-password').post(userController.forgotPassword)
+router.route('/reset-password').post(userController.resetPassword)
 router.route('/export').get(authentication, userController.exportData)
 
 export default router

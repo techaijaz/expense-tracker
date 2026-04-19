@@ -14,13 +14,12 @@ import { useEffect } from 'react';
 import { toast } from 'sonner';
 import { useDispatch } from 'react-redux';
 import { updateAccount } from '@/redux/accountSlice';
-import { useSelector } from 'react-redux';
+import useFormat from '@/hooks/useFormat';
 import { restrictDecimals } from '@/utils/format';
 
 const AddMoneyPopup = ({ open, setOpen, accountId }) => {
   const dispatch = useDispatch();
-  const preferences = useSelector((state) => state.auth.user?.user?.preferences);
-  const { decimalPlaces = 2 } = preferences || {};
+  const { decimalPlaces } = useFormat();
   const { data, error, loading, makeRequest } = useApi();
   const {
     register,

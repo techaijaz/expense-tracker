@@ -18,6 +18,15 @@ export default {
             if (error) return httpError(next, error, req, 422)
 
             const userId = req.authenticatedUser._id
+            const user = await mongoose.model('User').findById(userId).select('plan')
+            const plan = user?.plan || 'basic'
+            const count = await Loan.countDocuments({ user: userId, isDeleted: false })
+            const limit = plan === 'basic' ? 1 : 100
+
+            if (count >= limit) {
+                return httpError(next, new Error(`${plan.toUpperCase()} plan limit reached for personal debt records (${limit}).`), req, 403)
+            }
+
 
             // Create Transaction via databseService to ensure ledger sync
             const transactionPayload = {

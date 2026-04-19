@@ -368,11 +368,18 @@ export default function AddAccounts({
   onEditClose = null,
 }) {
   const dispatch = useDispatch();
+  const { user } = useSelector((state) => state.auth);
   const { accounts } = useSelector((state) => state.accounts);
   const [isOpen, setIsOpen] = useState(false);
+  const plan = user?.user?.plan || user?.plan || 'basic';
+  const isPro = plan === 'pro';
 
   // Check if user already has a Cash account
   const hasCash = accounts.some((a) => a.type === 'CASH' && !a.isDeleted);
+  
+  // Basic plan: 1 Cash + 1 Other limit
+  const nonCashAccounts = accounts.filter(a => a.type !== 'CASH' && !a.isDeleted);
+  const limitReached = !isPro && nonCashAccounts.length >= 1;
 
   const handleSaved = (account) => {
     if (editAccount) {
@@ -405,15 +412,23 @@ export default function AddAccounts({
   return (
     <>
       <div
-        onClick={() => setIsOpen(true)}
+        onClick={() => {
+          if (limitReached) {
+            toast.error('Basic plan limit reached (1 Non-Cash account). Upgrade to PRO to add more.');
+            return;
+          }
+          setIsOpen(true);
+        }}
         className="inline-block cursor-pointer"
       >
         {customTrigger ?? (
-          <button className="bg-primary text-background px-4 py-2 rounded-lg font-bold text-sm hover:opacity-90 transition-all">
+          <button className="bg-primary text-background px-4 py-2 rounded-lg font-bold text-sm hover:opacity-90 transition-all flex items-center gap-2">
+            {limitReached && '🔒 '}
             {btnLabel}
           </button>
         )}
       </div>
+
 
       {isOpen && (
         <AccountModal

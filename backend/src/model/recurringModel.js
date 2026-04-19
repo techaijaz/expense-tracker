@@ -5,7 +5,7 @@ const recurringSchema = new mongoose.Schema(
         userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
         title: { type: String, required: true },
         amount: { type: Number, required: true },
-        type: { type: String, enum: ['INCOME', 'EXPENSE'], required: true },
+        type: { type: String, enum: ['INCOME', 'EXPENSE', 'TRANSFER'], required: true },
         frequency: { 
             type: String, 
             enum: ['DAILY', 'WEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY'], 
@@ -15,9 +15,10 @@ const recurringSchema = new mongoose.Schema(
         nextDueDate: { type: Date, required: true },
         categoryId: { type: mongoose.Schema.Types.ObjectId, ref: 'Category' },
         accountId: { type: mongoose.Schema.Types.ObjectId, ref: 'Account', required: true },
-        toAccountId: { type: mongoose.Schema.Types.ObjectId, ref: 'Account' }, // For transfers if we extend it
+        toAccountId: { type: mongoose.Schema.Types.ObjectId, ref: 'Account' }, // For transfers
         status: { type: String, enum: ['ACTIVE', 'PAUSED'], default: 'ACTIVE' },
         entryType: { type: String, enum: ['auto', 'manual'], default: 'auto' },
+        notes: { type: String, maxlength: 250 },
         lastProcessedAt: { type: Date },
     },
     { timestamps: true }

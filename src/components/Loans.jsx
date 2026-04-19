@@ -4,8 +4,8 @@ import { toast } from 'sonner';
 import api from '@/utils/httpMethods';
 import { setLoans, updateLoan, removeLoan } from '@/redux/loanSlice';
 import { setAccounts, updateAccount } from '@/redux/accountSlice';
-import { formatAmount, getCurrencySymbol } from '@/utils/format';
-import { format } from 'date-fns';
+import useFormat from '@/hooks/useFormat';
+import { format, isPast } from 'date-fns';
 import {
   Popover,
   PopoverContent,
@@ -15,20 +15,28 @@ import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/utils/utils';
 import AddLoanPopup from './AddLoanPopup';
+import AddFormalLoanPopup from './AddFormalLoanPopup';
+import PayEMIPopup from './PayEMIPopup';
+import PrepaymentPopup from './PrepaymentPopup';
+import LoanSchedulePopup from './LoanSchedulePopup';
 
 export default function Loans() {
   const dispatch = useDispatch();
   const { loans } = useSelector((state) => state.loans);
-  const preferences = useSelector(
-    (state) => state.auth.user?.user?.preferences,
-  );
-  const { currency = 'INR', decimalPlaces = 2 } = preferences || {};
-  const currencySymbol = getCurrencySymbol(currency);
+  const { formatAmount, formatDate, currencySymbol } = useFormat();
 
   const [activeTab, setActiveTab] = useState('PERSONAL');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editLoan, setEditLoan] = useState(null);
   
+  // Formal Loans State
+  const [formalLoans, setFormalLoans] = useState([]);
+  const [isFormalLoanOpen, setIsFormalLoanOpen] = useState(false);
+  const [isPayEMIOpen, setIsPayEMIOpen] = useState(false);
+  const [isPrepayOpen, setIsPrepayOpen] = useState(false);
+  const [isScheduleOpen, setIsScheduleOpen] = useState(false);
+  const [selectedFormalLoan, setSelectedFormalLoan] = useState(null);
+
   // Filters
   const [partyFilter, setPartyFilter] = useState('ALL');
   const [dateFilter, setDateFilter] = useState(null);
@@ -39,10 +47,20 @@ export default function Loans() {
   const [parties, setParties] = useState([]);
 
   // Fetch on mount
+  const fetchFormalLoans = async () => {
+    try {
+      const res = await api.get('/formal-loans');
+      setFormalLoans(res.data.data || res.data || []);
+    } catch (e) {
+      console.error('Failed to fetch formal loans');
+    }
+  };
+
   useEffect(() => {
     api.get('/loans').then((res) => dispatch(setLoans(res.data.data || res.data))).catch(() => {});
     api.get('/parties').then((res) => setParties(res.data.data || res.data || [])).catch(() => {});
     api.get('/account').then((res) => dispatch(setAccounts(res.data.data || res.data))).catch(() => {});
+    fetchFormalLoans();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -69,7 +87,7 @@ export default function Loans() {
     setExpandedParties(newExpanded);
   };
 
-  // Metrics
+  // Metrics (Personal)
   const metrics = useMemo(() => {
     const pending = loans.filter((l) => l.status === 'PENDING');
     const totalLent = pending
@@ -85,6 +103,21 @@ export default function Loans() {
       activeCount: pending.length,
     };
   }, [loans]);
+
+  // Metrics (Formal)
+  const formalMetrics = useMemo(() => {
+    const active = formalLoans.filter(l => l.status === 'ACTIVE');
+    const totalOutstanding = active.reduce((s, l) => s + l.outstandingBalance, 0);
+    const monthlyEMI = active.reduce((s, l) => s + l.emiAmount, 0);
+    const totalInterestPaid = formalLoans.reduce((s, l) => s + (l.totalInterest - (l.currentPendingInterest || 0)), 0); 
+    // Simplified interest paid if tracked, otherwise 0 for now
+    return {
+      totalOutstanding,
+      monthlyEMI,
+      totalInterestPaid: 0, // Need backend support/tracking for accurate historical interest paid
+      activeCount: active.length
+    };
+  }, [formalLoans]);
 
   // Grouped and Filtered Loans (Consolidated by Party)
   const consolidatedLedger = useMemo(() => {
@@ -132,8 +165,32 @@ export default function Loans() {
     return Object.values(partyGroups).sort((a, b) => new Date(b.lastActivity) - new Date(a.lastActivity));
   }, [loans, partyFilter, dateFilter]);
 
+  const { user } = useSelector((state) => state.auth);
+  const plan = user?.user?.plan || user?.plan || 'basic';
+  const isPro = plan === 'pro';
+
+  const personalLimitReached = !isPro && loans.filter(l => l.status === 'PENDING').length >= 1;
+  const formalLimitReached = !isPro && formalLoans.filter(l => l.status === 'ACTIVE').length >= 1;
+
+  const handleAddPersonal = () => {
+    if (personalLimitReached) {
+      toast.error('Basic plan limit reached (1 active personal debt). Upgrade to PRO to add more.');
+      return;
+    }
+    setIsDialogOpen(true);
+  };
+
+  const handleAddFormal = () => {
+    if (formalLimitReached) {
+      toast.error('Basic plan limit reached (1 active formal loan). Upgrade to PRO to add more.');
+      return;
+    }
+    setIsFormalLoanOpen(true);
+  };
+
   return (
     <>
+
       <div className="page-body">
         
         {/* Header Action Row */}
@@ -155,16 +212,17 @@ export default function Loans() {
 
           <div>
              {activeTab === 'FORMAL' ? (
-              <button className="btn-new" onClick={() => toast.info('Formal Loan modal coming soon!')}>
-                + Add Formal Loan
+              <button className="btn-new" onClick={handleAddFormal}>
+                {formalLimitReached ? '🔒' : '+'} Add Formal Loan
               </button>
             ) : (
-              <button className="btn-new" onClick={() => setIsDialogOpen(true)}>
-                + Record Commitment
+              <button className="btn-new" onClick={handleAddPersonal}>
+                {personalLimitReached ? '🔒' : '+'} Record Commitment
               </button>
             )}
           </div>
         </div>
+
 
         {activeTab === 'PERSONAL' && (
           <>
@@ -179,14 +237,14 @@ export default function Loans() {
               <div className="kpi-card green">
                 <div className="kpi-label">Total Lent</div>
                 <div className="kpi-val" style={{ fontSize: '18px' }}>
-                  {formatAmount(metrics.totalLent, currency, decimalPlaces)}
+                  {formatAmount(metrics.totalLent)}
                 </div>
                 <div className="kpi-change neutral">Active receivables</div>
               </div>
               <div className="kpi-card red">
                 <div className="kpi-label">Total Borrowed</div>
                 <div className="kpi-val" style={{ fontSize: '18px' }}>
-                  {formatAmount(metrics.totalBorrowed, currency, decimalPlaces)}
+                  {formatAmount(metrics.totalBorrowed)}
                 </div>
                 <div className="kpi-change neutral">Active payables</div>
               </div>
@@ -194,11 +252,7 @@ export default function Loans() {
                 <div className="kpi-label">Net Position</div>
                 <div className="kpi-val" style={{ fontSize: '18px' }}>
                   {metrics.netPosition >= 0 ? '+' : '-'}
-                  {formatAmount(
-                    Math.abs(metrics.netPosition),
-                    currency,
-                    decimalPlaces,
-                  )}
+                  {formatAmount(Math.abs(metrics.netPosition))}
                 </div>
                 <div
                   className={`kpi-change ${metrics.netPosition >= 0 ? 'up' : 'down'}`}
@@ -340,13 +394,13 @@ export default function Loans() {
                         </div>
 
                         <div style={{ fontFamily: 'var(--mono)', fontSize: '12px' }}>
-                           <span style={{ color: 'var(--green)' }}>+{formatAmount(group.totalLent, currency, decimalPlaces)}</span>
+                           <span style={{ color: 'var(--green)' }}>+{formatAmount(group.totalLent)}</span>
                            <br />
-                           <span style={{ color: 'var(--red)' }}>-{formatAmount(group.totalBorrowed, currency, decimalPlaces)}</span>
+                           <span style={{ color: 'var(--red)' }}>-{formatAmount(group.totalBorrowed)}</span>
                         </div>
 
                         <div style={{ fontFamily: 'var(--mono)', fontWeight: 600, color: isSettled ? 'var(--green)' : isOwed ? 'var(--green)' : 'var(--red)' }}>
-                          {isOwe ? '-' : ''}{formatAmount(Math.abs(group.netBalance), currency, decimalPlaces)}
+                          {isOwe ? '-' : ''}{formatAmount(Math.abs(group.netBalance))}
                         </div>
 
                         <div>
@@ -393,7 +447,7 @@ export default function Loans() {
                                   </td>
                                   <td style={{ padding: '8px 0', fontSize: '12px', color: 'var(--text2)' }}>{loan.accountId?.name || 'Account'}</td>
                                   <td style={{ padding: '8px 0', fontSize: '12px', textAlign: 'right', fontWeight: 600 }}>
-                                    {formatAmount(loan.amount, currency, decimalPlaces)}
+                                    {formatAmount(loan.amount)}
                                   </td>
                                   <td style={{ padding: '8px 0', textAlign: 'right' }}>
                                     <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
@@ -439,237 +493,163 @@ export default function Loans() {
               <div className="kpi-card red">
                 <div className="kpi-label">Total Outstanding</div>
                 <div className="kpi-val" style={{ fontSize: '18px' }}>
-                  {currencySymbol}11,20,000
+                  {formatAmount(formalMetrics.totalOutstanding)}
                 </div>
               </div>
               <div className="kpi-card amber">
                 <div className="kpi-label">Monthly EMI</div>
                 <div className="kpi-val" style={{ fontSize: '18px' }}>
-                  {currencySymbol}57,831
+                  {formatAmount(formalMetrics.monthlyEMI)}
                 </div>
               </div>
               <div className="kpi-card blue">
                 <div className="kpi-label">Interest Paid</div>
                 <div className="kpi-val" style={{ fontSize: '18px' }}>
-                  {currencySymbol}89,420
+                  {formatAmount(formalMetrics.totalInterestPaid)}
                 </div>
               </div>
               <div className="kpi-card purple">
                 <div className="kpi-label">Active Loans</div>
                 <div className="kpi-val" style={{ fontSize: '18px' }}>
-                  2
+                  {formalMetrics.activeCount}
                 </div>
               </div>
             </div>
 
-            <div className="formal-loan-card">
-              <div className="loan-card-header">
-                <div>
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px',
-                      marginBottom: '4px',
-                    }}
-                  >
-                    <span className="loan-type-badge">🚗 Car Loan</span>
-                    <span style={{ fontSize: '11px', color: 'var(--text3)' }}>
-                      HDFC Bank
-                    </span>
-                  </div>
-                  <div style={{ fontSize: '18px', fontWeight: '700' }}>
-                    Car Loan — Maruti Suzuki
-                  </div>
-                </div>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button className="btn-outline" style={{ fontSize: '12px' }}>
-                    Prepay Calc
-                  </button>
-                  <button className="btn-new" style={{ fontSize: '12px' }}>
-                    Pay EMI →
-                  </button>
-                </div>
-              </div>
-              <div className="loan-progress-wrap">
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    fontSize: '12px',
-                    color: 'var(--text2)',
-                    marginBottom: '6px',
-                  }}
-                >
-                  <span>23 EMIs paid of 60</span>
-                  <span>38.3% complete</span>
-                </div>
-                <div className="loan-progress-bar">
-                  <div
-                    className="loan-progress-fill"
-                    style={{ width: '38%' }}
-                  ></div>
-                </div>
-              </div>
-              <div className="loan-stats">
-                <div className="loan-stat">
-                  <div
-                    className="loan-stat-val"
-                    style={{ color: 'var(--red)' }}
-                  >
-                    {currencySymbol}4,23,600
-                  </div>
-                  <div className="loan-stat-label">Outstanding</div>
-                </div>
-                <div className="loan-stat">
-                  <div
-                    className="loan-stat-val"
-                    style={{ color: 'var(--accent)' }}
-                  >
-                    {currencySymbol}14,385
-                  </div>
-                  <div className="loan-stat-label">Monthly EMI</div>
-                </div>
-                <div className="loan-stat">
-                  <div
-                    className="loan-stat-val"
-                    style={{ color: 'var(--amber)' }}
-                  >
-                    8.5%
-                  </div>
-                  <div className="loan-stat-label">Interest Rate</div>
-                </div>
-                <div className="loan-stat">
-                  <div
-                    className="loan-stat-val"
-                    style={{ color: 'var(--green)' }}
-                  >
-                    37 left
-                  </div>
-                  <div className="loan-stat-label">EMIs Remaining</div>
-                </div>
-              </div>
-              <div
-                style={{
-                  marginTop: '12px',
-                  paddingTop: '12px',
-                  borderTop: '1px solid var(--border)',
-                  display: 'flex',
-                  gap: '16px',
-                  fontSize: '12px',
-                  color: 'var(--text2)',
-                }}
-              >
-                <span>Principal: {currencySymbol}7,00,000</span>
-                <span>Interest paid: {currencySymbol}56,820</span>
-                <span>Next EMI: 01 May 2026</span>
-                <span style={{ marginLeft: 'auto' }}>
-                  <span
-                    className="form-link"
-                    style={{ cursor: 'pointer' }}
-                  >
-                    View Schedule →
-                  </span>
-                </span>
-              </div>
-            </div>
-
-            <div className="formal-loan-card">
-              <div className="loan-card-header">
-                <div>
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px',
-                      marginBottom: '4px',
-                    }}
-                  >
-                    <span
-                      className="loan-type-badge"
+            {formalLoans.length === 0 ? (
+               <div className="card" style={{ padding: '40px', textAlign: 'center', color: 'var(--text3)' }}>
+                  No formal loans recorded. Click "+ Add Formal Loan" to get started.
+               </div>
+            ) : (
+              formalLoans.map(loan => {
+                const completedPct = ((loan.principal - loan.outstandingBalance) / loan.principal) * 100;
+                
+                return (
+                  <div key={loan._id} className="formal-loan-card">
+                    <div className="loan-card-header">
+                      <div>
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '10px',
+                            marginBottom: '4px',
+                          }}
+                        >
+                          <span className={`loan-type-badge ${loan.loanType.toLowerCase()}`}>
+                            {loan.loanType === 'CAR' ? '🚗' : loan.loanType === 'HOME' ? '🏠' : '💼'} {loan.loanType} Loan
+                          </span>
+                          <span style={{ fontSize: '11px', color: 'var(--text3)' }}>
+                            {loan.bankName}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '18px', fontWeight: '700' }}>
+                          {loan.loanType} Loan — {loan.bankName}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button 
+                          className="btn-outline" 
+                          style={{ fontSize: '12px' }}
+                          onClick={() => { setSelectedFormalLoan(loan); setIsPrepayOpen(true); }}
+                        >
+                          Prepay Calc
+                        </button>
+                        <button 
+                          className="btn-new" 
+                          style={{ fontSize: '12px' }}
+                          onClick={() => { setSelectedFormalLoan(loan); setIsPayEMIOpen(true); }}
+                        >
+                          Pay EMI →
+                        </button>
+                      </div>
+                    </div>
+                    <div className="loan-progress-wrap">
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          fontSize: '12px',
+                          color: 'var(--text2)',
+                          marginBottom: '6px',
+                        }}
+                      >
+                        {/* We don't track paid count directly yet, but can estimate from outstanding */}
+                        <span>{completedPct.toFixed(1)}% complete</span>
+                        <span>{loan.status}</span>
+                      </div>
+                      <div className="loan-progress-bar">
+                        <div
+                          className="loan-progress-fill"
+                          style={{ width: `${completedPct}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                    <div className="loan-stats">
+                      <div className="loan-stat">
+                        <div
+                          className="loan-stat-val"
+                          style={{ color: 'var(--red)' }}
+                        >
+                          {formatAmount(loan.outstandingBalance)}
+                        </div>
+                        <div className="loan-stat-label">Outstanding</div>
+                      </div>
+                      <div className="loan-stat">
+                        <div
+                          className="loan-stat-val"
+                          style={{ color: 'var(--accent)' }}
+                        >
+                          {formatAmount(loan.emiAmount)}
+                        </div>
+                        <div className="loan-stat-label">Monthly EMI</div>
+                      </div>
+                      <div className="loan-stat">
+                        <div
+                          className="loan-stat-val"
+                          style={{ color: 'var(--amber)' }}
+                        >
+                          {loan.interestRate}%
+                        </div>
+                        <div className="loan-stat-label">Interest Rate</div>
+                      </div>
+                      <div className="loan-stat">
+                        <div
+                          className="loan-stat-val"
+                          style={{ color: 'var(--green)' }}
+                        >
+                           {loan.tenureMonths} mo.
+                        </div>
+                        <div className="loan-stat-label">Total Tenure</div>
+                      </div>
+                    </div>
+                    <div
                       style={{
-                        background: 'var(--purple-bg)',
-                        color: 'var(--purple)',
+                        marginTop: '12px',
+                        paddingTop: '12px',
+                        borderTop: '1px solid var(--border)',
+                        display: 'flex',
+                        gap: '16px',
+                        fontSize: '12px',
+                        color: 'var(--text2)',
                       }}
                     >
-                      💼 Personal Loan
-                    </span>
-                    <span style={{ fontSize: '11px', color: 'var(--text3)' }}>
-                      SBI Bank
-                    </span>
+                      <span>Principal: {formatAmount(loan.principal)}</span>
+                      <span>Next Due: {formatDate(loan.startDate)}</span>
+                      <span style={{ marginLeft: 'auto' }}>
+                        <span
+                          className="form-link"
+                          style={{ cursor: 'pointer' }}
+                          onClick={() => { setSelectedFormalLoan(loan); setIsScheduleOpen(true); }}
+                        >
+                          View Schedule →
+                        </span>
+                      </span>
+                    </div>
                   </div>
-                  <div style={{ fontSize: '18px', fontWeight: '700' }}>
-                    Personal Loan
-                  </div>
-                </div>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button className="btn-outline" style={{ fontSize: '12px' }}>
-                    Prepay Calc
-                  </button>
-                  <button className="btn-new" style={{ fontSize: '12px' }}>
-                    Pay EMI →
-                  </button>
-                </div>
-              </div>
-              <div className="loan-progress-wrap">
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    fontSize: '12px',
-                    color: 'var(--text2)',
-                    marginBottom: '6px',
-                  }}
-                >
-                  <span>3 EMIs paid of 12</span>
-                  <span>25% complete</span>
-                </div>
-                <div className="loan-progress-bar">
-                  <div
-                    className="loan-progress-fill"
-                    style={{ width: '25%', background: 'var(--purple)' }}
-                  ></div>
-                </div>
-              </div>
-              <div className="loan-stats">
-                <div className="loan-stat">
-                  <div
-                    className="loan-stat-val"
-                    style={{ color: 'var(--red)' }}
-                  >
-                    {currencySymbol}3,37,500
-                  </div>
-                  <div className="loan-stat-label">Outstanding</div>
-                </div>
-                <div className="loan-stat">
-                  <div
-                    className="loan-stat-val"
-                    style={{ color: 'var(--accent)' }}
-                  >
-                    {currencySymbol}43,446
-                  </div>
-                  <div className="loan-stat-label">Monthly EMI</div>
-                </div>
-                <div className="loan-stat">
-                  <div
-                    className="loan-stat-val"
-                    style={{ color: 'var(--amber)' }}
-                  >
-                    13%
-                  </div>
-                  <div className="loan-stat-label">Interest Rate</div>
-                </div>
-                <div className="loan-stat">
-                  <div
-                    className="loan-stat-val"
-                    style={{ color: 'var(--green)' }}
-                  >
-                    9 left
-                  </div>
-                  <div className="loan-stat-label">EMIs Remaining</div>
-                </div>
-              </div>
-            </div>
+                );
+              })
+            )}
           </>
         )}
       </div>
@@ -682,6 +662,37 @@ export default function Loans() {
         }} 
         editLoan={editLoan}
       />
+
+      <AddFormalLoanPopup 
+        open={isFormalLoanOpen} 
+        setOpen={setIsFormalLoanOpen} 
+        onSaved={fetchFormalLoans}
+      />
+
+      {selectedFormalLoan && (
+        <>
+          <PayEMIPopup 
+            open={isPayEMIOpen} 
+            setOpen={setIsPayEMIOpen} 
+            loanId={selectedFormalLoan._id} 
+            onPaid={fetchFormalLoans}
+          />
+          <PrepaymentPopup 
+            open={isPrepayOpen} 
+            setOpen={setIsPrepayOpen} 
+            loanId={selectedFormalLoan._id}
+            loanName={selectedFormalLoan.bankName}
+            outstanding={selectedFormalLoan.outstandingBalance}
+            onPaid={fetchFormalLoans}
+          />
+          <LoanSchedulePopup 
+            open={isScheduleOpen} 
+            setOpen={setIsScheduleOpen} 
+            loanId={selectedFormalLoan._id}
+            loanName={selectedFormalLoan.bankName}
+          />
+        </>
+      )}
     </>
   );
 }

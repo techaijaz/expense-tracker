@@ -42,6 +42,21 @@ export default function Taxonomy() {
     }
   };
 
+  const { user } = useSelector((state) => state.auth);
+  const plan = user?.user?.plan || user?.plan || 'basic';
+  const isPro = plan === 'pro';
+
+  const limitReached = !isPro && categories.length >= 10;
+
+  const handleAddCategory = () => {
+    if (limitReached) {
+      toast.error('Basic plan limit reached (10 categories). Upgrade to PRO to add more.');
+      return;
+    }
+    setEditingCategory(null);
+    setIsCategoryModalOpen(true);
+  };
+
   return (
     <div className="settings-card">
       <div className="settings-section-title"><div className="icon">🏷️</div>Categories</div>
@@ -97,13 +112,14 @@ export default function Taxonomy() {
       )}
 
       <button 
-        onClick={() => { setEditingCategory(null); setIsCategoryModalOpen(true); }}
+        onClick={handleAddCategory}
         className="btn-outline" 
-        style={{ width: '100%', marginTop: 12, justifyContent: 'center' }}
+        style={{ width: '100%', marginTop: 12, border: limitReached ? '1px dashed var(--red)' : '' }}
       >
-        <span className="material-symbols-outlined" style={{ fontSize: 16, marginRight: 6 }}>add</span>
-        Add New Category
+        <span className="material-symbols-outlined" style={{ fontSize: 16, marginRight: 6 }}>{limitReached ? 'lock' : 'add'}</span>
+        {limitReached ? 'Limit Reached (Upgrade to PRO)' : 'Add New Category'}
       </button>
+
 
       <AddCategoryPopup
         open={isCategoryModalOpen}

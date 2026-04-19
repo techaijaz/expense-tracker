@@ -1,7 +1,8 @@
 import React from 'react';
 import { differenceInDays, format } from 'date-fns';
+import useFormat from '@/hooks/useFormat';
 
-const PaymentItem = ({ title, subtitle, amount, dueDate }) => {
+const PaymentItem = ({ title, subtitle, amount, dueDate, formatAmount }) => {
   const daysRemaining = differenceInDays(new Date(dueDate), new Date());
   const isUrgent = daysRemaining <= 3;
   const isSoon   = daysRemaining <= 7;
@@ -18,7 +19,7 @@ const PaymentItem = ({ title, subtitle, amount, dueDate }) => {
       <div>
         <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)' }}>{title}</div>
         <div style={{ fontSize: 11, color: 'var(--text2)' }}>
-          {subtitle || `Due · ₹${Number(amount).toLocaleString()}`}
+          {subtitle || `Due · ${formatAmount(amount)}`}
         </div>
       </div>
       <div className={`due-chip ${chipClass}`}>{chipLabel}</div>
@@ -27,6 +28,7 @@ const PaymentItem = ({ title, subtitle, amount, dueDate }) => {
 };
 
 export const UpcomingPayments = ({ payments }) => {
+  const { formatAmount } = useFormat();
   return (
     <div className="card">
       <div className="card-header">
@@ -41,6 +43,7 @@ export const UpcomingPayments = ({ payments }) => {
             subtitle={payment.subtitle}
             amount={payment.amount}
             dueDate={payment.dueDate}
+            formatAmount={formatAmount}
           />
         ))
       ) : (

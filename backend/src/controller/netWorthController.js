@@ -12,7 +12,12 @@ export default {
     getNetWorth: async (req, res, next) => {
         try {
             const userId = req.authenticatedUser._id
+            const user = await accountModel.db.model('User').findById(userId).select('plan')
+            if (user?.plan === 'basic') {
+                return httpError(next, new Error('Net Worth tracking is a PRO feature. Upgrade to unlock.'), req, 403)
+            }
             const today = dayjs().toDate()
+
 
             // 1. Get Accounts Balance (excluding CCdebt first or just sum all)
             // Note: CC accounts usually have negative balances or zero balance with a credit limit.
@@ -20,11 +25,15 @@ export default {
             const accounts = await accountModel.find({ userId, isDeleted: false })
             let liquidAssets = 0
             let creditCardDebt = 0
+            let investmentAssets = 0
+            let physicalAssets = 0
             
             accounts.forEach(acc => {
                 if (acc.type === 'CREDIT_CARD') {
                     // Assuming balance for CC is negative (amount owed)
                     if (acc.balance < 0) creditCardDebt += Math.abs(acc.balance)
+                } else if (acc.type === 'INVESTMENT') {
+                    investmentAssets += acc.balance
                 } else {
                     liquidAssets += acc.balance
                 }
@@ -32,8 +41,6 @@ export default {
 
             // 2. Get Physical/Investment Assets
             const assets = await assetModel.find({ userId, isDeleted: false })
-            let investmentAssets = 0
-            let physicalAssets = 0
             
             assets.forEach(asset => {
                 if (asset.type === 'INVESTMENT') {
@@ -87,7 +94,12 @@ export default {
     getHistory: async (req, res, next) => {
         try {
             const userId = req.authenticatedUser._id
+            const user = await accountModel.db.model('User').findById(userId).select('plan')
+            if (user?.plan === 'basic') {
+                return httpError(next, new Error('Net Worth tracking is a PRO feature. Upgrade to unlock.'), req, 403)
+            }
             const history = await netWorthSnapshotModel.find({ userId }).sort({ date: 1 })
+
             httpResponse(req, res, 200, 'Net Worth history retrieved', history)
         } catch (error) {
             httpError(next, error, req, 500)

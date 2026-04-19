@@ -21,6 +21,7 @@ dayjs.extend(quarterOfYear)
 
 const getRange = (period, tz = 'Asia/Kolkata', preferences = {}) => {
     const now = dayjs().tz(tz)
+    const fyPref = preferences.fiscalYear || 'April-March'
     let start, end
 
     switch (period) {
@@ -34,8 +35,6 @@ const getRange = (period, tz = 'Asia/Kolkata', preferences = {}) => {
             break
         case 'fy':
             const currentYear = now.year()
-            const fyPref = preferences.fiscalYear || 'April-March'
-            
             if (fyPref === 'January-December') {
                 start = now.startOf('year').toDate()
                 end = now.endOf('year').toDate()
@@ -45,6 +44,10 @@ const getRange = (period, tz = 'Asia/Kolkata', preferences = {}) => {
                 start = dayjs(`${fiscalYearStart}-04-01`).tz(tz).startOf('day').toDate()
                 end = dayjs(`${fiscalYearStart + 1}-03-31`).tz(tz).endOf('day').toDate()
             }
+            break
+        case 'last6months':
+            start = now.subtract(5, 'month').startOf('month').toDate()
+            end = now.endOf('month').toDate()
             break
         case 'monthly':
         default:
@@ -59,7 +62,7 @@ export default {
     getOverview: async (req, res, next) => {
         try {
             const userId = req.authenticatedUser._id
-            const timezone = req.query.timezone || 'Asia/Kolkata' 
+            const timezone = req.query.timezone || req.authenticatedUser?.preferences?.timezone || 'Asia/Kolkata' 
 
             let currentStart, currentEnd, prevStart, prevEnd
 
@@ -131,7 +134,7 @@ export default {
         try {
             const userId = req.authenticatedUser._id
             const type = req.query.type || 'expense' // Filter by income or expense
-            const timezone = req.query.timezone || 'Asia/Kolkata'
+            const timezone = req.query.timezone || req.authenticatedUser?.preferences?.timezone || 'Asia/Kolkata'
 
             const matchQuery = {
                 userId: new mongoose.Types.ObjectId(userId),
@@ -187,7 +190,7 @@ export default {
     getTrend: async (req, res, next) => {
         try {
             const userId = req.authenticatedUser._id
-            const timezone = req.query.timezone || 'Asia/Kolkata'
+            const timezone = req.query.timezone || req.authenticatedUser?.preferences?.timezone || 'Asia/Kolkata'
 
             let trendStart, trendEnd
             if (req.query.startDate && req.query.endDate) {
@@ -198,6 +201,9 @@ export default {
                 trendStart = range.start
                 trendEnd = range.end
             }
+
+            const groupBy = req.query.groupBy || 'day'
+            const format = groupBy === 'month' ? '%Y-%m' : '%Y-%m-%d'
 
             const trend = await Transaction.aggregate([
                 {
@@ -210,11 +216,11 @@ export default {
                 },
                 {
                     $group: {
-                        _id: { $dateToString: { format: '%Y-%m-%d', date: '$date', timezone: timezone } },
-                        dailyIncome: {
+                        _id: { $dateToString: { format: format, date: '$date', timezone: timezone } },
+                        income: {
                             $sum: { $cond: [{ $eq: ['$type', 'income'] }, '$amount', 0] },
                         },
-                        dailyExpense: {
+                        expense: {
                             $sum: { $cond: [{ $eq: ['$type', 'expense'] }, '$amount', 0] },
                         },
                     },
@@ -223,9 +229,12 @@ export default {
             ])
 
             const formatted = trend.map((t) => ({
-                date: t._id,
-                dailyIncome: Number(t.dailyIncome.toFixed(2)),
-                dailyExpense: Number(t.dailyExpense.toFixed(2)),
+                [groupBy === 'month' ? 'month' : 'date']: t._id,
+                income: Number(t.income.toFixed(2)),
+                expense: Number(t.expense.toFixed(2)),
+                // Keep backward compatibility for Reports page until updated
+                dailyIncome: Number(t.income.toFixed(2)),
+                dailyExpense: Number(t.expense.toFixed(2)),
             }))
 
             httpResponse(req, res, 200, 'Trend retrieved successfully', formatted)
@@ -286,7 +295,7 @@ export default {
         try {
             const userId = req.authenticatedUser._id
             const userEmail = req.authenticatedUser.email
-            const { type, period, timezone = 'Asia/Kolkata' } = req.body
+            const { type, period, timezone = req.authenticatedUser?.preferences?.timezone || 'Asia/Kolkata' } = req.body
 
             if (!userEmail) {
                 return httpError(next, 'User email not found. Cannot send report.', req, 400)

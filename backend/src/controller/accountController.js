@@ -16,28 +16,32 @@ export default {
 
             const userId = req.authenticatedUser._id
 
-            // Only 1 CASH account allowed per user
+            const user = await userModel.findById(userId).select('plan')
+            const plan = user?.plan || 'basic'
+
+            // Enforce Plan Limits
             if (value.type === 'CASH') {
                 const cashCount = await Account.countDocuments({ userId, type: 'CASH', isDeleted: false })
                 if (cashCount >= 1) {
-                    return httpError(next, new Error('Only one Cash account is allowed per user.'), req, 409)
+                    return httpError(next, new Error('Only one Cash account is allowed.'), req, 403)
                 }
-                value.isCash = true // Force isCash for CASH type
+                value.isCash = true
             } else {
-                value.isCash = false // Ensure isCash is false for other types
-            }
-
-            // PRO subscription enforcement: BASIC users can only have 1 BANK account
-            if (value.type === 'BANK') {
-                const user = await userModel.findById(userId).select('plan')
-                const plan = user?.plan || 'basic'
+                value.isCash = false
                 if (plan === 'basic') {
-                    const bankCount = await Account.countDocuments({ userId, type: 'BANK', isDeleted: false })
-                    if (bankCount >= 1) {
-                        return httpError(next, new Error('PRO subscription required to add more than 1 bank account.'), req, 403)
+
+                    const otherCount = await Account.countDocuments({ userId, type: { $ne: 'CASH' }, isDeleted: false })
+                    if (otherCount >= 1) {
+                        return httpError(next, new Error('Basic plan is limited to one non-cash account. Upgrade to PRO for more.'), req, 403)
+                    }
+                } else {
+                    const otherCount = await Account.countDocuments({ userId, type: { $ne: 'CASH' }, isDeleted: false })
+                    if (otherCount >= 100) {
+                        return httpError(next, new Error('PRO plan account limit reached (100).'), req, 403)
                     }
                 }
             }
+
 
             // Unique accountNumber check for BANK / CREDIT_CARD / WALLET
             if (value.accountNumber) {

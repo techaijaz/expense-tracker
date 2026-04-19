@@ -16,11 +16,13 @@ export const getCurrencySymbol = (code) => CURRENCY_MAP[code] || '$';
  * @param {number} amount - The numeric value to format.
  * @param {string} currency - The currency code (e.g., 'INR', 'USD').
  * @param {number} precision - Number of decimal places.
+ * @param {string} locale - Locale for formatting.
  * @returns {string} - Formatted currency string.
  */
-export const formatAmount = (amount, currency = 'INR', precision = 2) => {
+export const formatAmount = (amount, currency = 'INR', precision = 2, locale = 'en-IN') => {
   try {
-    return new Intl.NumberFormat('en-IN', {
+    // If currency is JPY, precision is usually 0, but we respect the user setting
+    return new Intl.NumberFormat(locale, {
       style: 'currency',
       currency: currency,
       minimumFractionDigits: precision,

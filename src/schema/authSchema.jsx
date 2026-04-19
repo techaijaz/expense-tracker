@@ -44,4 +44,25 @@ export default {
         .min(8, { message: 'Password must be at least 8 characters' }),
     });
   },
+  forgotPasswordSchema: () => {
+    return z.object({
+      email: z
+        .string({ required_error: 'Email is required' })
+        .min(1, { message: 'Email is required' })
+        .email({ message: 'Invalid email' }),
+    });
+  },
+  resetPasswordSchema: () => {
+    return z.object({
+      password: z
+        .string({ required_error: 'Password is required' })
+        .min(8, { message: 'Password must be at least 8 characters' }),
+      confirmPassword: z
+        .string({ required_error: 'Please confirm your password' })
+        .min(8, { message: 'Password must be at least 8 characters' }),
+    }).refine((data) => data.password === data.confirmPassword, {
+      message: "Passwords don't match",
+      path: ["confirmPassword"],
+    });
+  },
 };

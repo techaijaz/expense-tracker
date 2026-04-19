@@ -7,18 +7,23 @@ import {
   deleteTransection,
 } from '@/redux/transectionSlice';
 import { updateAccount } from '@/redux/accountSlice';
-import { formatDate } from '@/utils/utils';
+import useFormat from '@/hooks/useFormat';
 import { DateRangePicker } from './DateRangePicker';
 import { DeleteConfirmModal } from './SharedComponents';
 import TransectionPopup from './TransectionPopup';
 import { toast } from 'sonner';
-import { formatAmount } from '@/utils/format';
 import api from '@/utils/httpMethods';
 
 export default function Transections() {
   const dispatch = useDispatch();
   const { openTransactionPopup } = useOutletContext();
+  const { user } = useSelector((state) => state.auth);
+  const plan = user?.user?.plan || user?.plan || 'basic';
+  const isPro = plan === 'pro';
+
   const { transections } = useSelector((state) => state.transections);
+
+
   const { categories: groupedCategories } = useSelector(
     (state) => state.category,
   );
@@ -126,8 +131,7 @@ export default function Transections() {
     .reduce((acc, curr) => acc + (curr.amount || 0), 0);
   const netPrecision = inflow - outflow;
 
-  const user = useSelector((state) => state.auth.user?.user || state.auth.user);
-  const currency = user?.preferences?.currency || 'INR';
+  const { formatAmount, formatDate } = useFormat();
 
   // Handlers
   const handleEdit = (t) => {
@@ -194,17 +198,17 @@ export default function Transections() {
       <div className="txn-kpi-row">
         <div className="kpi-card green">
           <div className="kpi-label">Total Inflow</div>
-          <div className="kpi-val" style={{ fontSize: 20 }}>{formatAmount(inflow, currency)}</div>
+          <div className="kpi-val" style={{ fontSize: 20 }}>{formatAmount(inflow)}</div>
           <div className="kpi-change up">↑ +12% vs last month</div>
         </div>
         <div className="kpi-card red">
           <div className="kpi-label">Total Outflow</div>
-          <div className="kpi-val" style={{ fontSize: 20 }}>{formatAmount(outflow, currency)}</div>
+          <div className="kpi-val" style={{ fontSize: 20 }}>{formatAmount(outflow)}</div>
           <div className="kpi-change down">↓ -5% vs last month</div>
         </div>
         <div className="kpi-card blue">
           <div className="kpi-label">Net Precision</div>
-          <div className="kpi-val" style={{ fontSize: 20 }}>{formatAmount(netPrecision, currency)}</div>
+          <div className="kpi-val" style={{ fontSize: 20 }}>{formatAmount(netPrecision)}</div>
           <div className="kpi-change up">↑ +2.4% vs last month</div>
         </div>
       </div>
@@ -267,13 +271,14 @@ export default function Transections() {
       </div>
 
       {/* ── FILTER BAR (row 2) ── */}
-      <div className="txn-filter-bar2">
+      <div className="txn-filter-bar2" style={{ opacity: isPro ? 1 : 0.6, pointerEvents: isPro ? 'auto' : 'none' }}>
         <div className="filter-group">
-          <label>Category</label>
+          <label>Category {!isPro && '🔒'}</label>
           <select
             className="filter-input"
             value={category}
             onChange={(e) => { setCategory(e.target.value); setPage(1); }}
+            disabled={!isPro}
           >
             <option value="all">All Categories</option>
             {categories.map((c) => (
@@ -282,11 +287,12 @@ export default function Transections() {
           </select>
         </div>
         <div className="filter-group">
-          <label>Party (Debt)</label>
+          <label>Party (Debt) {!isPro && '🔒'}</label>
           <select
             className="filter-input"
             value={party}
             onChange={(e) => { setParty(e.target.value); setPage(1); }}
+            disabled={!isPro}
           >
             <option value="all">All Parties</option>
             {parties.map((p) => (
@@ -294,6 +300,7 @@ export default function Transections() {
             ))}
           </select>
         </div>
+
         <div className="filter-group" style={{ display: 'flex', alignItems: 'flex-end' }}>
           <button
             className="txn-clear-btn"
@@ -386,7 +393,7 @@ export default function Transections() {
                 {/* Amount + Actions */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6 }}>
                   <span className={amtDisplay.cls}>
-                    {amtDisplay.prefix}{formatAmount(t.amount, currency)}
+                    {amtDisplay.prefix}{formatAmount(t.amount)}
                   </span>
                   <div className="txn-row-actions">
                     <button

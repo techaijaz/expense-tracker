@@ -3,7 +3,13 @@ import path from 'path'
 import archiver from 'archiver'
 import { Parser } from 'json2csv'
 import PDFDocument from 'pdfkit'
+import dayjs from 'dayjs'
+import utc from 'dayjs/plugin/utc.js'
+import timezone from 'dayjs/plugin/timezone.js'
 import logger from './loger.js'
+
+dayjs.extend(utc)
+dayjs.extend(timezone)
 
 /**
  * Report Generator Utility
@@ -13,10 +19,19 @@ import logger from './loger.js'
 /**
  * Generates a CSV file from transaction data
  */
-const generateCSV = async (data, filePath) => {
+const generateCSV = async (data, filePath, metadata = {}) => {
     try {
+        const tz = metadata.timezone || 'UTC'
         const fields = ['date', 'title', 'amount', 'type', 'category', 'accountName', 'targetAccountName']
-        const json2csvParser = new Parser({ fields })
+        const json2csvParser = new Parser({ 
+            fields,
+            transforms: [
+                (row) => ({
+                    ...row,
+                    date: dayjs(row.date).tz(tz).format('YYYY-MM-DD HH:mm')
+                })
+            ] 
+        })
         const csv = json2csvParser.parse(data)
         await fs.outputFile(filePath, csv)
         return filePath
@@ -32,6 +47,7 @@ const generateCSV = async (data, filePath) => {
 const generatePDF = async (data, filePath, metadata = {}) => {
     return new Promise((resolve, reject) => {
         try {
+            const tz = metadata.timezone || 'UTC'
             const doc = new PDFDocument({ margin: 50 })
             const stream = fs.createWriteStream(filePath)
 
@@ -39,7 +55,7 @@ const generatePDF = async (data, filePath, metadata = {}) => {
 
             // Header
             doc.fontSize(20).text('Financial Report', { align: 'center' })
-            doc.fontSize(12).text(`Generated on: ${new Date().toLocaleString()}`, { align: 'center' })
+            doc.fontSize(12).text(`Generated on: ${dayjs().tz(tz).format('DD MMM YYYY, HH:mm')}`, { align: 'center' })
             doc.moveDown()
 
             if (metadata.period) {
@@ -78,14 +94,14 @@ const generatePDF = async (data, filePath, metadata = {}) => {
             doc.font('Helvetica').fontSize(9)
             let currentY = tableTop + 20
 
-            data.forEach((txn, index) => {
+            data.forEach((txn) => {
                 // Page break handling
                 if (currentY > 700) {
                     doc.addPage()
                     currentY = 50
                 }
 
-                doc.text(new Date(txn.date).toLocaleDateString(), col1, currentY)
+                doc.text(dayjs(txn.date).tz(tz).format('DD/MM/YYYY'), col1, currentY)
                 doc.text(txn.title || 'N/A', col2, currentY, { width: 140 })
                 doc.text(txn.type || 'N/A', col3, currentY)
                 doc.text(txn.category || 'N/A', col4, currentY)

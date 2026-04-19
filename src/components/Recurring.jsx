@@ -9,6 +9,9 @@ import AddRecurringPopup from './AddRecurringPopup';
 import RecurringHistoryPopup from './RecurringHistoryPopup';
 import { DeleteConfirmModal } from './SharedComponents';
 import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+
+dayjs.extend(relativeTime);
 
 const Recurring = () => {
   const [tasks, setTasks] = useState([]);
@@ -93,8 +96,23 @@ const Recurring = () => {
 
   const filteredTasks = tasks.filter(t => 
     t.title.toLowerCase().includes(search.toLowerCase()) ||
-    t.categoryId?.name?.toLowerCase().includes(search.toLowerCase())
+    (t.categoryId?.name?.toLowerCase() || '').includes(search.toLowerCase())
   );
+
+  const { user } = useSelector((state) => state.auth);
+  const plan = user?.user?.plan || user?.plan || 'basic';
+  const isPro = plan === 'pro';
+
+  const limitReached = !isPro && tasks.length >= 1;
+
+  const handleAddNew = () => {
+    if (limitReached) {
+      toast.error('Basic plan limit reached (1 recurring rule). Upgrade to PRO to add more.');
+      return;
+    }
+    setSelectedTask(null);
+    setIsPopupOpen(true);
+  };
 
   return (
     <div className="page-body p-6 min-h-screen bg-[#080B12]">
@@ -148,13 +166,14 @@ const Recurring = () => {
             />
           </div>
           <button
-            onClick={() => { setSelectedTask(null); setIsPopupOpen(true); }}
+            onClick={handleAddNew}
             className="flex h-10 items-center gap-2 rounded-xl bg-[#5B8DEF] px-5 text-xs font-bold text-white transition-all hover:bg-[#4070D4] hover:-translate-y-0.5 shadow-lg shadow-[#5B8DEF]/10"
           >
-            <span>+</span> Establish Rule
+            <span>{limitReached ? '🔒' : '+'}</span> Establish Rule
           </button>
         </div>
       </div>
+
 
       {loading && tasks.length === 0 ? (
         <div className="flex h-64 flex-col items-center justify-center space-y-4 opacity-50">
@@ -163,12 +182,12 @@ const Recurring = () => {
         </div>
       ) : tasks.length === 0 ? (
         <div 
-          onClick={() => setIsPopupOpen(true)}
+          onClick={handleAddNew}
           className="flex h-64 cursor-pointer flex-col items-center justify-center rounded-[32px] border-2 border-dashed border-white/5 bg-white/[0.01] transition-all hover:bg-white/[0.03] hover:border-white/10"
         >
-          <div className="mb-4 text-5xl opacity-40">🤖</div>
+          <div className="mb-4 text-5xl opacity-40">{limitReached ? '🔒' : '🤖'}</div>
           <p className="text-sm font-semibold text-[#EEF0F8]">Zero automation rules found</p>
-          <p className="mt-1 text-xs text-[#4A5578]">Click to automate your first recurring transaction</p>
+          <p className="mt-1 text-xs text-[#4A5578]">{limitReached ? 'Upgrade to PRO to automate transactions' : 'Click to automate your first recurring transaction'}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">
@@ -185,15 +204,16 @@ const Recurring = () => {
           ))}
           
           <div
-            onClick={() => { setSelectedTask(null); setIsPopupOpen(true); }}
+            onClick={handleAddNew}
             className="flex min-h-[180px] cursor-pointer flex-col items-center justify-center rounded-[28px] border-2 border-dashed border-white/5 bg-white/[0.01] transition-all hover:bg-white/[0.03] group"
           >
-            <div className="text-2xl text-[#4A5578] group-hover:text-[#5B8DEF] transition-colors">+</div>
+            <div className="text-2xl text-[#4A5578] group-hover:text-[#5B8DEF] transition-colors">{limitReached ? '🔒' : '+'}</div>
             <div className="text-xs font-bold text-[#EEF0F8] mt-2">New Protocol</div>
-            <div className="mt-1 text-[10px] text-[#4A5578]">Deploy automated ledger rule</div>
+            <div className="mt-1 text-[10px] text-[#4A5578]">{limitReached ? 'Limit Reached' : 'Deploy automated ledger rule'}</div>
           </div>
         </div>
       )}
+
 
       {/* Popups */}
       <AddRecurringPopup 

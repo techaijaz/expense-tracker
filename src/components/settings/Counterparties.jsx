@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
 import { toast } from 'sonner';
 import api from '@/utils/httpMethods';
 import { DeleteConfirmModal } from '../SharedComponents';
@@ -41,6 +42,20 @@ export default function Counterparties() {
   const handlePartySaved = (savedParty, isEdit) => {
     if (isEdit) setParties(prev => prev.map(p => p._id === savedParty._id ? savedParty : p));
     else setParties(prev => [savedParty, ...prev]);
+  };
+
+  const { user } = useSelector((state) => state.auth);
+  const plan = user?.user?.plan || user?.plan || 'basic';
+  const isPro = plan === 'pro';
+
+  const limitReached = !isPro && parties.length >= 5;
+
+  const handleAddParty = () => {
+    if (limitReached) {
+      toast.error('Basic plan limit reached (5 counterparties). Upgrade to PRO to add more.');
+      return;
+    }
+    setPartyModal('new');
   };
 
   return (
@@ -105,13 +120,14 @@ export default function Counterparties() {
       )}
 
       <button 
-        onClick={() => setPartyModal('new')}
+        onClick={handleAddParty}
         className="btn-outline" 
-        style={{ width: '100%', marginTop: 12, justifyContent: 'center' }}
+        style={{ width: '100%', marginTop: 12, justifyContent: 'center', border: limitReached ? '1px dashed var(--red)' : '' }}
       >
-        <span className="material-symbols-outlined" style={{ fontSize: 16, marginRight: 6 }}>person_add</span>
-        Add Counterparty
+        <span className="material-symbols-outlined" style={{ fontSize: 16, marginRight: 6 }}>{limitReached ? 'lock' : 'person_add'}</span>
+        {limitReached ? 'Limit Reached (Upgrade to PRO)' : 'Add Counterparty'}
       </button>
+
 
       {partyModal && (
         <AddPartyPopup

@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import i18n from 'i18next';
 
 const ThemeContext = createContext(null);
 
@@ -16,6 +17,10 @@ export function ThemeProvider({ children }) {
     return localStorage.getItem('aiexpenser-accent') || 'lightblue';
   });
 
+  const [language, setLanguage] = useState(() => {
+    return localStorage.getItem('i18nextLng') || 'en';
+  });
+
   // Hydrate from DB when user logs in or preferences are updated
   useEffect(() => {
     if (user?.preferences) {
@@ -25,9 +30,12 @@ export function ThemeProvider({ children }) {
       if (user.preferences.accentColor && user.preferences.accentColor !== accentColor) {
         setAccentColor(user.preferences.accentColor);
       }
+      if (user.preferences.language && user.preferences.language !== language) {
+        setLanguage(user.preferences.language);
+      }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.preferences?.theme, user?.preferences?.accentColor]);
+  }, [user?.preferences?.theme, user?.preferences?.accentColor, user?.preferences?.language]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -70,8 +78,19 @@ export function ThemeProvider({ children }) {
     localStorage.setItem('aiexpenser-accent', accentColor);
   }, [accentColor]);
 
+  useEffect(() => {
+    if (language) {
+      i18n.changeLanguage(language);
+      localStorage.setItem('i18nextLng', language);
+    }
+  }, [language]);
+
   return (
-    <ThemeContext.Provider value={{ theme, setTheme, accentColor, setAccentColor }}>
+    <ThemeContext.Provider value={{ 
+      theme, setTheme, 
+      accentColor, setAccentColor, 
+      language, setLanguage 
+    }}>
       {children}
     </ThemeContext.Provider>
   );

@@ -6,7 +6,11 @@ import {
     validationLoginBody,
     validationChangePasswordBody,
     validationPreferencesBody,
+    validationForgotPasswordBody,
+    validationResetPasswordBody,
 } from '../service/validationService.js'
+import mailService from '../service/mailService.js'
+import crypto from 'crypto'
 import responceseMessage from '../constent/responceseMessage.js'
 import httpError from '../util/httpError.js'
 import httpResponse from '../util/httpResponse.js'
@@ -37,9 +41,31 @@ export default {
             if (user) return httpError(next, responceseMessage.ALREADY_EXIST('User', email), req, 422)
 
             const encryptedPassword = await quiker.hashedPassword(password)
-            const payload = { firstName, lastName, email, password: encryptedPassword, consent }
+            
+            // Generate verification token
+            const verificationToken = crypto.randomBytes(32).toString('hex')
+            const verificationTokenExpires = dayjs().add(24, 'hours').toDate()
+
+            const payload = { 
+                firstName, 
+                lastName, 
+                email, 
+                password: encryptedPassword, 
+                consent,
+                verificationToken,
+                verificationTokenExpires
+            }
             const newUser = await databseService.registerUser(payload)
-            httpResponse(req, res, 201, responceseMessage.SUCCESS, { _id: newUser._id, email: newUser.email })
+            
+            // Send verification email
+            try {
+                await mailService.sendVerificationEmail(email, firstName, verificationToken)
+            } catch (mailError) {
+                console.error('Error sending verification email:', mailError)
+                // We don't fail registration if email fails, user can resend later
+            }
+
+            httpResponse(req, res, 201, 'Registration successful. Please check your email to verify your account.', { _id: newUser._id, email: newUser.email })
         } catch (error) {
             httpError(next, error, req, 500)
         }
@@ -109,6 +135,7 @@ export default {
                     preferences: user.preferences,
                     plan: user.plan || 'basic',
                     onboardingDone: user.onboardingDone || false,
+                    isVerified: user.isVerified || false,
                 },
                 accounts,
                 categories,
@@ -376,6 +403,98 @@ export default {
             res.setHeader('Content-Type', 'application/json')
             res.setHeader('Content-Disposition', `attachment; filename="aiexpenser_export_${dateStr}.json"`)
             return res.json(exportData)
+        } catch (error) {
+            httpError(next, error, req, 500)
+        }
+    },
+
+    verifyEmail: async (req, res, next) => {
+        try {
+            const { token } = req.query
+            if (!token) return httpError(next, new Error('Verification token is required'), req, 400)
+
+            const user = await userModel.findOne({
+                verificationToken: token,
+                verificationTokenExpires: { $gt: new Date() },
+            })
+
+            if (!user) return httpError(next, new Error('Invalid or expired verification token'), req, 400)
+
+            user.isVerified = true
+            user.verificationToken = null
+            user.verificationTokenExpires = null
+            await user.save()
+
+            httpResponse(req, res, 200, 'Email verified successfully. You can now log in.', null)
+        } catch (error) {
+            httpError(next, error, req, 500)
+        }
+    },
+
+    resendVerification: async (req, res, next) => {
+        try {
+            const { email } = req.body
+            if (!email) return httpError(next, new Error('Email is required'), req, 400)
+
+            const user = await userModel.findOne({ email })
+            if (!user) return httpError(next, new Error('User not found'), req, 404)
+            if (user.isVerified) return httpError(next, new Error('Email is already verified'), req, 400)
+
+            const verificationToken = crypto.randomBytes(32).toString('hex')
+            user.verificationToken = verificationToken
+            user.verificationTokenExpires = dayjs().add(24, 'hours').toDate()
+            await user.save()
+
+            await mailService.sendVerificationEmail(user.email, user.firstName, verificationToken)
+            httpResponse(req, res, 200, 'Verification email resent successfully.', null)
+        } catch (error) {
+            httpError(next, error, req, 500)
+        }
+    },
+
+    forgotPassword: async (req, res, next) => {
+        try {
+            const { error, value } = validateJoiSchema(validationForgotPasswordBody, req.body)
+            if (error) return httpError(next, error, req, 422)
+
+            const { email } = value
+            const user = await userModel.findOne({ email })
+            if (!user) return httpError(next, new Error('User with this email does not exist'), req, 404)
+
+            const resetToken = crypto.randomBytes(32).toString('hex')
+            user.resetPasswordToken = resetToken
+            user.resetPasswordExpires = dayjs().add(1, 'hour').toDate()
+            await user.save()
+
+            await mailService.sendResetPasswordEmail(user.email, user.firstName, resetToken)
+            httpResponse(req, res, 200, 'Password reset link sent to your email.', null)
+        } catch (error) {
+            httpError(next, error, req, 500)
+        }
+    },
+
+    resetPassword: async (req, res, next) => {
+        try {
+            const { token } = req.query
+            const { error, value } = validateJoiSchema(validationResetPasswordBody, req.body)
+            if (error) return httpError(next, error, req, 422)
+
+            if (!token) return httpError(next, new Error('Reset token is required'), req, 400)
+
+            const user = await userModel.findOne({
+                resetPasswordToken: token,
+                resetPasswordExpires: { $gt: new Date() },
+            })
+
+            if (!user) return httpError(next, new Error('Invalid or expired reset token'), req, 400)
+
+            const { password } = value
+            user.password = await quiker.hashedPassword(password)
+            user.resetPasswordToken = null
+            user.resetPasswordExpires = null
+            await user.save()
+
+            httpResponse(req, res, 200, 'Password has been reset successfully. You can now log in.', null)
         } catch (error) {
             httpError(next, error, req, 500)
         }

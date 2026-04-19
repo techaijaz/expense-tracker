@@ -24,10 +24,21 @@ export default {
             const { error, value } = validateJoiSchema(validationCategoryBody, req.body)
             if (error) return httpError(next, error, req, 422)
 
+            const userId = req.authenticatedUser._id
+            const user = await mongoose.model('User').findById(userId).select('plan')
+            const plan = user?.plan || 'basic'
+            const count = await Category.countDocuments({ userId, isDeleted: false })
+            const limit = plan === 'basic' ? 10 : 100
+
+            if (count >= limit) {
+                return httpError(next, new Error(`${plan.toUpperCase()} plan limit reached for categories (${limit}).`), req, 403)
+            }
+
             const category = await Category.create({
                 ...value,
                 userId: req.authenticatedUser._id,
             })
+
             httpResponse(req, res, 201, 'Category created successfully', category)
         } catch (error) {
             httpError(next, error, req, 500)

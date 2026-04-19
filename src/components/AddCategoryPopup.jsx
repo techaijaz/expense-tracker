@@ -1,9 +1,9 @@
 /* eslint-disable react/prop-types */
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import useApi from '@/hooks/useApi';
 import { addCatagory, updateCategory } from '@/redux/categorySlice';
 import { toast } from 'sonner';
@@ -47,10 +47,22 @@ const AddCategoryPopup = ({ open, onClose, onSave, editCategory = null, defaultT
     }
   }, [editCategory, open, reset, setValue, defaultType]);
 
-  // Guard to prevent onSave from being called multiple times on re-renders
-  const handledRef = useRef(false);
+  const { categories: groupedCategories } = useSelector((state) => state.category);
+  const categories = useMemo(() => {
+    const { INCOME = [], EXPENSE = [], TRANSFER = [] } = groupedCategories || {};
+    return [...INCOME, ...EXPENSE, ...TRANSFER];
+  }, [groupedCategories]);
+
+  const { user } = useSelector((state) => state.auth);
+  const plan = user?.user?.plan || user?.plan || 'basic';
+  const isPro = plan === 'pro';
+  const limitReached = !isPro && categories.length >= 10 && !editCategory;
 
   const onSubmit = (formData) => {
+    if (limitReached) {
+      toast.error('Limit reached (10 categories). Upgrade to PRO.');
+      return;
+    }
     handledRef.current = false; // reset for this new submission
     const payload = { name: formData.name, type: formData.type, icon: selectedIcon };
     if (editCategory) {
@@ -102,8 +114,11 @@ const AddCategoryPopup = ({ open, onClose, onSave, editCategory = null, defaultT
           <div>
             <h2 className="text-lg font-extrabold text-on-surface tracking-[-0.02em] mb-1">
               {editCategory ? 'Edit Category' : 'New Category'}
+              {limitReached && ' 🔒'}
             </h2>
-            <p className="text-xs text-on-surface-variant">Organize your transactions with a custom category</p>
+            <p className="text-xs text-on-surface-variant">
+              {limitReached ? 'Basic plan limit reached (10 categories).' : 'Organize your transactions with a custom category'}
+            </p>
           </div>
           <button onClick={onClose} className="bg-secondary-container border border-secondary-container rounded-lg px-2 py-1.5 cursor-pointer text-on-surface-variant flex items-center">
             <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: "'FILL' 0" }}>close</span>
@@ -139,7 +154,8 @@ const AddCategoryPopup = ({ open, onClose, onSave, editCategory = null, defaultT
             <input
               type="text"
               {...register('name')}
-              placeholder="e.g. Groceries, Salary, Rent…"
+              disabled={limitReached}
+              placeholder={limitReached ? "Limit reached..." : "e.g. Groceries, Salary, Rent…"}
               className={inputClass('name')}
               onFocus={() => setFocusedField('name')}
               onBlur={() => setFocusedField(null)}
@@ -156,12 +172,13 @@ const AddCategoryPopup = ({ open, onClose, onSave, editCategory = null, defaultT
               {ICONS.map((ic) => (
                 <button
                   key={ic} type="button"
+                  disabled={limitReached}
                   onClick={() => { setSelectedIcon(ic); setValue('icon', ic); }}
                   className={`w-9 h-9 text-lg rounded-lg cursor-pointer border-[1.5px] transition-all duration-150 ${
                     selectedIcon === ic
                       ? 'bg-surface-variant border-surface-variant'
                       : 'bg-secondary-container border-secondary-container'
-                  }`}
+                  } ${limitReached ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   {ic}
                 </button>
@@ -175,17 +192,18 @@ const AddCategoryPopup = ({ open, onClose, onSave, editCategory = null, defaultT
               Cancel
             </button>
             <button
-              type="submit" disabled={loading}
+              type="submit" disabled={loading || limitReached}
               className={`flex-[2] p-3 border-none rounded-[10px] text-background text-[13px] font-bold flex items-center justify-center gap-2 ${
-                loading ? 'bg-surface-variant cursor-not-allowed text-primary' : 'bg-primary cursor-pointer'
+                (loading || limitReached) ? 'bg-surface-variant cursor-not-allowed text-primary' : 'bg-primary cursor-pointer'
               }`}
             >
               {loading ? (
                 <><div className="w-3.5 h-3.5 border-2 border-[rgba(6,20,35,0.3)] border-t-background rounded-full animate-spin" /> Saving...</>
               ) : (
-                <><span className="material-symbols-outlined text-base font-semibold">check</span>{editCategory ? 'Update Category' : 'Create Category'}</>
+                <><span className="material-symbols-outlined text-base font-semibold">{limitReached ? 'lock' : 'check'}</span>{editCategory ? 'Update Category' : 'Create Category'}</>
               )}
             </button>
+
           </div>
         </form>
       </div>

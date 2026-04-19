@@ -13,10 +13,19 @@ export const validationRegisterBody = Joi.object({
     lastName: Joi.string().required().min(3).max(72).trim(),
     email: Joi.string().email().required(),
     password: Joi.string().min(8).max(72).required().trim(),
+    consent: Joi.boolean().required(),
 })
 
 export const validationLoginBody = Joi.object({
     email: Joi.string().email().required(),
+    password: Joi.string().min(8).max(72).required().trim(),
+})
+
+export const validationForgotPasswordBody = Joi.object({
+    email: Joi.string().email().required(),
+})
+
+export const validationResetPasswordBody = Joi.object({
     password: Joi.string().min(8).max(72).required().trim(),
 })
 
@@ -82,10 +91,12 @@ export const validationChangePasswordBody = Joi.object({
 })
 
 export const validationPreferencesBody = Joi.object({
-    currency: Joi.string().valid('INR', 'USD', 'EUR', 'GBP', 'JPY', 'AUD', 'CAD', 'SGD').optional(),
+    currency: Joi.string().valid('INR', 'USD', 'EUR', 'GBP', 'JPY', 'AUD', 'CAD', 'SGD', 'AED', 'CNY').optional(),
+    dateFormat: Joi.string().valid('DD/MM/YYYY', 'MM/DD/YYYY', 'YYYY-MM-DD', 'YYYY/MM/DD', 'DD-MM-YYYY').optional(),
     decimalPlaces: Joi.number().min(0).max(4).optional(),
     theme: Joi.string().valid('dark', 'light', 'system').optional(),
-    accentColor: Joi.string().valid('lightblue', 'tomato', 'orange', 'mint', 'brown').optional(),
+    accentColor: Joi.string().valid('lightblue', 'tomato', 'orange', 'mint', 'brown', 'purple', 'green', 'pink').optional(),
+    language: Joi.string().valid('en', 'hi').optional(),
     fiscalYear: Joi.string().valid('April-March', 'January-December').optional(),
 })
 
@@ -121,13 +132,14 @@ export const validationBudgetBody = Joi.object({
 export const validationRecurringBody = Joi.object({
     title: Joi.string().required().min(3).max(100).trim(),
     amount: Joi.number().required().min(1),
-    type: Joi.string().valid('INCOME', 'EXPENSE').required(),
+    type: Joi.string().valid('INCOME', 'EXPENSE', 'TRANSFER').required(),
     frequency: Joi.string().valid('DAILY', 'WEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY').required(),
     startDate: Joi.date().required(),
     categoryId: Joi.string().optional().allow(null, ''),
     accountId: Joi.string().required(),
     toAccountId: Joi.string().optional().allow(null, ''),
     entryType: Joi.string().valid('auto', 'manual').default('auto'),
+    notes: Joi.string().max(250).allow(null, '').optional(),
 })
 
 export const validationAssetBody = Joi.object({

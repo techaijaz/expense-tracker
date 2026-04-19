@@ -8,7 +8,7 @@ import {
   removeAccount,
 } from '@/redux/accountSlice';
 import AddAccounts from './AddAccounts';
-import { formatAmount } from '@/utils/format';
+import useFormat from '@/hooks/useFormat';
 import {
   Dialog,
   DialogContent,
@@ -302,8 +302,7 @@ export default function Accounts() {
   const dispatch = useDispatch();
   const { accounts } = useSelector((state) => state.accounts);
   const { user } = useSelector((state) => state.auth);
-  const preferences = user?.user?.preferences || {};
-  const { currency = 'INR', decimalPlaces = 2 } = preferences;
+  const { formatAmount } = useFormat();
   const [loading, setLoading] = useState(false);
   const [editingAccount, setEditingAccount] = useState(null);
   const [deletingAccount, setDeletingAccount] = useState(null);
@@ -561,8 +560,8 @@ export default function Accounts() {
                       style={{ color: cfg.balanceColor }}
                     >
                       {cfg.isNegative
-                        ? `${formatAmount(Math.abs(balanceInt), currency, decimalPlaces)}${balanceInt < 0 ? ' Owed' : ''}`
-                        : formatAmount(balanceInt, currency, decimalPlaces)}
+                        ? `${formatAmount(Math.abs(balanceInt))}${balanceInt < 0 ? ' Owed' : ''}`
+                        : formatAmount(balanceInt)}
                     </div>
 
                     {/* Credit limit if applicable */}
@@ -576,11 +575,7 @@ export default function Accounts() {
                         }}
                       >
                         Limit:{' '}
-                        {formatAmount(
-                          account.creditLimit,
-                          currency,
-                          decimalPlaces,
-                        )}
+                        {formatAmount(account.creditLimit)}
                       </div>
                     )}
                   </div>
@@ -695,7 +690,7 @@ export default function Accounts() {
                   letterSpacing: '-1px',
                 }}
               >
-                {formatAmount(netLiquidity, currency, decimalPlaces)}
+                {formatAmount(netLiquidity)}
               </div>
               <div
                 style={{

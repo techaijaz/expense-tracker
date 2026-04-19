@@ -78,6 +78,73 @@ const userSchema = new Schema(
             type: String,
             default: null,
         },
+        preferences: {
+            _id: false,
+            currency: {
+                type: String,
+                enum: ['INR', 'USD', 'EUR', 'GBP', 'JPY', 'AUD', 'CAD', 'SGD', 'AED', 'CNY'],
+                default: 'INR',
+            },
+            dateFormat: {
+                type: String,
+                enum: ['DD/MM/YYYY', 'MM/DD/YYYY', 'YYYY-MM-DD', 'YYYY/MM/DD', 'DD-MM-YYYY'],
+                default: 'DD/MM/YYYY',
+            },
+            decimalPlaces: {
+                type: Number,
+                default: 2,
+                min: 0,
+                max: 4,
+            },
+            fiscalYear: {
+                type: String,
+                enum: ['April-March', 'January-December'],
+                default: 'April-March',
+            },
+            theme: {
+                type: String,
+                enum: ['dark', 'light', 'system'],
+                default: 'dark',
+            },
+            accentColor: {
+                type: String,
+                enum: ['lightblue', 'tomato', 'orange', 'mint', 'brown', 'purple', 'green', 'pink'],
+                default: 'lightblue',
+            },
+            language: {
+                type: String,
+                enum: ['en', 'hi'],
+                default: 'en',
+            },
+            timezone: {
+                type: String,
+                default: 'Asia/Kolkata',
+            },
+            country: {
+                type: String,
+                default: 'IN',
+            },
+        },
+        isVerified: {
+            type: Boolean,
+            default: false,
+        },
+        verificationToken: {
+            type: String,
+            default: null,
+        },
+        verificationTokenExpires: {
+            type: Date,
+            default: null,
+        },
+        resetPasswordToken: {
+            type: String,
+            default: null,
+        },
+        resetPasswordExpires: {
+            type: Date,
+            default: null,
+        },
     },
     {
         timestamps: true,

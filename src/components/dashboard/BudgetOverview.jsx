@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import useFormat from '@/hooks/useFormat';
 
 // Category emoji mapping
 const CAT_ICONS = {
@@ -45,6 +46,7 @@ const BudgetItem = ({ name, spent, total }) => {
 
 export const BudgetOverview = ({ budgets }) => {
   const navigate = useNavigate();
+  const { formatAmount } = useFormat();
 
   const totalSpent = budgets.reduce((s, b) => s + (b.totalAmount || 0), 0);
   const totalLimit = budgets.reduce((s, b) => s + (b.limit || 0), 0);
@@ -82,8 +84,8 @@ export const BudgetOverview = ({ budgets }) => {
           }}>
             <span style={{ color: 'var(--text2)' }}>Total spent</span>
             <span style={{ fontFamily: 'var(--mono)', fontWeight: 600 }}>
-              ₹{totalSpent.toLocaleString()}{' '}
-              <span style={{ color: 'var(--text2)' }}>/ ₹{totalLimit.toLocaleString()}</span>
+              {formatAmount(totalSpent)}{' '}
+              <span style={{ color: 'var(--text2)' }}>/ {formatAmount(totalLimit)}</span>
             </span>
           </div>
         </>

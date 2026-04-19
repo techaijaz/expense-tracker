@@ -1,6 +1,7 @@
 import React from 'react';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
+import useFormat from '@/hooks/useFormat';
 
 // Map transaction type → icon + colors matching reference design
 const TYPE_STYLES = {
@@ -26,7 +27,7 @@ function getCategoryIcon(categoryName = '') {
   return '💳';
 }
 
-const TransactionItem = ({ desc, type, categoryName, account, amount, date }) => {
+const TransactionItem = ({ desc, type, categoryName, account, amount, date, formatAmount }) => {
   const style = TYPE_STYLES[type] || TYPE_STYLES.expense;
   const isCredit = type === 'income' || type === 'repayment';
   const catIcon = getCategoryIcon(categoryName);
@@ -49,7 +50,7 @@ const TransactionItem = ({ desc, type, categoryName, account, amount, date }) =>
         className="mini-txn-amt"
         style={{ color: isCredit ? 'var(--green)' : type === 'transfer' ? 'var(--text2)' : 'var(--red)' }}
       >
-        {isCredit ? '+' : '-'}₹{Number(amount).toLocaleString()}
+        {isCredit ? '+' : '-'}{formatAmount(amount)}
       </div>
     </div>
   );
@@ -57,6 +58,7 @@ const TransactionItem = ({ desc, type, categoryName, account, amount, date }) =>
 
 export const RecentTransactionsMini = ({ transactions, onViewAll }) => {
   const navigate = useNavigate();
+  const { formatAmount } = useFormat();
   const handleViewAll = onViewAll || (() => navigate('/transactions'));
 
   return (
@@ -80,6 +82,7 @@ export const RecentTransactionsMini = ({ transactions, onViewAll }) => {
             account={txn.accountName}
             amount={txn.amount}
             date={txn.date}
+            formatAmount={formatAmount}
           />
         ))
       ) : (

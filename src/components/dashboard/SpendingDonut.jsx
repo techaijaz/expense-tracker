@@ -7,9 +7,11 @@ import {
   Tooltip
 } from 'recharts';
 
+import useFormat from '@/hooks/useFormat';
+
 const COLORS = ['#FF6B6B', '#5B8DEF', '#2DD4A0', '#F5A623', '#A78BFA', '#22D3EE'];
 
-const CustomTooltip = ({ active, payload }) => {
+const CustomTooltip = ({ active, payload, formatAmount }) => {
   if (active && payload && payload.length) {
     return (
       <div style={{
@@ -21,7 +23,7 @@ const CustomTooltip = ({ active, payload }) => {
       }}>
         <p style={{ color: 'var(--text)', fontWeight: 600 }}>{payload[0].name}</p>
         <p style={{ color: 'var(--accent)', fontFamily: 'var(--mono)' }}>
-          ₹{payload[0].value.toLocaleString()}
+          {formatAmount(payload[0].value)}
         </p>
       </div>
     );
@@ -30,6 +32,7 @@ const CustomTooltip = ({ active, payload }) => {
 };
 
 export const SpendingDonut = ({ data, total }) => {
+  const { formatAmount } = useFormat();
   const hasData = data && data.length > 0;
 
   return (
@@ -61,7 +64,7 @@ export const SpendingDonut = ({ data, total }) => {
                     />
                   ))}
                 </Pie>
-                <Tooltip content={<CustomTooltip />} />
+                <Tooltip content={<CustomTooltip formatAmount={formatAmount} />} />
               </PieChart>
             </ResponsiveContainer>
             {/* Center label */}
@@ -79,7 +82,7 @@ export const SpendingDonut = ({ data, total }) => {
                 fontSize: 11,
                 color: 'var(--text)',
               }}>
-                ₹{Number(total || 0).toLocaleString()}
+                {formatAmount(total || 0)}
               </span>
             </div>
           </div>
@@ -87,7 +90,7 @@ export const SpendingDonut = ({ data, total }) => {
           <div style={{ width: 100, height: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <svg viewBox="0 0 100 100" width="100" height="100">
               <circle cx="50" cy="50" r="35" fill="none" stroke="var(--bg4)" strokeWidth="14" />
-              <text x="50" y="50" textAnchor="middle" dominantBaseline="central" fill="var(--text3)" fontSize="10" fontFamily="JetBrains Mono">₹0</text>
+              <text x="50" y="50" textAnchor="middle" dominantBaseline="central" fill="var(--text3)" fontSize="10" fontFamily="JetBrains Mono">{formatAmount(0)}</text>
             </svg>
           </div>
         )}
@@ -107,7 +110,7 @@ export const SpendingDonut = ({ data, total }) => {
                 fontSize: 11,
                 color: 'var(--text)',
               }}>
-                ₹{Number(entry.value).toLocaleString()}
+                {formatAmount(entry.value)}
               </span>
             </div>
           ))}

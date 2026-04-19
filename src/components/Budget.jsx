@@ -4,18 +4,19 @@ import { toast } from 'sonner';
 import useApi from '@/hooks/useApi';
 import api from '@/utils/httpMethods';
 import AddBudgetPopup from './AddBudgetPopup';
-import { getCurrencySymbol, formatAmount } from '@/utils/format';
+import useFormat from '@/hooks/useFormat';
 import { cn } from '@/utils/utils';
 
 const Budget = () => {
   const [budgets, setBudgets] = useState([]);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [editingBudget, setEditingBudget] = useState(null);
+  const { user } = useSelector((state) => state.auth);
+  const plan = user?.user?.plan || user?.plan || 'basic';
+  const isPro = plan === 'pro';
+
   const { loading, makeRequest } = useApi();
-  
-  const preferences = useSelector((state) => state.auth.user?.user?.preferences);
-  const { currency = 'INR' } = preferences || {};
-  const currencySymbol = getCurrencySymbol(currency);
+  const { formatAmount } = useFormat();
 
   const fetchBudgets = async () => {
     try {
@@ -50,9 +51,15 @@ const Budget = () => {
   };
 
   const handleAddNew = () => {
+    if (!isPro && budgets.length >= 1) {
+      toast.error('Basic plan limit reached (1 active budget). Upgrade to PRO to add more.');
+      return;
+    }
     setEditingBudget(null);
     setIsPopupOpen(true);
   };
+
+  const limitReached = !isPro && budgets.length >= 1;
 
   return (
     <div className="page-body p-6">
@@ -60,19 +67,19 @@ const Budget = () => {
       <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard
           label="Total Budgeted"
-          value={formatAmount(stats.totalBudgeted, currency)}
+          value={formatAmount(stats.totalBudgeted)}
           color="blue"
           icon="💰"
         />
         <KpiCard
           label="Total Spent"
-          value={formatAmount(stats.totalSpent, currency)}
+          value={formatAmount(stats.totalSpent)}
           color="red"
           icon="🛍️"
         />
         <KpiCard
           label="Remaining"
-          value={formatAmount(stats.remaining, currency)}
+          value={formatAmount(stats.remaining)}
           color="green"
           icon="🔋"
         />
@@ -94,8 +101,9 @@ const Budget = () => {
           onClick={handleAddNew}
           className="flex h-10 items-center gap-2 rounded-lg bg-[#5B8DEF] px-4 text-sm font-semibold text-white transition-all hover:bg-[#4070D4] hover:-translate-y-0.5"
         >
-          <span>+</span> Add Budget
+          <span>{limitReached ? '🔒' : '+'}</span> Add Budget
         </button>
+
       </div>
 
       {loading && budgets.length === 0 ? (
@@ -118,7 +126,6 @@ const Budget = () => {
               key={budget.category?._id || idx} 
               budget={budget} 
               onEdit={() => handleEdit(budget)}
-              currency={currency}
             />
           ))}
           
@@ -166,7 +173,8 @@ const KpiCard = ({ label, value, color, icon, subtext }) => {
   );
 };
 
-const BudgetCard = ({ budget, onEdit, currency }) => {
+const BudgetCard = ({ budget, onEdit }) => {
+  const { formatAmount } = useFormat();
   const percent = budget.percent || 0;
   const isOver = percent >= 100;
   const isWarning = percent >= 80 && percent < 100;
@@ -202,10 +210,10 @@ const BudgetCard = ({ budget, onEdit, currency }) => {
 
       <div className="mb-2 flex items-baseline justify-between">
         <span className="font-mono text-xl font-bold text-[#EEF0F8]">
-          {formatAmount(budget.spentAmount, currency)}
+          {formatAmount(budget.spentAmount)}
         </span>
         <span className="text-xs text-[#8892B0]">
-          of {formatAmount(budget.budgetAmount, currency)}
+          of {formatAmount(budget.budgetAmount)}
         </span>
       </div>
 
@@ -220,8 +228,8 @@ const BudgetCard = ({ budget, onEdit, currency }) => {
         <span className={cn(textColor)}>{percent}% used</span>
         <span className={cn(textColor)}>
           {isOver 
-            ? `🚨 Over by ${formatAmount(budget.spentAmount - budget.budgetAmount, currency)}` 
-            : `${percent >= 80 ? '⚠' : '✓'} ${formatAmount(budget.remaining, currency)} left`
+            ? `🚨 Over by ${formatAmount(budget.spentAmount - budget.budgetAmount)}` 
+            : `${percent >= 80 ? '⚠' : '✓'} ${formatAmount(budget.remaining)} left`
           }
         </span>
       </div>

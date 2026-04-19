@@ -13,6 +13,20 @@ export default {
             if (error) return httpError(next, error, req, 422)
 
             const userId = req.authenticatedUser._id
+            const user = await mongoose.model('User').findById(userId).select('plan')
+            const plan = user?.plan || 'basic'
+
+            // Limit check: Upserting means we are either updating an existing one or creating a new one.
+            // If it's a new one (categoryId doesn't exist for user), check limit.
+            const existing = await budgetModel.findOne({ userId, categoryId: req.body.categoryId, isActive: true })
+            if (!existing) {
+                const count = await budgetModel.countDocuments({ userId, isActive: true })
+                const limit = plan === 'basic' ? 1 : 100
+                if (count >= limit) {
+                    return httpError(next, new Error(`${plan.toUpperCase()} plan limit reached for budgets (${limit}).`), req, 403)
+                }
+            }
+
             const { categoryId, amount, period, alertThreshold, rollover, notes } = value
 
             const updatedBudget = await budgetModel.findOneAndUpdate(

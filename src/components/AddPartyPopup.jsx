@@ -1,15 +1,23 @@
 import { useState } from 'react';
+import { useSelector } from 'react-redux';
 import { toast } from 'sonner';
 import api from '@/utils/httpMethods';
 import { FieldLabel } from './SharedComponents';
 
-export default function AddPartyPopup({ party, onClose, onSave }) {
+export default function AddPartyPopup({ party, onClose, onSave, partyCount }) {
   const [name, setName] = useState(party?.name || '');
   const [relation, setRelation] = useState(party?.relation || 'FRIEND');
   const [busy, setBusy] = useState(false);
 
+  const { user } = useSelector((state) => state.auth);
+  const plan = user?.user?.plan || user?.plan || 'basic';
+  const isPro = plan === 'pro';
+  const isLimitReached = !party && !isPro && (partyCount || 0) >= 5;
+
   const handleSave = async () => {
     if (!name.trim()) return toast.error('Name is required');
+    if (isLimitReached) return toast.error('Upgrade to Pro to add more counterparties');
+    
     setBusy(true);
     try {
       const url = party ? `/parties/${party._id}` : '/parties';

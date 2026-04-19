@@ -46,7 +46,49 @@ export const generateAmortizationSchedule = (principal, annualRate, tenureMonths
     return schedule;
 };
 
+export const recalculateScheduleAfterPrepayment = (remainingPrincipal, annualRate, monthlyEMI, nextDueDate, startInstallmentNo) => {
+    const monthlyRate = (annualRate || 0) / (12 * 100);
+    let remainingBalance = remainingPrincipal;
+    const schedule = [];
+    const baseDate = new Date(nextDueDate);
+
+    let i = startInstallmentNo;
+    while (remainingBalance > 0.01) { // Process until negligible balance
+        const interestComponent = monthlyRate > 0 ? remainingBalance * monthlyRate : 0;
+        let principalComponent = monthlyEMI - interestComponent;
+        
+        // Final adjustment if principal exceeds remaining balance
+        if (principalComponent > remainingBalance) {
+            principalComponent = remainingBalance;
+        }
+
+        remainingBalance -= principalComponent;
+
+        const currentPrincipal = Math.round(principalComponent * 100) / 100;
+        const currentInterest = Math.round(interestComponent * 100) / 100;
+        const currentBalance = Math.max(0, Math.round(remainingBalance * 100) / 100);
+
+        const dueDate = new Date(baseDate.getFullYear(), baseDate.getMonth() + (i - startInstallmentNo), baseDate.getDate());
+
+        schedule.push({
+            installmentNo: i,
+            dueDate,
+            emiAmount: Math.round((currentPrincipal + currentInterest) * 100) / 100,
+            principalComponent: currentPrincipal,
+            interestComponent: currentInterest,
+            remainingBalance: currentBalance,
+            status: 'PENDING'
+        });
+        i++;
+        
+        // Safety break to prevent infinite loops (e.g. if EMI < Interest)
+        if (i > 1000) break; 
+    }
+    return schedule;
+};
+
 export default {
     calculateEMI,
-    generateAmortizationSchedule
+    generateAmortizationSchedule,
+    recalculateScheduleAfterPrepayment
 };

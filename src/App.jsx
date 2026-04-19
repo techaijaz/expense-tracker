@@ -14,6 +14,11 @@ import Reports from './components/Reports';
 import Budget from './components/Budget';
 import Recurring from './components/Recurring';
 import Onboarding from './components/onboarding/Onboarding';
+import NetWorth from './components/NetWorth';
+import FinancialAnalysis from './components/FinancialAnalysis';
+import ForgotPassword from './components/ForgotPassword';
+import ResetPassword from './components/ResetPassword';
+import EmailVerification from './components/EmailVerification';
 import { Toaster } from '@/components/ui/sonner';
 import { ThemeProvider } from './context/ThemeContext';
 
@@ -51,10 +56,20 @@ function App() {
               <Route path="/recurring" element={<MainLayout />}>
                 <Route index element={<Recurring />} />
               </Route>
+              <Route path="/net-worth" element={<MainLayout />}>
+                <Route index element={<NetWorth />} />
+              </Route>
+              <Route path="/analysis" element={<MainLayout />}>
+                <Route index element={<FinancialAnalysis />} />
+              </Route>
               <Route path="/onboarding" element={<Onboarding />} />
             </Route>
-            <Route path="/" element={<SignIn />} />
+            <Route path="/signin" element={<SignIn />} />
             <Route path="/signup" element={<SignUp />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/verify-email" element={<EmailVerification />} />
+            <Route path="/" element={<SignIn />} />
           </Routes>
         </ThemeProvider>
       </Router>

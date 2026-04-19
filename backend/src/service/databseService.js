@@ -29,6 +29,7 @@ const runInTransaction = async (work) => {
 }
 
 export default {
+    runInTransaction,
     connect: async () => {
         try {
             await mongoose.connect(config.DATABASE_URL)

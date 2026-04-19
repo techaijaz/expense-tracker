@@ -1,4 +1,5 @@
 import React from 'react';
+import useFormat from '@/hooks/useFormat';
 import {
   BarChart,
   Bar,
@@ -9,7 +10,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 
-const CustomTooltip = ({ active, payload, label }) => {
+const CustomTooltip = ({ active, payload, label, formatAmount }) => {
   if (active && payload && payload.length) {
     return (
       <div style={{
@@ -25,7 +26,7 @@ const CustomTooltip = ({ active, payload, label }) => {
             <div style={{ width: 8, height: 8, borderRadius: '50%', background: entry.color }} />
             <span style={{ color: 'var(--text2)' }}>{entry.name}:</span>
             <span style={{ color: 'var(--text)', fontFamily: 'var(--mono)', fontWeight: 600 }}>
-              ₹{Number(entry.value).toLocaleString()}
+              {formatAmount(entry.value)}
             </span>
           </div>
         ))}
@@ -36,6 +37,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 export const CashFlowChart = ({ data }) => {
+  const { formatAmount } = useFormat();
   return (
     <div className="card">
       <div className="card-header">
@@ -74,7 +76,7 @@ export const CashFlowChart = ({ data }) => {
               tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 10, fontFamily: 'JetBrains Mono' }}
               tickFormatter={(v) => `${v / 1000}k`}
             />
-            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
+            <Tooltip content={<CustomTooltip formatAmount={formatAmount} />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
             <Bar dataKey="income" name="Income" fill="#5B8DEF" radius={[4, 4, 0, 0]} barSize={16} />
             <Bar dataKey="expense" name="Expense" fill="#FF6B6B" radius={[4, 4, 0, 0]} barSize={16} fillOpacity={0.8} />
           </BarChart>

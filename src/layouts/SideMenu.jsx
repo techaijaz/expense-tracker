@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '@/redux/authSlice';
 import { toast } from 'sonner';
 import api from '@/utils/httpMethods';
@@ -7,7 +7,11 @@ import api from '@/utils/httpMethods';
 export default function SideMenu({ isOpen, setIsOpen }) {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useSelector((state) => state.auth);
+  const plan = user?.user?.plan || user?.plan || 'basic';
+  const isPro = plan === 'pro';
   const dispatch = useDispatch();
+
   const isActive = (path) => location.pathname === path;
 
   const handleLogout = async (e) => {
@@ -32,19 +36,23 @@ export default function SideMenu({ isOpen, setIsOpen }) {
     }
   };
 
-  const NavItem = ({ to, icon, label, locked }) => (
-    <Link
-      to={locked ? '#' : to}
-      onClick={() => !locked && setIsOpen(false)}
-      className={`nav-item ${isActive(to) ? 'active' : ''} ${locked ? 'opacity-50 cursor-not-allowed' : ''}`}
-    >
-      <span className="nav-icon">{icon}</span>
-      <span className="flex-1">{label}</span>
-      {locked && (
-        <span style={{ fontSize: 12, color: 'var(--text3)' }}>🔒</span>
-      )}
-    </Link>
-  );
+  const NavItem = ({ to, icon, label, proOnly }) => {
+
+    const locked = proOnly && !isPro;
+    return (
+      <Link
+        to={locked ? '#' : to}
+        onClick={() => !locked && setIsOpen(false)}
+        className={`nav-item ${isActive(to) ? 'active' : ''} ${locked ? 'opacity-50 cursor-not-allowed' : ''}`}
+      >
+        <span className="nav-icon">{icon}</span>
+        <span className="flex-1">{label}</span>
+        {locked && (
+          <span style={{ fontSize: 12, color: 'var(--text3)' }}>🔒</span>
+        )}
+      </Link>
+    );
+  };
 
   return (
     <>
@@ -83,25 +91,28 @@ export default function SideMenu({ isOpen, setIsOpen }) {
           <NavItem to="/budget" icon="💰" label="Budget" />
           <NavItem to="/recurring" icon="🔄" label="Recurring" />
           <NavItem to="/loans" icon="🤝" label="Loans" />
-          <NavItem to="/net-worth" icon="📈" label="Net Worth" locked />
+          <NavItem to="/net-worth" icon="📈" label="Net Worth" proOnly />
 
           <div className="nav-section">Insights</div>
-          <NavItem to="/reports" icon="📋" label="Reports" />
+          <NavItem to="/reports" icon="📋" label="Reports" proOnly />
           <NavItem to="/settings" icon="⚙️" label="Settings" />
         </nav>
 
         {/* Bottom: Plan Badge + Logout */}
         <div className="sidebar-bottom">
           <div className="plan-badge">
-            <div className="plan-name">Pro Trial</div>
-            <div className="plan-sub">12 days remaining</div>
-            <button className="btn-upgrade">Upgrade ₹99/mo</button>
+            <div className="plan-name">{isPro ? 'Pro Member' : 'Basic Plan'}</div>
+            <div className="plan-sub">
+              {isPro ? 'All features unlocked' : 'Limited features'}
+            </div>
+            {!isPro && <button className="btn-upgrade">Upgrade ₹99/mo</button>}
           </div>
           <button onClick={handleLogout} className="nav-item w-full text-left">
             <span className="nav-icon">🚪</span>
             <span>Logout</span>
           </button>
         </div>
+
 
         {/* Mobile Close Button */}
         <button

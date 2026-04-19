@@ -146,12 +146,12 @@ function SignIn() {
                   >
                     Password
                   </label>
-                  <a
+                  <Link
+                    to="/forgot-password"
                     className="text-[11px] font-bold text-primary hover:text-on-primary-container transition-colors"
-                    href="#"
                   >
                     Forgot Password?
-                  </a>
+                  </Link>
                 </div>
                 <div className="relative">
                   <input

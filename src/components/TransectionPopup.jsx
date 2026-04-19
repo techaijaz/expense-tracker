@@ -7,13 +7,8 @@ import { z } from 'zod';
 import { format } from 'date-fns';
 import useApi from '@/hooks/useApi';
 import { addTransection, updateTransection } from '@/redux/transectionSlice';
+import useFormat from '@/hooks/useFormat';
 import AddCategoryPopup from './AddCategoryPopup';
-import AddPartyPopup from './AddPartyPopup';
-import {
-  getCurrencySymbol,
-  restrictDecimals,
-  formatAmount,
-} from '@/utils/format';
 import { updateAccount } from '@/redux/accountSlice';
 import api from '@/utils/httpMethods';
 import { Calendar } from '@/components/ui/calendar';
@@ -105,11 +100,7 @@ const TransactionPopup = ({
   const [dueDateOpen, setDueDateOpen] = useState(false);
   const { data: transData, loading, makeRequest } = useApi();
 
-  const preferences = useSelector(
-    (state) => state.auth.user?.user?.preferences,
-  );
-  const { currency = 'INR', decimalPlaces = 2 } = preferences || {};
-  const currencySymbol = getCurrencySymbol(currency);
+  const { formatAmount, currencySymbol, decimalPlaces } = useFormat();
 
   const activeAccounts = accounts.filter((a) => a.isActive !== false);
 
@@ -244,7 +235,7 @@ const TransactionPopup = ({
 
   const onSubmit = async (data) => {
     if (data.type === 'expense' && data.amount > accountBalance) {
-      toast.error(`Insufficient balance. Available: ${formatAmount(accountBalance, currency)}`);
+      toast.error(`Insufficient balance. Available: ${formatAmount(accountBalance)}`);
       return;
     }
     if (data.type === 'transfer' && data.account === data.toaccount) {
@@ -254,7 +245,7 @@ const TransactionPopup = ({
     if (data.type === 'debt' && data.loanId) {
       const selectedLoan = activeLoans.find((l) => l._id === data.loanId);
       if (selectedLoan && data.amount > selectedLoan.amount) {
-        toast.error(`Repayment cannot exceed outstanding balance (${formatAmount(selectedLoan.amount, currency)})`);
+        toast.error(`Repayment cannot exceed outstanding balance (${formatAmount(selectedLoan.amount)})`);
         return;
       }
     }
@@ -662,7 +653,7 @@ const TransactionPopup = ({
                   Source Account{' '}
                   {selectedAccount && (
                     <span style={{ color: 'var(--accent)', fontWeight: 600, fontSize: '10px', textTransform: 'none', letterSpacing: 0 }}>
-                      Bal: {formatAmount(accountBalance, currency)}
+                      Bal: {formatAmount(accountBalance)}
                     </span>
                   )}
                 </label>
@@ -725,7 +716,7 @@ const TransactionPopup = ({
                     {activeLoans.map((l) => (
                       <option key={l._id} value={l._id}>
                         {l.type === 'LENT' ? 'Repay to me' : 'Repay by me'}:{' '}
-                        {formatAmount(l.amount, currency)} ({new Date(l.createdAt).toLocaleDateString()})
+                        {formatAmount(l.amount)} ({new Date(l.createdAt).toLocaleDateString()})
                       </option>
                     ))}
                   </select>
