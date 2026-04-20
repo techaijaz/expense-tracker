@@ -86,3 +86,31 @@ export function DeleteConfirmModal({ title, description, onConfirm, onCancel, bu
     </div>
   );
 }
+
+export function ConfirmModal({ title, description, confirmLabel, onConfirm, onCancel, busy, danger = false }) {
+  return (
+    <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4"
+      onClick={(e) => { if(e.target === e.currentTarget) onCancel(); }}>
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-[8px]" />
+      <div className={`relative z-[1] w-full max-w-[400px] bg-surface border ${danger ? 'border-error/30' : 'border-primary/30'} rounded-[20px] py-8 px-7 shadow-2xl`}>
+        <div className="flex items-center gap-4 mb-5.5">
+          <div className={`w-12 h-12 rounded-full ${danger ? 'bg-error/10 text-error' : 'bg-primary/10 text-primary'} flex items-center justify-center shrink-0`}>
+            <span className="material-symbols-outlined text-[28px]" style={{ fontVariationSettings:"'FILL' 1" }}>
+              {danger ? 'warning' : 'help_outline'}
+            </span>
+          </div>
+          <div>
+            <h2 className={`text-[17px] font-extrabold ${danger ? 'text-error' : 'text-primary'} tracking-[-0.01em] mb-1`}>{title}</h2>
+            <p className="text-[13px] text-on-surface-variant leading-[1.4]">{description}</p>
+          </div>
+        </div>
+        <div className="flex gap-3 mt-6">
+          <button onClick={onCancel} disabled={busy} className="flex-1 p-[11px] bg-secondary-container border border-secondary-container rounded-[10px] text-on-surface-variant text-[13px] font-semibold cursor-pointer">Cancel</button>
+          <button onClick={onConfirm} disabled={busy} className={`flex-1 p-[11px] border-none rounded-[10px] text-white text-[13px] font-bold ${busy ? 'cursor-not-allowed' : 'cursor-pointer'} ${danger ? 'bg-error/90' : 'bg-primary'}`}>
+            {busy ? 'Processing...' : confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

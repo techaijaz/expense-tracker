@@ -24,6 +24,7 @@ function Dashboard() {
 
   const { formatAmount } = useFormat();
   const { user } = useSelector((state) => state.auth);
+  const { dateRange } = useSelector((state) => state.dashboard);
   const [resending, setResending] = useState(false);
 
   const handleResend = async () => {
@@ -47,15 +48,25 @@ function Dashboard() {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
+        const params = {};
+        if (dateRange.from && dateRange.to) {
+          params.startDate = dateRange.from;
+          params.endDate = dateRange.to;
+        }
+
         const [overviewRes, categoriesRes, trendRes, recentRes, upcomingRes] =
           await Promise.all([
-            axiosInstance.get('/reports/overview'),
-            axiosInstance.get('/reports/categories'),
-            axiosInstance.get(
-              '/reports/trend?period=last6months&groupBy=month',
-            ),
-            axiosInstance.get('/reports/recent'),
-            axiosInstance.get('/reports/upcoming'),
+            axiosInstance.get('/reports/overview', { params }),
+            axiosInstance.get('/reports/categories', { params }),
+            axiosInstance.get('/reports/trend', {
+              params: {
+                ...params,
+                groupBy: 'month',
+                period: params.startDate ? undefined : 'last6months',
+              },
+            }),
+            axiosInstance.get('/reports/recent'), // Recent transactions usually aren't filtered by date range in these types of dashboards, but we could
+            axiosInstance.get('/reports/upcoming'), // Upcoming payments are future-looking, not historical
           ]);
 
         setOverview(overviewRes.data.data);
@@ -69,7 +80,7 @@ function Dashboard() {
     };
 
     fetchDashboardData();
-  }, []);
+  }, [dateRange]);
 
   const statsData = {
     totalBalance: formatAmount(overview?.totalBalance || 0),

@@ -1,8 +1,10 @@
 import { useLocation } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { DateRangePicker } from '@/components/DateRangePicker';
+import { setDateRange } from '@/redux/dashboardSlice';
 
 const PAGE_META = {
-  '/dashboard': { title: 'Dashboard', sub: 'Global overview · Last 30 days' },
+  '/dashboard': { title: 'Dashboard', sub: 'Global overview' },
   '/transactions': {
     title: 'Transactions',
     sub: 'Asset Ledger · All movements',
@@ -22,9 +24,10 @@ const PAGE_META = {
 
 export default function Header({ onMenuToggle, onNewTransaction }) {
   const location = useLocation();
+  const dispatch = useDispatch();
   const user = useSelector((state) => state.auth.user);
+  const { dateRange } = useSelector((state) => state.dashboard);
 
-  const isSettings = location.pathname === '/settings';
   const meta = PAGE_META[location.pathname] || {
     title: 'Dashboard',
     sub: 'Global overview',
@@ -37,13 +40,6 @@ export default function Header({ onMenuToggle, onNewTransaction }) {
       ).toUpperCase() || 'JD'
     : 'JD';
 
-  // Current month label for date range button
-  const now = new Date();
-  const monthLabel = now.toLocaleString('default', { month: 'short' });
-  const year = now.getFullYear();
-  const firstDay = `${monthLabel} 1`;
-  const lastDay = `${monthLabel} ${new Date(year, now.getMonth() + 1, 0).getDate()}`;
-
   const backendBase =
     import.meta.env.VITE_API_URL?.replace('/api/v1', '') ||
     'http://localhost:5000';
@@ -53,6 +49,20 @@ export default function Header({ onMenuToggle, onNewTransaction }) {
     return `${backendBase.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
   };
   const avatarUrl = getAvatarUrl(user?.avatar);
+
+  const handleDateChange = (range) => {
+    dispatch(
+      setDateRange({
+        from: range?.from ? range.from.toISOString() : null,
+        to: range?.to ? range.to.toISOString() : null,
+      }),
+    );
+  };
+
+  const displayDateRange = {
+    from: dateRange.from ? new Date(dateRange.from) : null,
+    to: dateRange.to ? new Date(dateRange.to) : null,
+  };
 
   return (
     <header className="topbar">
@@ -72,15 +82,17 @@ export default function Header({ onMenuToggle, onNewTransaction }) {
         style={{
           marginLeft: 'auto',
           display: 'flex',
-          gap: 8,
+          gap: 12,
           alignItems: 'center',
         }}
       >
         {/* Date range — only on dashboard */}
         {location.pathname === '/dashboard' && (
-          <button className="btn-outline hidden sm:flex">
-            📅 {firstDay} – {lastDay}
-          </button>
+          <DateRangePicker
+            className="hidden sm:flex"
+            value={displayDateRange}
+            onChange={handleDateChange}
+          />
         )}
 
         {/* Export — only on transactions */}

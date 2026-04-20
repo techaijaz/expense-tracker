@@ -514,27 +514,13 @@ export default function Accounts() {
                       <span className={cfg.badgeClass}>
                         {cfg.emoji} {cfg.label}
                       </span>
-                      {account.type === 'CASH' ? (
-                        <div
-                          style={{
-                            fontSize: '10px',
-                            color: 'var(--text3)',
-                            border: '1px solid var(--border)',
-                            borderRadius: '4px',
-                            padding: '2px 6px',
-                          }}
-                        >
-                          Protected
-                        </div>
-                      ) : (
-                        <AccountMenu
-                          account={account}
-                          onSetDefault={() => handleSetDefault(account)}
-                          onToggleActive={() => handleToggleActive(account)}
-                          onEdit={() => setEditingAccount(account)}
-                          onDelete={() => setDeletingAccount(account)}
-                        />
-                      )}
+                      <AccountMenu
+                        account={account}
+                        onSetDefault={() => handleSetDefault(account)}
+                        onToggleActive={() => handleToggleActive(account)}
+                        onEdit={() => setEditingAccount(account)}
+                        onDelete={() => setDeletingAccount(account)}
+                      />
                     </div>
 
                     {/* Account name */}

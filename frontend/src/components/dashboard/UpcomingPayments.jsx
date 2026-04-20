@@ -3,7 +3,13 @@ import { differenceInDays, format } from 'date-fns';
 import useFormat from '@/hooks/useFormat';
 
 const PaymentItem = ({ title, subtitle, amount, dueDate, formatAmount }) => {
-  const daysRemaining = differenceInDays(new Date(dueDate), new Date());
+  // Defensive check for date-fns v3 argument requirements
+  if (!dueDate) return null;
+
+  const targetDate = new Date(dueDate);
+  if (isNaN(targetDate.getTime())) return null;
+
+  const daysRemaining = differenceInDays(targetDate, new Date());
   const isUrgent = daysRemaining <= 3;
   const isSoon = daysRemaining <= 7;
 

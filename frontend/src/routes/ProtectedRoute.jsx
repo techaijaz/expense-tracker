@@ -1,12 +1,17 @@
 import { useSelector } from 'react-redux';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 
-const ProtectedRoute = () => {
+const ProtectedRoute = ({ adminOnly = false }) => {
   const { user } = useSelector((store) => store.auth);
   const location = useLocation();
 
   if (!user) {
     return <Navigate to="/" />;
+  }
+
+  // Admin isolation
+  if (adminOnly && user.role !== 'admin') {
+    return <Navigate to="/dashboard" />;
   }
 
   // Redirect to onboarding if not done

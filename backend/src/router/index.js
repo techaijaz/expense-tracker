@@ -14,6 +14,8 @@ import settingsRouter from './settingsRouter.js'
 import onboardingRouter from './onboardingRouter.js'
 import recurringRouter from './recurringRouter.js'
 import assetRouter from './assetRouter.js'
+import subscriptionRouter from './subscriptionRouter.js'
+import adminRouter from './adminRouter.js'
 
 const router = Router()
 
@@ -32,5 +34,7 @@ router.use('/net-worth', netWorthRouter)
 router.use('/settings', settingsRouter)
 router.use('/recurring', recurringRouter)
 router.use('/assets', assetRouter)
+router.use('/subscription', subscriptionRouter)
+router.use('/admin', adminRouter)
 
 export default router

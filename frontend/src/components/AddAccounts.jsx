@@ -204,6 +204,7 @@ function AccountModal({ onClose, onSaved, account = null, hasCash = false }) {
                 placeholder="e.g. HDFC Savings"
                 className="form-input"
                 type="text"
+                disabled={accountType === 'CASH'}
               />
               {errors.name && (
                 <p

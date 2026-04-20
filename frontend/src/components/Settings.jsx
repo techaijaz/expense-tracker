@@ -1,5 +1,6 @@
 import UserIdentity from './settings/UserIdentity';
 import Taxonomy from './settings/Taxonomy';
+import SubscriptionManagement from './settings/SubscriptionManagement';
 import DataExport from './settings/DataExport';
 import Counterparties from './settings/Counterparties';
 import Appearance from './settings/Appearance';
@@ -21,6 +22,7 @@ export default function Settings() {
         {/* ── LEFT COLUMN ── */}
         <div>
           <UserIdentity />
+          <SubscriptionManagement />
           <Appearance />
           <RegionalSpecs />
           <DataExport />

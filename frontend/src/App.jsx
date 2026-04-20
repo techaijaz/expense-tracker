@@ -19,6 +19,10 @@ import FinancialAnalysis from './components/FinancialAnalysis';
 import ForgotPassword from './components/ForgotPassword';
 import ResetPassword from './components/ResetPassword';
 import EmailVerification from './components/EmailVerification';
+import AdminDashboard from './components/AdminDashboard';
+import AdminUserList from './components/AdminUserList';
+import AdminPayments from './components/AdminPayments';
+import AdminSettings from './components/AdminSettings';
 import { Toaster } from '@/components/ui/sonner';
 import { ThemeProvider } from './context/ThemeContext';
 
@@ -64,6 +68,23 @@ function App() {
               </Route>
               <Route path="/onboarding" element={<Onboarding />} />
             </Route>
+
+            {/* Admin Routes */}
+            <Route element={<ProtectedRoute adminOnly={true} />}>
+              <Route path="/admin/dashboard" element={<MainLayout />}>
+                <Route index element={<AdminDashboard />} />
+              </Route>
+              <Route path="/admin/users" element={<MainLayout />}>
+                <Route index element={<AdminUserList />} />
+              </Route>
+              <Route path="/admin/payments" element={<MainLayout />}>
+                <Route index element={<AdminPayments />} />
+              </Route>
+              <Route path="/admin/settings" element={<MainLayout />}>
+                <Route index element={<AdminSettings />} />
+              </Route>
+            </Route>
+
             <Route path="/signin" element={<SignIn />} />
             <Route path="/signup" element={<SignUp />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />

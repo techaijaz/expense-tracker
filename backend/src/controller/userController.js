@@ -8,6 +8,7 @@ import {
     validationPreferencesBody,
     validationForgotPasswordBody,
     validationResetPasswordBody,
+    validationSubscriptionBody,
 } from '../service/validationService.js'
 import mailService from '../service/mailService.js'
 import crypto from 'crypto'
@@ -137,8 +138,12 @@ export default {
                     lastLoginAt: user.lastLoginAt,
                     preferences: user.preferences,
                     plan: user.plan || 'basic',
+                    subscriptionPeriod: user.subscriptionPeriod || null,
+                    subscriptionStart: user.subscriptionStart || null,
+                    subscriptionEnd: user.subscriptionEnd || null,
                     onboardingDone: user.onboardingDone || false,
                     isVerified: user.isVerified || false,
+                    role: user.role || 'user',
                 },
                 accounts,
                 categories,
@@ -236,8 +241,12 @@ export default {
                     lastLoginAt: user.lastLoginAt,
                     preferences: user.preferences,
                     plan: user.plan || 'basic',
+                    subscriptionPeriod: user.subscriptionPeriod || null,
+                    subscriptionStart: user.subscriptionStart || null,
+                    subscriptionEnd: user.subscriptionEnd || null,
                     onboardingDone: user.onboardingDone || false,
                     isVerified: user.isVerified || false,
+                    role: user.role || 'user',
                 },
                 accounts,
                 categories,
@@ -276,7 +285,24 @@ export default {
     selfIdentification: async (req, res, next) => {
         try {
             const { authenticatedUser } = req
-            httpResponse(req, res, 200, responceseMessage.SUCCESS, authenticatedUser)
+            httpResponse(req, res, 200, responceseMessage.SUCCESS, {
+                _id: authenticatedUser._id,
+                firstName: authenticatedUser.firstName,
+                lastName: authenticatedUser.lastName,
+                email: authenticatedUser.email,
+                avatar: authenticatedUser.avatar,
+                consent: authenticatedUser.consent,
+                setBasicDetails: authenticatedUser.setBasicDetails,
+                lastLoginAt: authenticatedUser.lastLoginAt,
+                preferences: authenticatedUser.preferences,
+                plan: authenticatedUser.plan || 'basic',
+                subscriptionPeriod: authenticatedUser.subscriptionPeriod || null,
+                subscriptionStart: authenticatedUser.subscriptionStart || null,
+                subscriptionEnd: authenticatedUser.subscriptionEnd || null,
+                onboardingDone: authenticatedUser.onboardingDone || false,
+                isVerified: authenticatedUser.isVerified || false,
+                role: authenticatedUser.role || 'user',
+            })
         } catch (error) {
             httpError(next, error, req, 500)
         }
@@ -597,6 +623,42 @@ export default {
             await user.save()
 
             httpResponse(req, res, 200, 'Password has been reset successfully. You can now log in.', null)
+        } catch (error) {
+            httpError(next, error, req, 500)
+        }
+    },
+
+    updateSubscription: async (req, res, next) => {
+        try {
+            const { error, value } = validateJoiSchema(validationSubscriptionBody, req.body)
+            if (error) return httpError(next, error, req, 422)
+
+            const { plan, period } = value
+            const user = await userModel.findById(req.authenticatedUser._id)
+            if (!user) return httpError(next, new Error('User not found'), req, 404)
+
+            user.plan = plan
+            user.subscriptionPeriod = period
+
+            if (plan === 'pro' && period) {
+                user.subscriptionStart = dayjs().toDate()
+                if (period === 'monthly') {
+                    user.subscriptionEnd = dayjs().add(1, 'month').toDate()
+                } else if (period === 'yearly') {
+                    user.subscriptionEnd = dayjs().add(1, 'year').toDate()
+                }
+            } else {
+                user.subscriptionStart = null
+                user.subscriptionEnd = null
+            }
+
+            await user.save()
+            httpResponse(req, res, 200, 'Subscription updated successfully', {
+                plan: user.plan,
+                subscriptionPeriod: user.subscriptionPeriod,
+                subscriptionStart: user.subscriptionStart,
+                subscriptionEnd: user.subscriptionEnd,
+            })
         } catch (error) {
             httpError(next, error, req, 500)
         }

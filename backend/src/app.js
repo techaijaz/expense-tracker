@@ -42,7 +42,11 @@ app.use(
         credentials: true,
     })
 )
-app.use(express.json())
+app.use(express.json({
+    verify: (req, res, buf) => {
+        req.rawBody = buf
+    }
+}))
 
 // Derive __filename and __dirname
 const __filename = fileURLToPath(import.meta.url)

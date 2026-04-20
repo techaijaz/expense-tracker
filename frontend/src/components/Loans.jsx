@@ -5,7 +5,6 @@ import api from '@/utils/httpMethods';
 import { setLoans, updateLoan, removeLoan } from '@/redux/loanSlice';
 import { setAccounts, updateAccount } from '@/redux/accountSlice';
 import useFormat from '@/hooks/useFormat';
-import { format, isPast } from 'date-fns';
 import {
   Popover,
   PopoverContent,

@@ -150,3 +150,8 @@ export const validationAssetBody = Joi.object({
     currentValue: Joi.number().required().min(0),
 })
 
+export const validationSubscriptionBody = Joi.object({
+    plan: Joi.string().valid('basic', 'pro').required(),
+    period: Joi.string().valid('monthly', 'yearly').allow(null).optional(),
+})
+

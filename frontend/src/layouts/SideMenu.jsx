@@ -1,6 +1,8 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '@/redux/authSlice';
+import SubscriptionPopup from '@/components/SubscriptionPopup';
 import { toast } from 'sonner';
 import api from '@/utils/httpMethods';
 
@@ -8,6 +10,7 @@ export default function SideMenu({ isOpen, setIsOpen }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth);
+  const [isSubscriptionOpen, setIsSubscriptionOpen] = useState(false);
   
   // Robust plan checking
   const userData = user?.user || user;
@@ -103,11 +106,21 @@ export default function SideMenu({ isOpen, setIsOpen }) {
           <div className="nav-section">Insights</div>
           <NavItem to="/reports" icon="📋" label="Reports" proOnly />
           <NavItem to="/settings" icon="⚙️" label="Settings" />
+
+          {userData?.role === 'admin' && (
+            <>
+              <div className="nav-section">Administration</div>
+              <NavItem to="/admin/dashboard" icon="🛡️" label="Admin Dashboard" />
+              <NavItem to="/admin/users" icon="👤" label="Manage Users" />
+              <NavItem to="/admin/payments" icon="✅" label="Verifications" />
+              <NavItem to="/admin/settings" icon="🛠️" label="System Config" />
+            </>
+          )}
         </nav>
 
         {/* Bottom: Plan Badge + Logout */}
         <div className="sidebar-bottom">
-          <div className="plan-badge">
+          <div className="plan-badge cursor-pointer hover:border-accent/40 transition-colors" onClick={() => setIsSubscriptionOpen(true)}>
             <div className="plan-name">
               {isPro ? (isTrial ? 'Pro Trial' : 'Pro Member') : 'Basic Plan'}
             </div>
@@ -123,6 +136,12 @@ export default function SideMenu({ isOpen, setIsOpen }) {
             <span>Logout</span>
           </button>
         </div>
+
+        <SubscriptionPopup 
+          isOpen={isSubscriptionOpen} 
+          onOpenChange={setIsSubscriptionOpen} 
+          currentPlan={plan}
+        />
 
         {/* Mobile Close Button */}
         <button

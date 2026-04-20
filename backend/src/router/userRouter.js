@@ -22,5 +22,6 @@ router.route('/resend-verification').post(userController.resendVerification)
 router.route('/forgot-password').post(userController.forgotPassword)
 router.route('/reset-password').post(userController.resetPassword)
 router.route('/export').get(authentication, userController.exportData)
+router.route('/subscription').patch(authentication, userController.updateSubscription)
 
 export default router

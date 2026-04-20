@@ -58,7 +58,18 @@ const userSchema = new Schema(
         plan: {
             type: String,
             default: 'basic',
-            enum: ['basic', 'pro'],
+        },
+        subscriptionPeriod: {
+            type: String,
+            default: null,
+        },
+        subscriptionStart: {
+            type: Date,
+            default: null,
+        },
+        subscriptionEnd: {
+            type: Date,
+            default: null,
         },
         trialStart: {
             type: Date,
@@ -126,6 +137,11 @@ const userSchema = new Schema(
                 type: String,
                 default: 'IN',
             },
+        },
+        role: {
+            type: String,
+            enum: ['user', 'admin'],
+            default: 'user',
         },
         isVerified: {
             type: Boolean,

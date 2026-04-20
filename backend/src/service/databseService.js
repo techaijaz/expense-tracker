@@ -531,6 +531,13 @@ export default {
             .populate('categoryId', 'name icon')
             .populate('accountId', 'name')
             .sort({ date: -1 })
+    },
+    updateUserSubscription: async (userId, planData) => {
+        return userModel.findByIdAndUpdate(
+            userId,
+            { $set: planData },
+            { new: true }
+        )
     }
 }
 

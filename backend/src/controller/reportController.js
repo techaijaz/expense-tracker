@@ -458,8 +458,11 @@ export default {
             }).lean()
 
             const mappedLoans = formalLoans.map(l => {
+                if (!l.startDate) return null;
                 const loanStartDate = dayjs(l.startDate).tz(timezone)
-                let nextEMI = loanStartDate.date(loanStartDate.date())
+                if (!loanStartDate.isValid()) return null;
+                
+                let nextEMI = loanStartDate.clone();
                 
                 // Find the next EMI date that is today or in the future
                 while (nextEMI.isBefore(now, 'day')) {
@@ -474,11 +477,12 @@ export default {
                     dueDate: nextEMI.toDate(),
                     type: 'loan'
                 }
-            }).filter(l => dayjs(l.dueDate).isBefore(thirtyDaysFromNow))
+            }).filter(l => l !== null && dayjs(l.dueDate).isBefore(thirtyDaysFromNow))
 
             // 3. Fetch Credit Card Dues
             const ccCycles = await CreditCardCycle.find({ userId }).populate('accountId', 'name').lean()
             const mappedCC = ccCycles.map(c => {
+                if (!c.dueDay) return null;
                 let dueDate = now.date(c.dueDay)
                 if (dueDate.isBefore(now, 'day')) {
                     dueDate = dueDate.add(1, 'month')
@@ -491,7 +495,7 @@ export default {
                     dueDate: dueDate.toDate(),
                     type: 'credit_card'
                 }
-            }).filter(c => dayjs(c.dueDate).isBefore(thirtyDaysFromNow))
+            }).filter(c => c !== null && dayjs(c.dueDate).isBefore(thirtyDaysFromNow))
 
             // Combine and sort
             const allPayments = [...mappedRecurring, ...mappedLoans, ...mappedCC]

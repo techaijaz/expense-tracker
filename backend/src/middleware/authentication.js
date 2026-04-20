@@ -38,3 +38,10 @@ export default async (req, _res, next) => {
         httpError(next, error, req, 500)
     }
 }
+
+export const isAdmin = async (req, _res, next) => {
+    if (req.authenticatedUser && req.authenticatedUser.role === 'admin') {
+        return next()
+    }
+    httpError(next, new Error('Permission denied: Admin access required'), req, 403)
+}

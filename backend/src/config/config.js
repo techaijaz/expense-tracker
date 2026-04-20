@@ -37,4 +37,18 @@ export default {
     },
 
     GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+    
+    // Payment Gateway
+    PAYMENT_GATEWAY: process.env.PAYMENT_GATEWAY || 'manual', // 'razorpay', 'stripe', 'manual'
+    
+    RAZORPAY: {
+        KEY_ID: process.env.RAZORPAY_KEY_ID,
+        KEY_SECRET: process.env.RAZORPAY_KEY_SECRET,
+    },
+    
+    STRIPE: {
+        SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+        WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
+        PUBLISHABLE_KEY: process.env.STRIPE_PUBLISHABLE_KEY
+    }
 }
