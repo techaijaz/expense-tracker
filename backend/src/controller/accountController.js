@@ -60,38 +60,44 @@ export default {
                 await Account.updateMany({ userId, isDeleted: false }, { $set: { isDefault: false } })
             }
 
-            // Start account with 0 balance if we're going to create an opening balance transaction
-            const initialBalance = value.balance || 0
+            // Handle Balance for Credit Card (store as negative debt)
+            let initialBalance = Number(value.balance || 0)
+            if (value.type === 'CREDIT_CARD' && initialBalance !== 0) {
+                initialBalance = -Math.abs(initialBalance)
+            }
+
             const account = await Account.create({ ...value, balance: 0, userId })
 
-            // Handle Opening Balance
-            if (initialBalance > 0) {
-                let category = await mongoose.model('Category').findOne({ userId, name: 'Opening Balance', isDeleted: false })
-                if (!category) {
-                    category = await mongoose.model('Category').create({
-                        userId,
-                        name: 'Opening Balance',
-                        type: 'INCOME',
-                    })
-                }
-
-                // Create initial transaction directly
-                await mongoose.model('Transaction').create({
+            // Handle Opening Balance Transaction
+            let category = await mongoose.model('Category').findOne({ userId, name: 'Opening Balance', isDeleted: false })
+            if (!category) {
+                category = await mongoose.model('Category').create({
                     userId,
-                    accountId: account._id,
-                    type: 'income',
-                    amount: initialBalance,
-                    title: 'Opening Balance',
-                    date: new Date(),
-                    categoryId: category._id,
-                    notes: 'Initial balance at account creation',
-                    balanceSnapshot: initialBalance,
+                    name: 'Opening Balance',
+                    type: 'INCOME', // Category itself is neutral, but we'll use INCOME as base
+                    icon: '🏁',
                 })
-
-                // Update account balance
-                account.balance = initialBalance
-                await account.save()
             }
+
+            // For Credit Cards, the opening debt is an 'expense' type transaction
+            const transactionType = value.type === 'CREDIT_CARD' ? 'expense' : 'income'
+            const transactionAmount = Math.abs(initialBalance)
+
+            await mongoose.model('Transaction').create({
+                userId,
+                accountId: account._id,
+                type: transactionType,
+                amount: transactionAmount,
+                title: 'Opening Balance',
+                date: new Date(),
+                categoryId: category._id,
+                notes: 'Initial balance at account creation',
+                balanceSnapshot: initialBalance,
+            })
+
+            // Update account balance
+            account.balance = initialBalance
+            await account.save()
 
             httpResponse(req, res, 201, 'Account created successfully', account)
         } catch (error) {
@@ -144,6 +150,8 @@ export default {
             if (accountNumber !== undefined) updateFields.accountNumber = accountNumber
             if (name !== undefined) updateFields.name = name
             if (creditLimit !== undefined) updateFields.creditLimit = creditLimit
+            if (req.body.billGenerationDate !== undefined) updateFields.billGenerationDate = req.body.billGenerationDate
+            if (req.body.dueDate !== undefined) updateFields.dueDate = req.body.dueDate
 
             // Handle "Opening Balance" edit
             if (balance !== undefined) {
@@ -157,35 +165,46 @@ export default {
                     notes: 'Initial balance at account creation',
                 })
 
+                let targetBalance = Number(balance)
+                if (current.type === 'CREDIT_CARD' && targetBalance !== 0) {
+                    targetBalance = -Math.abs(targetBalance)
+                }
+
                 if (initialTransaction) {
-                    const diff = Number(balance) - initialTransaction.amount
+                    const oldAmount = current.type === 'CREDIT_CARD' ? -initialTransaction.amount : initialTransaction.amount
+                    const diff = targetBalance - oldAmount
 
                     // Update Transaction
-                    initialTransaction.amount = Number(balance)
-                    initialTransaction.balanceSnapshot += diff
+                    initialTransaction.amount = Math.abs(targetBalance)
+                    initialTransaction.type = current.type === 'CREDIT_CARD' ? 'expense' : 'income'
+                    initialTransaction.balanceSnapshot = targetBalance // Simplified for opening balance
                     await initialTransaction.save()
 
                     // Update Account Balance by diff
                     updateFields.balance = current.balance + diff
-                } else if (Number(balance) !== 0) {
-                    // No initial transaction found (it was 0), create one if new balance is non-zero
+                } else {
+                    // No initial transaction found (it was missing), create one
                     let category = await mongoose.model('Category').findOne({ userId, name: 'Opening Balance', isDeleted: false })
                     if (!category) {
-                        category = await mongoose.model('Category').create({ userId, name: 'Opening Balance', type: 'INCOME' })
+                        category = await mongoose.model('Category').create({ userId, name: 'Opening Balance', type: 'INCOME', icon: '🏁' })
                     }
                     
+                    const transactionType = current.type === 'CREDIT_CARD' ? 'expense' : 'income'
+
                     await Transaction.create({
                         userId,
                         accountId: req.params.id,
-                        type: 'income',
-                        amount: Number(balance),
+                        type: transactionType,
+                        amount: Math.abs(targetBalance),
                         title: 'Opening Balance',
                         date: new Date(),
                         categoryId: category._id,
                         notes: 'Initial balance at account creation',
-                        balanceSnapshot: current.balance + Number(balance),
+                        balanceSnapshot: targetBalance,
                     })
-                    updateFields.balance = current.balance + Number(balance)
+                    // If no initial was found, we assume the previous balance didn't include it or was 0
+                    // Since it's "Opening Balance", we set the balance directly or add to current
+                    updateFields.balance = targetBalance
                 }
             }
 

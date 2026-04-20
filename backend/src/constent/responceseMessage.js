@@ -1,6 +1,6 @@
 export default {
-    SUCCESS: 'The opration has been successful',
-    ERROR: 'The opration has an error',
+    SUCCESS: 'The operation has been successful',
+    ERROR: 'The operation has an error',
     NOT_FOUND: (entity) => `${entity} not found`,
     TOO_MANY_REQUEST: 'Too many request please try again later',
     ALREADY_EXIST: (entity, value) => `${entity} already exist with ${value}`,

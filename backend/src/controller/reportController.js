@@ -3,6 +3,9 @@ import httpResponse from '../util/httpResponse.js'
 import httpError from '../util/httpError.js'
 import Transaction from '../model/transactionModel.js'
 import Account from '../model/accountModel.js'
+import Recurring from '../model/recurringModel.js'
+import FormalLoan from '../model/formalLoanModel.js'
+import CreditCardCycle from '../model/creditCardCycleModel.js'
 import dayjs from 'dayjs'
 import utc from 'dayjs/plugin/utc.js'
 import timezone from 'dayjs/plugin/timezone.js'
@@ -112,12 +115,31 @@ export default {
             const current = await calculateTotals(currentStart, currentEnd)
             const previous = await calculateTotals(prevStart, prevEnd)
 
+            // Calculate current total balance from all active accounts
+            const accountSummary = await Account.aggregate([
+                {
+                    $match: {
+                        userId: new mongoose.Types.ObjectId(userId),
+                        isDeleted: false,
+                        isActive: true
+                    }
+                },
+                {
+                    $group: {
+                        _id: null,
+                        totalBalance: { $sum: '$balance' }
+                    }
+                }
+            ])
+            const totalBalance = accountSummary.length > 0 ? accountSummary[0].totalBalance : 0
+
             const calcPercentage = (curr, prev) => {
                 if (prev === 0) return curr > 0 ? 100 : 0
                 return Number((((curr - prev) / prev) * 100).toFixed(2))
             }
 
             httpResponse(req, res, 200, 'Overview retrieved successfully', {
+                totalBalance,
                 currentMonth: current,
                 previousMonth: previous,
                 comparison: {
@@ -402,6 +424,81 @@ export default {
         } catch (error) {
             // Ensure cleanup happens even on error
             await reportGenerator.cleanupFiles(tempFiles)
+            httpError(next, error, req, 500)
+        }
+    },
+    getUpcomingPayments: async (req, res, next) => {
+        try {
+            const userId = req.authenticatedUser._id
+            const timezone = req.query.timezone || req.authenticatedUser?.preferences?.timezone || 'Asia/Kolkata'
+            const now = dayjs().tz(timezone)
+            const thirtyDaysFromNow = now.add(30, 'day').endOf('day').toDate()
+
+            // 1. Fetch Active Recurring Tasks
+            const recurringTasks = await Recurring.find({
+                userId,
+                status: 'ACTIVE',
+                nextDueDate: { $lte: thirtyDaysFromNow }
+            }).populate('categoryId', 'name icon').lean()
+
+            const mappedRecurring = recurringTasks.map(r => ({
+                id: r._id,
+                name: r.title,
+                subtitle: `Recurring · ${r.frequency}`,
+                amount: r.amount,
+                dueDate: r.nextDueDate,
+                type: 'recurring'
+            }))
+
+            // 2. Fetch Active Formal Loans
+            const formalLoans = await FormalLoan.find({
+                userId,
+                status: 'ACTIVE',
+                isDeleted: false
+            }).lean()
+
+            const mappedLoans = formalLoans.map(l => {
+                const loanStartDate = dayjs(l.startDate).tz(timezone)
+                let nextEMI = loanStartDate.date(loanStartDate.date())
+                
+                // Find the next EMI date that is today or in the future
+                while (nextEMI.isBefore(now, 'day')) {
+                    nextEMI = nextEMI.add(1, 'month')
+                }
+
+                return {
+                    id: l._id,
+                    name: l.bankName,
+                    subtitle: `${l.loanType} Loan EMI`,
+                    amount: l.emiAmount,
+                    dueDate: nextEMI.toDate(),
+                    type: 'loan'
+                }
+            }).filter(l => dayjs(l.dueDate).isBefore(thirtyDaysFromNow))
+
+            // 3. Fetch Credit Card Dues
+            const ccCycles = await CreditCardCycle.find({ userId }).populate('accountId', 'name').lean()
+            const mappedCC = ccCycles.map(c => {
+                let dueDate = now.date(c.dueDay)
+                if (dueDate.isBefore(now, 'day')) {
+                    dueDate = dueDate.add(1, 'month')
+                }
+                return {
+                    id: c._id,
+                    name: c.accountId?.name || 'Credit Card',
+                    subtitle: 'Bill Payment',
+                    amount: c.lastStatementBalance || 0,
+                    dueDate: dueDate.toDate(),
+                    type: 'credit_card'
+                }
+            }).filter(c => dayjs(c.dueDate).isBefore(thirtyDaysFromNow))
+
+            // Combine and sort
+            const allPayments = [...mappedRecurring, ...mappedLoans, ...mappedCC]
+                .sort((a, b) => dayjs(a.dueDate).diff(dayjs(b.dueDate)))
+
+            httpResponse(req, res, 200, 'Upcoming payments retrieved successfully', allPayments)
+        } catch (error) {
             httpError(next, error, req, 500)
         }
     },

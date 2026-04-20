@@ -38,6 +38,8 @@ export const validationAccountBody = Joi.object({
     currency: Joi.string().default('INR'),
     isActive: Joi.boolean().default(true),
     isDefault: Joi.boolean().default(false),
+    billGenerationDate: Joi.date().optional().allow(null, ''),
+    dueDate: Joi.date().optional().allow(null, ''),
 })
 
 export const validationCategoryBody = Joi.object({

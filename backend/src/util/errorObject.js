@@ -12,7 +12,7 @@ export default (error, req, errorStatusCode = 500) => {
             method: req.method,
             url: req.originalUrl,
         },
-        message: error instanceof Error ? error.message || responceseMessage.ERROR : responceseMessage.ERROR,
+        message: error instanceof Error ? error.message || responceseMessage.ERROR : typeof error === 'string' ? error : responceseMessage.ERROR,
         data: error,
         trace: error instanceof Error ? { error: error.stack } : null,
     }

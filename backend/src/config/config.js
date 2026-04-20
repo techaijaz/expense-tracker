@@ -35,4 +35,6 @@ export default {
         SECRET: process.env.REFRESH_TOKEN_SECRET,
         EXPIRY: 3600 * 24,
     },
+
+    GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
 }

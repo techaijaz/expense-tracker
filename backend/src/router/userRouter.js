@@ -7,6 +7,7 @@ const router = Router()
 
 router.route('/register').post(userController.register)
 router.route('/login').post(userController.login)
+router.route('/google-login').post(userController.googleLogin)
 router.route('/self-identification').get(authentication, userController.selfIdentification)
 router.route('/logout').put(authentication, userController.logout)
 router.route('/refresh-token').post(userController.refreshToken)

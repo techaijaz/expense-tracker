@@ -64,6 +64,14 @@ const accountSchema = new mongoose.Schema(
             type: Boolean,
             default: false,
         },
+        billGenerationDate: {
+            type: Date,
+            default: null,
+        },
+        dueDate: {
+            type: Date,
+            default: null,
+        },
     },
     {
         timestamps: true,

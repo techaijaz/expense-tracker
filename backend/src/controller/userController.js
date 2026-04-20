@@ -26,6 +26,9 @@ import transactionModel from '../model/transactionModel.js'
 import mongoose from 'mongoose'
 import fs from 'fs'
 import path from 'path'
+import { OAuth2Client } from 'google-auth-library'
+
+const client = new OAuth2Client(config.GOOGLE_CLIENT_ID)
 
 dayjs.extend(utc)
 
@@ -105,6 +108,105 @@ export default {
                 { INCOME: [], EXPENSE: [], TRANSFER: [] }
             )
             const DOMAIN = quiker.getDomainFromUrl(config.SERVER_URL)
+
+            res.cookie('accessToken', accessToken, {
+                path: '/',
+                sameSite: 'lax',
+                maxAge: 1000 * config.ACCESS_TOKEN.EXPIRY,
+                httpOnly: true,
+                secure: config.ENV === EApplicationEnvionment.PRODUCTION,
+            }).cookie('refreshToken', refreshToken, {
+                path: '/',
+                sameSite: 'lax',
+                maxAge: 1000 * config.REFRESH_TOKEN.EXPIRY,
+                httpOnly: true,
+                secure: config.ENV === EApplicationEnvionment.PRODUCTION,
+            })
+
+            httpResponse(req, res, 200, responceseMessage.SUCCESS, {
+                accessToken,
+                refreshToken,
+                user: {
+                    _id: user._id,
+                    firstName: user.firstName,
+                    lastName: user.lastName,
+                    email: user.email,
+                    avatar: user.avatar,
+                    consent: user.consent,
+                    setBasicDetails: user.setBasicDetails,
+                    lastLoginAt: user.lastLoginAt,
+                    preferences: user.preferences,
+                    plan: user.plan || 'basic',
+                    onboardingDone: user.onboardingDone || false,
+                    isVerified: user.isVerified || false,
+                },
+                accounts,
+                categories,
+            })
+        } catch (error) {
+            httpError(next, error, req, 500)
+        }
+    },
+
+    googleLogin: async (req, res, next) => {
+        try {
+            const { credential } = req.body
+            if (!credential) return httpError(next, new Error('Google credential is required'), req, 400)
+
+            const ticket = await client.verifyIdToken({
+                idToken: credential,
+                audience: config.GOOGLE_CLIENT_ID,
+            })
+            const payload = ticket.getPayload()
+            const { email, given_name, family_name, picture, sub: googleId } = payload
+
+            let user = await databseService.findUserByEmail(email)
+
+            if (user) {
+                // Link Google ID if not already linked
+                if (!user.googleId) {
+                    user.googleId = googleId
+                }
+                // Auto-verify if not verified
+                if (!user.isVerified) {
+                    user.isVerified = true
+                }
+                await user.save()
+            } else {
+                // Create new user
+                const newUserPayload = {
+                    firstName: given_name || 'Google',
+                    lastName: family_name || 'User',
+                    email,
+                    googleId,
+                    avatar: picture,
+                    isVerified: true,
+                    consent: true, // Assuming consent is given via Google link
+                }
+                user = await databseService.registerUser(newUserPayload)
+            }
+
+            // Standard login logic follow-up
+            const accessToken = quiker.genrateToken({ userId: user._id, role: user.role }, config.ACCESS_TOKEN.SECRET, config.ACCESS_TOKEN.EXPIRY)
+            const refreshToken = quiker.genrateToken({ userId: user._id, role: user.role }, config.REFRESH_TOKEN.SECRET, config.REFRESH_TOKEN.EXPIRY)
+
+            user.lastLoginAt = dayjs().utc().toDate()
+            user.refreshToken.token = refreshToken
+            await user.save()
+
+            if (!user.setBasicDetails) {
+                await databseService.setDefaultData(user._id)
+            }
+
+            const accounts = await databseService.getAccountsByUserId(user._id)
+            const allCategories = await databseService.getAllCategories(user._id)
+            const categories = allCategories.reduce(
+                (acc, cat) => {
+                    acc[cat.type].push(cat)
+                    return acc
+                },
+                { INCOME: [], EXPENSE: [], TRANSFER: [] }
+            )
 
             res.cookie('accessToken', accessToken, {
                 path: '/',
