@@ -1,3 +1,4 @@
+import mongoose from 'mongoose'
 import httpResponse from '../util/httpResponse.js'
 import httpError from '../util/httpError.js'
 import Loan from '../model/loanModel.js'

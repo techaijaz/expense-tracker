@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
+import { format } from 'date-fns';
 import { useSelector, useDispatch } from 'react-redux';
 import { toast } from 'sonner';
 import api from '@/utils/httpMethods';
@@ -104,7 +105,7 @@ export default function Loans() {
 
   // Metrics (Personal)
   const metrics = useMemo(() => {
-    const pending = loans.filter((l) => l.status === 'PENDING');
+    const pending = loans.filter((l) => !l.status || l.status === 'PENDING');
     const totalLent = pending
       .filter((l) => l.type === 'LENT')
       .reduce((s, l) => s + l.amount, 0);
@@ -150,7 +151,7 @@ export default function Loans() {
       const matchesParty = partyFilter === 'ALL' || partyId === partyFilter;
       const matchesDate =
         !dateFilter ||
-        format(new Date(loan.date), 'yyyy-MM-dd') ===
+        format(new Date(loan.date || loan.createdAt), 'yyyy-MM-dd') ===
           format(dateFilter, 'yyyy-MM-dd');
 
       if (!matchesParty || !matchesDate) return acc;
@@ -196,7 +197,8 @@ export default function Loans() {
   const isPro = plan === 'pro';
 
   const personalLimitReached =
-    !isPro && loans.filter((l) => l.status === 'PENDING').length >= 1;
+    !isPro &&
+    loans.filter((l) => !l.status || l.status === 'PENDING').length >= 1;
   const formalLimitReached =
     !isPro && formalLoans.filter((l) => l.status === 'ACTIVE').length >= 1;
 

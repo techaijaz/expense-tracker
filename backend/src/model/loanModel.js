@@ -16,6 +16,13 @@ const loanSchema = new mongoose.Schema(
         date: { type: Date, default: Date.now },
         transactionId: { type: mongoose.Schema.Types.ObjectId, ref: 'Transaction' },
         isDeleted: { type: Boolean, default: false },
+        status: {
+            type: String,
+            enum: ['PENDING', 'PAID'],
+            default: 'PENDING',
+        },
+        dueDate: { type: Date },
+        interestRate: { type: Number, default: 0 },
     },
     { timestamps: true }
 )
