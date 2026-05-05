@@ -322,7 +322,8 @@ export default function Accounts() {
   const [openMenuId, setOpenMenuId] = useState(null);
   const [deleteInput, setDeleteInput] = useState('');
   const userObj = user?.user || user;
-  const plan = userObj?.plan || 'basic';
+  const isAdmin = userObj?.role === 'admin';
+  const plan = (isAdmin || userObj?.plan === 'pro') ? 'pro' : 'basic';
 
   // Fetch accounts
   useEffect(() => {

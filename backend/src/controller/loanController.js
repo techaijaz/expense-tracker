@@ -19,8 +19,8 @@ export default {
             if (error) return httpError(next, error, req, 422)
 
             const userId = req.authenticatedUser._id
-            const user = await mongoose.model('User').findById(userId).select('plan')
-            const plan = user?.plan || 'basic'
+            const user = await mongoose.model('User').findById(userId).select('plan role')
+            const plan = (user?.role === 'admin' || user?.plan === 'pro') ? 'pro' : 'basic'
             const count = await Loan.countDocuments({ user: userId, isDeleted: false })
             const limit = plan === 'basic' ? 1 : 100
 

@@ -68,7 +68,7 @@ export default function Header({ onMenuToggle, onNewTransaction }) {
   };
 
   const userObj = user?.user || user;
-  const plan = userObj?.plan || 'basic';
+  const plan = (userObj?.role === 'admin' || userObj?.plan === 'pro') ? 'pro' : 'basic';
 
   return (
     <header className="topbar">

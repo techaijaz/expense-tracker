@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { toast } from 'sonner';
 import api from '@/utils/httpMethods';
-import { updateAvatar } from '@/redux/authSlice';
+import { updateAvatar, updateHasPassword } from '@/redux/authSlice';
 
 const BACKEND_URL =
   import.meta.env.VITE_API_URL?.replace('/api/v1', '') ||
@@ -31,14 +31,17 @@ export default function UserIdentity() {
 
   const validate = (field, value, currentState = pwdForm) => {
     let err = '';
+    const isFirstPassword = currentUser?.googleId && !currentUser?.hasPassword;
+
     if (field === 'current') {
+      if (isFirstPassword) return ''; // Skip validation for current password if it's the first one
       if (!value) err = 'Current password is required';
       else if (value.length < 8) err = 'Required min. 8 characters';
     }
     if (field === 'newPwd') {
       if (!value) err = 'New password is required';
       else if (value.length < 8) err = 'Min. 8 characters required';
-      else if (value === currentState.current)
+      else if (!isFirstPassword && value === currentState.current)
         err = 'Must be different from current';
     }
     if (field === 'confirm') {
@@ -90,17 +93,19 @@ export default function UserIdentity() {
     e.preventDefault();
 
     // Final check
+    const isFirstPassword = currentUser?.googleId && !currentUser?.hasPassword;
     const e1 = validate('current', pwdForm.current);
     const e2 = validate('newPwd', pwdForm.newPwd);
     const e3 = validate('confirm', pwdForm.confirm);
-    if (e1 || e2 || e3) return;
+    if ((!isFirstPassword && e1) || e2 || e3) return;
 
     setChangingPwd(true);
     try {
-      await api.put('/user/change-password', {
+      const res = await api.put('/user/change-password', {
         currentPassword: pwdForm.current,
         newPassword: pwdForm.newPwd,
       });
+      dispatch(updateHasPassword(true));
       toast.success('Password updated successfully!');
       setPwdForm({ current: '', newPwd: '', confirm: '' });
       setErrors({ current: '', newPwd: '', confirm: '' });
@@ -230,7 +235,9 @@ export default function UserIdentity() {
           className="btn-outline"
           style={{ width: '100%', justifyContent: 'center' }}
         >
-          🔒 Change Password
+          {currentUser?.googleId && !currentUser?.hasPassword
+            ? '🔑 Set Local Password'
+            : '🔒 Change Password'}
         </button>
       ) : (
         <form
@@ -244,19 +251,21 @@ export default function UserIdentity() {
             gap: 12,
           }}
         >
-          <div className="form-group">
-            <label className="form-label">Current Password</label>
-            <input
-              type="password"
-              value={pwdForm.current}
-              onChange={(e) => handlePwdInputChange('current', e.target.value)}
-              className={`form-input ${errors.current ? 'error' : ''}`}
-              placeholder="••••••••"
-            />
-            {errors.current && (
-              <span className="error-msg">{errors.current}</span>
-            )}
-          </div>
+          {!(currentUser?.googleId && !currentUser?.hasPassword) && (
+            <div className="form-group">
+              <label className="form-label">Current Password</label>
+              <input
+                type="password"
+                value={pwdForm.current}
+                onChange={(e) => handlePwdInputChange('current', e.target.value)}
+                className={`form-input ${errors.current ? 'error' : ''}`}
+                placeholder="••••••••"
+              />
+              {errors.current && (
+                <span className="error-msg">{errors.current}</span>
+              )}
+            </div>
+          )}
           <div className="form-group">
             <label className="form-label">New Password</label>
             <input
@@ -298,7 +307,11 @@ export default function UserIdentity() {
               className="btn-save"
               style={{ flex: 2 }}
             >
-              {changingPwd ? 'Updating…' : 'Update Password'}
+              {changingPwd
+                ? 'Updating…'
+                : currentUser?.googleId && !currentUser?.hasPassword
+                  ? 'Set Password'
+                  : 'Update Password'}
             </button>
           </div>
         </form>

@@ -14,8 +14,8 @@ export default {
             if (error) return httpError(next, error, req, 422)
 
             const userId = req.authenticatedUser._id
-            const user = await mongoose.model('User').findById(userId).select('plan')
-            const plan = user?.plan || 'basic'
+            const user = await mongoose.model('User').findById(userId).select('plan role')
+            const plan = (user?.role === 'admin' || user?.plan === 'pro') ? 'pro' : 'basic'
 
             // Limit check: Upserting means we are either updating an existing one or creating a new one.
             // If it's a new one (categoryId doesn't exist for user), check limit.

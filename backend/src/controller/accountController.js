@@ -16,8 +16,8 @@ export default {
 
             const userId = req.authenticatedUser._id
 
-            const user = await userModel.findById(userId).select('plan')
-            const plan = user?.plan || 'basic'
+            const user = await userModel.findById(userId).select('plan role')
+            const plan = (user?.role === 'admin' || user?.plan === 'pro') ? 'pro' : 'basic'
 
             // Enforce Plan Limits
             if (value.type === 'CASH') {

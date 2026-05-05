@@ -16,23 +16,30 @@ export default function SubscriptionManagement() {
   const [showPopup, setShowPopup] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
 
-  const plan = user?.plan || 'basic';
-  const period = user?.subscriptionPeriod;
-  const expiryDate = user?.subscriptionEnd;
+  const userObj = user?.user || user;
+  const plan = userObj?.plan || 'basic';
+  const isAdmin = userObj?.role === 'admin';
+  const period = userObj?.subscriptionPeriod;
+  const expiryDate = userObj?.subscriptionEnd;
+  const isPro = isAdmin || plan === 'pro';
 
   const handleCancel = async () => {
     setLoading(true);
     try {
       const res = await api.patch('/subscription/cancel', {});
       dispatch(updatePlan(res.data));
-      toast.success('Your subscription has been cancelled and reverted to Basic.');
+      toast.success(
+        'Your subscription has been cancelled and reverted to Basic.',
+      );
       setShowCancelModal(false);
     } catch (err) {
       console.error('Subscription cancellation failed:', err);
       let errorMsg = 'Cancellation failed';
       if (err.response) {
         console.error('Error response data:', err.response.data);
-        errorMsg = err.response.data.message || `Error ${err.response.status}: ${JSON.stringify(err.response.data).substring(0, 50)}...`;
+        errorMsg =
+          err.response.data.message ||
+          `Error ${err.response.status}: ${JSON.stringify(err.response.data).substring(0, 50)}...`;
       }
       toast.error(errorMsg);
     } finally {
@@ -43,7 +50,10 @@ export default function SubscriptionManagement() {
   const handleUpgradeToYearly = async () => {
     setLoading(true);
     try {
-      const res = await api.patch('/user/subscription', { plan: 'pro', period: 'yearly' });
+      const res = await api.patch('/user/subscription', {
+        plan: 'pro',
+        period: 'yearly',
+      });
       dispatch(updatePlan(res.data));
       toast.success('Successfully upgraded to Pro Yearly!');
     } catch (err) {
@@ -62,26 +72,32 @@ export default function SubscriptionManagement() {
       <div className="p-4 rounded-xl bg-white/5 border border-white/10 mb-4">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-lg ${plan === 'pro' ? 'bg-[#5B8DEF]/20 text-[#5B8DEF]' : 'bg-white/10 text-[#8892B0]'}`}>
-              {plan === 'pro' ? <Zap size={20} /> : <Shield size={20} />}
+            <div
+              className={`p-2 rounded-lg ${isPro ? 'bg-[#5B8DEF]/20 text-[#5B8DEF]' : 'bg-white/10 text-[#8892B0]'}`}
+            >
+              {isPro ? <Zap size={20} /> : <Shield size={20} />}
             </div>
             <div>
               <div className="text-sm font-bold text-white uppercase tracking-wider">
-                {plan === 'pro' ? `Pro ${period === 'monthly' ? 'Monthly' : 'Yearly'}` : 'Basic Plan'}
+                {isAdmin ? 'Admin Access' : (plan === 'pro'
+                  ? `Pro ${period === 'monthly' ? 'Monthly' : 'Yearly'}`
+                  : 'Basic Plan')}
               </div>
               <div className="text-xs text-[#8892B0]">
-                {plan === 'pro' ? 'Premium features unlocked' : 'Limited feature access'}
+                {isAdmin ? 'System Administrator' : (plan === 'pro'
+                  ? 'Premium features unlocked'
+                  : 'Limited feature access')}
               </div>
             </div>
           </div>
-          {plan === 'pro' && (
+          {isPro && (
             <span className="px-2 py-1 rounded text-[10px] font-bold bg-green-500/10 text-green-400 border border-green-500/20">
               ACTIVE
             </span>
           )}
         </div>
 
-        {plan === 'pro' && expiryDate && (
+        {plan === 'pro' && !isAdmin && expiryDate && (
           <div className="flex items-center gap-2 mb-4 text-xs text-[#8892B0]">
             <Calendar size={14} />
             <span>Expires on: {dayjs(expiryDate).format('MMMM DD, YYYY')}</span>
@@ -89,18 +105,22 @@ export default function SubscriptionManagement() {
         )}
 
         <div className="flex flex-col gap-2">
-          {plan === 'pro' && period === 'monthly' && (
+          {plan === 'pro' && !isAdmin && period === 'monthly' && (
             <button
               onClick={handleUpgradeToYearly}
               disabled={loading}
               className="btn-primary w-full py-2.5 text-xs flex items-center justify-center gap-2"
             >
-              {loading ? <Loader2 size={14} className="animate-spin" /> : <Zap size={14} fill="currentColor" />}
+              {loading ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <Zap size={14} fill="currentColor" />
+              )}
               Upgrade to Pro Yearly (Save 33%)
             </button>
           )}
 
-          {plan === 'pro' && (
+          {plan === 'pro' && !isAdmin && (
             <button
               onClick={() => setShowCancelModal(true)}
               disabled={loading}
@@ -110,11 +130,14 @@ export default function SubscriptionManagement() {
             </button>
           )}
 
-          {plan === 'basic' && (
+          {plan === 'basic' && !isAdmin && (
             <>
               <div className="text-xs text-[#8892B0] bg-white/5 p-3 rounded-lg flex items-start gap-2 mb-2">
                 <AlertCircle size={14} className="mt-0.5 flex-shrink-0" />
-                <span>You are currently using the limited version. Upgrade to Pro for unlimited accounts, budgets, and advanced analytics.</span>
+                <span>
+                  You are currently using the limited version. Upgrade to Pro
+                  for unlimited accounts, budgets, and advanced analytics.
+                </span>
               </div>
               <button
                 onClick={() => setShowPopup(true)}
@@ -125,13 +148,20 @@ export default function SubscriptionManagement() {
               </button>
             </>
           )}
+
+          {isAdmin && (
+            <div className="text-xs text-[#8892B0] bg-white/5 p-3 rounded-lg flex items-start gap-2 mb-2">
+              <Shield size={14} className="mt-0.5 flex-shrink-0" />
+              <span>
+                As an administrator, you have full access to all premium features 
+                without any subscription requirements or limitations.
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
-      <SubscriptionPopup 
-        isOpen={showPopup} 
-        onOpenChange={setShowPopup} 
-      />
+      <SubscriptionPopup isOpen={showPopup} onOpenChange={setShowPopup} />
 
       {showCancelModal && (
         <ConfirmModal

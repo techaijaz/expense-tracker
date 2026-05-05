@@ -89,7 +89,7 @@ export const validationLoanBody = Joi.object({
 })
 
 export const validationChangePasswordBody = Joi.object({
-    currentPassword: Joi.string().min(8).max(72).required().trim(),
+    currentPassword: Joi.string().min(8).max(72).optional().allow(null, '').trim(),
     newPassword: Joi.string().min(8).max(72).required().trim(),
 })
 

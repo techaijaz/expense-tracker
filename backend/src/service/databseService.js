@@ -119,11 +119,11 @@ export default {
                 isCash: true,
             })
 
-            const category = await categoryModel.create({
-                userId: userId,
-                name: 'Expense',
-                type: 'EXPENSE',
-            })
+            const categories = await categoryModel.insertMany([
+                { userId, name: 'Expense', type: 'EXPENSE' },
+                { userId, name: 'Income', type: 'INCOME' },
+                { userId, name: 'Transfer', type: 'TRANSFER' },
+            ])
 
             const updatedUser = await userModel.findByIdAndUpdate(
                 userId,
@@ -131,7 +131,7 @@ export default {
                 { new: true }
             )
 
-            return { account, category, user: updatedUser }
+            return { account, categories, user: updatedUser }
         } catch (error) {
             console.error('Default data creation failed:', error.message)
             throw error

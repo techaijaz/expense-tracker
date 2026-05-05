@@ -14,10 +14,9 @@ export default function SideMenu({ isOpen, setIsOpen }) {
   const { user } = useSelector((state) => state.auth);
   const [isSubscriptionOpen, setIsSubscriptionOpen] = useState(false);
   
-  // Robust plan checking
   const userData = user?.user || user;
+  const isPro = userData?.role === 'admin' || userData?.plan === 'pro';
   const plan = userData?.plan || 'basic';
-  const isPro = plan === 'pro';
   
   // Calculate trial days remaining
   const trialEnd = userData?.trialEnd ? new Date(userData.trialEnd) : null;
@@ -124,7 +123,7 @@ export default function SideMenu({ isOpen, setIsOpen }) {
         <div className="sidebar-bottom">
           <div className="plan-badge cursor-pointer hover:border-accent/40 transition-colors" onClick={() => setIsSubscriptionOpen(true)}>
             <div className="plan-name">
-              {isPro ? (isTrial ? 'Pro Trial' : 'Pro Member') : 'Basic Plan'}
+              {userData?.role === 'admin' ? 'Admin Access' : isPro ? (isTrial ? 'Pro Trial' : 'Pro Member') : 'Basic Plan'}
             </div>
             <div className="plan-sub">
               {isPro 

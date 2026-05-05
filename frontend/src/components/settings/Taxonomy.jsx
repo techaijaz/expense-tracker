@@ -48,6 +48,8 @@ export default function Taxonomy() {
       bg: 'var(--accent-glow)',
     };
 
+  const currentUser = useSelector((s) => s.auth.user);
+
   const handleDeleteCategory = async () => {
     if (!deleteCatModal) return;
     setDeletingCat(true);
@@ -65,11 +67,9 @@ export default function Taxonomy() {
     }
   };
 
-  const { user } = useSelector((state) => state.auth);
-  const plan = user?.user?.plan || user?.plan || 'basic';
-  const isPro = plan === 'pro';
-
+  const isPro = currentUser?.role === 'admin' || currentUser?.plan === 'pro';
   const limitReached = !isPro && categories.length >= 10;
+
 
   const handleAddCategory = () => {
     if (limitReached) {

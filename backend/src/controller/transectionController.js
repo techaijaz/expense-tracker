@@ -48,8 +48,8 @@ export default {
             const parsedPage = Math.max(1, parseInt(page) || 1)
 
             // 1. History Limit Logic for Basic Users
-            const user = await databseService.findUserById(userId, 'plan')
-            const plan = user?.plan || 'basic'
+            const user = await databseService.findUserById(userId, 'plan role')
+            const plan = (user?.plan === 'pro' || user?.role === 'admin') ? 'pro' : 'basic'
             
             let finalDateFrom = dateFrom ? new Date(dateFrom) : null
             if (plan === 'basic') {

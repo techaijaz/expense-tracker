@@ -27,8 +27,8 @@ export default {
             if (error) return httpError(next, error, req, 422)
 
             const userId = req.authenticatedUser._id
-            const user = await userModel.findById(userId).select('plan')
-            const plan = user?.plan || 'basic'
+            const user = await userModel.findById(userId).select('plan role')
+            const plan = (user?.role === 'admin' || user?.plan === 'pro') ? 'pro' : 'basic'
             const count = await Category.countDocuments({ userId, isDeleted: false })
             const limit = plan === 'basic' ? 10 : 100
 

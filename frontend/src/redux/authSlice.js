@@ -38,8 +38,13 @@ export const authSlice = createSlice({
         state.user.onboardingDone = action.payload;
       }
     },
+    updateHasPassword: (state, action) => {
+      if (state.user) {
+        state.user.hasPassword = action.payload;
+      }
+    },
   },
 });
 
-export const { setAuthUser, logout, updateAvatar, updatePreferences, setOnboardingDone, updatePlan } = authSlice.actions;
+export const { setAuthUser, logout, updateAvatar, updatePreferences, setOnboardingDone, updatePlan, updateHasPassword } = authSlice.actions;
 export default authSlice.reducer;

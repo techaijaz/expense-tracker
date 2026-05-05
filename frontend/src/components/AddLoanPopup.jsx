@@ -99,8 +99,8 @@ export default function AddLoanPopup({
   const { accounts = [] } = useSelector((state) => state.accounts);
   const { loans = [] } = useSelector((state) => state.loans);
   const { user } = useSelector((state) => state.auth);
-  const plan = user?.user?.plan || user?.plan || 'basic';
-  const isPro = plan === 'pro';
+  const userObj = user?.user || user;
+  const isPro = userObj?.role === 'admin' || userObj?.plan === 'pro';
 
   const preferences = useSelector(
     (state) => state.auth.user?.user?.preferences,
@@ -477,6 +477,7 @@ export default function AddLoanPopup({
               setValue('party', newParty._id);
               setIsAddPartyOpen(false);
             }}
+            partyCount={parties.length}
           />
         )}
       </>
@@ -519,6 +520,7 @@ export default function AddLoanPopup({
             setValue('party', newParty._id);
             setIsAddPartyOpen(false);
           }}
+          partyCount={parties.length}
         />
       )}
     </>

@@ -27,8 +27,11 @@ const loadScript = (src) => {
 const SubscriptionPopup = ({ isOpen, onOpenChange }) => {
   const dispatch = useDispatch();
   const user = useSelector((s) => s.auth.user);
-  const currentPlan = user?.plan || 'basic';
-  const currentPeriod = user?.subscriptionPeriod;
+  const userObj = user?.user || user;
+  const currentPlan = userObj?.plan || 'basic';
+  const isAdmin = userObj?.role === 'admin';
+  const currentPeriod = userObj?.subscriptionPeriod;
+  const isPro = isAdmin || currentPlan === 'pro';
   
   const [loadingPlan, setLoadingPlan] = useState(null);
   const [manualPaymentData, setManualPaymentData] = useState(null);
@@ -128,9 +131,9 @@ const SubscriptionPopup = ({ isOpen, onOpenChange }) => {
         '10 Custom Categories',
         'Basic Dashboard Insights'
       ],
-      buttonText: currentPlan === 'basic' ? 'Current Plan' : 'Select Basic',
-      buttonClass: currentPlan === 'basic' ? 'btn-outline border-white/20 text-[#8892B0]' : 'btn-primary',
-      disabled: currentPlan === 'basic',
+      buttonText: isAdmin ? 'Admin Access' : (currentPlan === 'basic' ? 'Current Plan' : 'Select Basic'),
+      buttonClass: (isAdmin || currentPlan === 'basic') ? 'btn-outline border-white/20 text-[#8892B0]' : 'btn-primary',
+      disabled: isAdmin || currentPlan === 'basic',
       popular: false,
     },
     {
@@ -150,9 +153,9 @@ const SubscriptionPopup = ({ isOpen, onOpenChange }) => {
         'Export Data (CSV/PDF)',
         'Credit Card Bill Cycles'
       ],
-      buttonText: (currentPlan === 'pro' && currentPeriod === 'monthly') ? 'Current Plan' : 'Upgrade Pro',
-      buttonClass: (currentPlan === 'pro' && currentPeriod === 'monthly') ? 'btn-outline border-white/20 text-[#8892B0]' : 'btn-primary',
-      disabled: (currentPlan === 'pro' && currentPeriod === 'monthly'),
+      buttonText: isAdmin ? 'Admin Access' : ((currentPlan === 'pro' && currentPeriod === 'monthly') ? 'Current Plan' : 'Upgrade Pro'),
+      buttonClass: (isAdmin || (currentPlan === 'pro' && currentPeriod === 'monthly')) ? 'btn-outline border-white/20 text-[#8892B0]' : 'btn-primary',
+      disabled: isAdmin || (currentPlan === 'pro' && currentPeriod === 'monthly'),
       popular: true,
       badge: 'Popular',
       badgeClass: 'bg-[#5B8DEF] text-white border-[#5B8DEF]'
@@ -170,13 +173,15 @@ const SubscriptionPopup = ({ isOpen, onOpenChange }) => {
         'Priority Customer Support',
         'Early access to AI features'
       ],
-      buttonText: (currentPlan === 'pro' && currentPeriod === 'yearly') 
-        ? 'Current Plan' 
-        : (currentPlan === 'pro' && currentPeriod === 'monthly')
-          ? 'Upgrade to Pro Yearly'
-          : 'Get Pro Yearly',
-      buttonClass: (currentPlan === 'pro' && currentPeriod === 'yearly') ? 'btn-outline border-white/20 text-[#8892B0]' : 'btn-primary',
-      disabled: (currentPlan === 'pro' && currentPeriod === 'yearly'),
+      buttonText: isAdmin 
+        ? 'Admin Access' 
+        : (currentPlan === 'pro' && currentPeriod === 'yearly') 
+          ? 'Current Plan' 
+          : (currentPlan === 'pro' && currentPeriod === 'monthly')
+            ? 'Upgrade to Pro Yearly'
+            : 'Get Pro Yearly',
+      buttonClass: (isAdmin || (currentPlan === 'pro' && currentPeriod === 'yearly')) ? 'btn-outline border-white/20 text-[#8892B0]' : 'btn-primary',
+      disabled: isAdmin || (currentPlan === 'pro' && currentPeriod === 'yearly'),
       popular: false,
       badge: 'Best Value',
       badgeClass: 'bg-green-500/20 text-green-400 border-green-500/30'

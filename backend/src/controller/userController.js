@@ -144,6 +144,8 @@ export default {
                     onboardingDone: user.onboardingDone || false,
                     isVerified: user.isVerified || false,
                     role: user.role || 'user',
+                    googleId: user.googleId || null,
+                    hasPassword: !!user.password,
                 },
                 accounts,
                 categories,
@@ -247,6 +249,8 @@ export default {
                     onboardingDone: user.onboardingDone || false,
                     isVerified: user.isVerified || false,
                     role: user.role || 'user',
+                    googleId: user.googleId || null,
+                    hasPassword: !!user.password,
                 },
                 accounts,
                 categories,
@@ -302,6 +306,8 @@ export default {
                 onboardingDone: authenticatedUser.onboardingDone || false,
                 isVerified: authenticatedUser.isVerified || false,
                 role: authenticatedUser.role || 'user',
+                googleId: authenticatedUser.googleId || null,
+                hasPassword: !!authenticatedUser.password,
             })
         } catch (error) {
             httpError(next, error, req, 500)
@@ -347,12 +353,19 @@ export default {
             const user = await userModel.findById(req.authenticatedUser._id).select('+password')
             if (!user) return httpError(next, new Error('User not found'), req, 404)
 
-            const isMatch = await quiker.comparePassword(currentPassword, user.password)
-            if (!isMatch) return httpError(next, new Error('Current password is incorrect'), req, 401)
+            // If user has a password, verify it
+            if (user.password) {
+                if (!currentPassword) return httpError(next, new Error('Current password is required'), req, 400)
+                const isMatch = await quiker.comparePassword(currentPassword, user.password)
+                if (!isMatch) return httpError(next, new Error('Current password is incorrect'), req, 401)
+            } else if (!user.googleId) {
+                // Should not happen, but for safety
+                return httpError(next, new Error('Password configuration error'), req, 400)
+            }
 
             user.password = await quiker.hashedPassword(newPassword)
             await user.save()
-            httpResponse(req, res, 200, 'Password changed successfully', null)
+            httpResponse(req, res, 200, 'Password changed successfully', { hasPassword: true })
         } catch (error) {
             httpError(next, error, req, 500)
         }

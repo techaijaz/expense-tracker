@@ -10,8 +10,8 @@ export default {
             if (error) return httpError(next, error, req, 422)
 
             const userId = req.authenticatedUser._id
-            const user = await Party.db.model('User').findById(userId).select('plan')
-            const plan = user?.plan || 'basic'
+            const user = await Party.db.model('User').findById(userId).select('plan role')
+            const plan = (user?.plan === 'pro' || user?.role === 'admin') ? 'pro' : 'basic'
             const count = await Party.countDocuments({ userId, isDeleted: false })
             const limit = plan === 'basic' ? 5 : 100
 

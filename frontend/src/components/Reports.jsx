@@ -38,11 +38,11 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 const Reports = () => {
+  const dispatch = useDispatch();
   const { formatAmount } = useFormat();
   const { user } = useSelector((state) => state.auth);
   const userData = user?.user || user;
-  const plan = userData?.plan || 'basic';
-  const isPro = plan === 'pro';
+  const isPro = userData?.role === 'admin' || userData?.plan === 'pro';
 
   const fyLabel =
     userData?.preferences?.fiscalYear === 'January-December'

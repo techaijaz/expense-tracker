@@ -26,8 +26,8 @@ export default {
                 return httpError(next, error, req, 422)
             }
 
-            const user = await databseService.findUserById(userId)
-            const plan = user?.plan || 'basic'
+            const user = await databseService.findUserById(userId, 'plan role')
+            const plan = (user?.plan === 'pro' || user?.role === 'admin') ? 'pro' : 'basic'
             const count = await databseService.countRecurringTasks(userId)
             const limit = plan === 'basic' ? 1 : 100
 

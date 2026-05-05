@@ -59,8 +59,7 @@ function AccountModal({ onClose, onSaved, account = null, initialType = null }) 
   const { user } = useSelector((state) => state.auth);
   const { accounts } = useSelector((state) => state.accounts);
   const userObj = user?.user || user;
-  const plan = userObj?.plan || 'basic';
-  const isPro = plan === 'pro';
+  const isPro = userObj?.role === 'admin' || userObj?.plan === 'pro';
   
   const preferences = userObj?.preferences;
   const { currency = 'INR', decimalPlaces = 2 } = preferences || {};
@@ -374,8 +373,7 @@ export default function AddAccounts({
   const { accounts } = useSelector((state) => state.accounts);
   const [isOpen, setIsOpen] = useState(false);
   const userObj = user?.user || user;
-  const plan = userObj?.plan || 'basic';
-  const isPro = plan === 'pro';
+  const isPro = userObj?.role === 'admin' || userObj?.plan === 'pro';
 
   const typeAccounts = accounts.filter((a) => a.type === type && !a.isDeleted);
   const isCashLimit = type === 'CASH' && typeAccounts.length >= 1;

@@ -47,8 +47,8 @@ export default function Loans() {
   const [expandedParties, setExpandedParties] = useState(new Set());
 
   // Plan logic
-  const plan = user?.user?.plan || user?.plan || 'basic';
-  const isPro = plan === 'pro';
+  const userObj = user?.user || user;
+  const isPro = userObj?.plan === 'pro' || userObj?.role === 'admin';
 
   const activePersonalParties = useMemo(() => {
     const pending = loans.filter((l) => !l.status || l.status === 'PENDING');

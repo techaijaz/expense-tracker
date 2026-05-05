@@ -25,8 +25,9 @@ export default function Transections() {
   const dispatch = useDispatch();
   const { openTransactionPopup } = useOutletContext();
   const { user } = useSelector((state) => state.auth);
-  const plan = user?.user?.plan || user?.plan || 'basic';
-  const isPro = plan === 'pro';
+  const userObj = user?.user || user;
+  const isPro = userObj?.role === 'admin' || userObj?.plan === 'pro';
+  const plan = userObj?.plan || 'basic';
 
   const { transections } = useSelector((state) => state.transections);
 

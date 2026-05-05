@@ -129,9 +129,9 @@ const AdminUserList = () => {
                     </div>
                   </td>
                   <td className="px-6 py-5">
-                    <div className={`acc-type-badge !inline-flex ${user.plan === 'pro' ? 'investment' : 'bank'}`}>
-                       {user.plan === 'pro' ? <Shield size={12} /> : <UserIcon size={12} />}
-                       <span>{user.plan.toUpperCase()} NODE</span>
+                    <div className={`acc-type-badge !inline-flex ${user.role === 'admin' ? 'loan' : user.plan === 'pro' ? 'investment' : 'bank'}`}>
+                       {user.role === 'admin' ? <ShieldCheck size={12} /> : user.plan === 'pro' ? <Shield size={12} /> : <UserIcon size={12} />}
+                       <span>{(user.role === 'admin' ? 'ADMIN' : user.plan).toUpperCase()} NODE</span>
                     </div>
                   </td>
                   <td className="px-6 py-5">

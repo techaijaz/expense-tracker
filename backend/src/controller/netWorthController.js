@@ -12,8 +12,8 @@ export default {
     getNetWorth: async (req, res, next) => {
         try {
             const userId = req.authenticatedUser._id
-            const user = await accountModel.db.model('User').findById(userId).select('plan')
-            if (user?.plan === 'basic') {
+            const user = await accountModel.db.model('User').findById(userId).select('plan role')
+            if (user?.role !== 'admin' && user?.plan === 'basic') {
                 return httpError(next, new Error('Net Worth tracking is a PRO feature. Upgrade to unlock.'), req, 403)
             }
             const today = dayjs().toDate()
@@ -94,8 +94,8 @@ export default {
     getHistory: async (req, res, next) => {
         try {
             const userId = req.authenticatedUser._id
-            const user = await accountModel.db.model('User').findById(userId).select('plan')
-            if (user?.plan === 'basic') {
+            const user = await accountModel.db.model('User').findById(userId).select('plan role')
+            if (user?.role !== 'admin' && user?.plan === 'basic') {
                 return httpError(next, new Error('Net Worth tracking is a PRO feature. Upgrade to unlock.'), req, 403)
             }
             const history = await netWorthSnapshotModel.find({ userId }).sort({ date: 1 })

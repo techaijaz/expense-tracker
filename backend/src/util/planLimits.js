@@ -38,9 +38,14 @@ export const PLAN_LIMITS = {
  * @param {object} [filter={}] - Optional filter to apply (e.g., { type: 'CASH' }).
  * @returns {Promise<{ allowed: boolean, limit: number, count: number }>}
  */
-export const checkLimit = async (model, userId, plan, feature, filter = {}) => {
+export const checkLimit = async (model, userId, plan, feature, filter = {}, role = 'user') => {
     const limits = PLAN_LIMITS[plan] || PLAN_LIMITS.basic;
     
+    // Admins have no limits (effectively pro)
+    if (role === 'admin') {
+        return { allowed: true, limit: 100, count: 0 };
+    }
+
     // If it's a pro features check and user is basic
     if (feature === 'proFeatures' && plan === 'basic') {
         return { allowed: false, limit: 0, count: 0 };
