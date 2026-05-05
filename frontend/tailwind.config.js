@@ -65,6 +65,7 @@ export default {
         text2: 'var(--text2)',
         text3: 'var(--text3)',
         accent: 'var(--accent)',
+        accent2: 'var(--accent2)',
         'accent-glow': 'var(--accent-glow)',
         green: 'var(--green)',
         'green-bg': 'var(--green-bg)',

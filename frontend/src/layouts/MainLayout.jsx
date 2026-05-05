@@ -9,12 +9,12 @@ function MainLayout() {
   const [isTransactionOpen, setIsTransactionOpen] = useState(false);
 
   return (
-    <div className="app-layout h-screen overflow-hidden">
-      {/* Premium Sidebar */}
+    <div className="app-layout h-screen overflow-hidden bg-bg">
+      {/* Sidebar - Desktop relative, Mobile fixed */}
       <SideMenu isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
 
       {/* Main Content Area */}
-      <div className="main-content flex flex-col">
+      <main className="main-content flex flex-col min-w-0">
         {/* Top Navbar */}
         <Header
           onMenuToggle={() => setIsSidebarOpen(true)}
@@ -22,12 +22,16 @@ function MainLayout() {
         />
 
         {/* View Surface */}
-        <div className="flex-1 overflow-y-auto">
-          <Outlet
-            context={{ openTransactionPopup: () => setIsTransactionOpen(true) }}
-          />
+        <div className="flex-1 overflow-y-auto relative outline-none">
+          <div className="mx-auto w-full max-w-8xl">
+            <Outlet
+              context={{
+                openTransactionPopup: () => setIsTransactionOpen(true),
+              }}
+            />
+          </div>
         </div>
-      </div>
+      </main>
 
       {/* Global Transaction Popup */}
       <TransactionPopup
