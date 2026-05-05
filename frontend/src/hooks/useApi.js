@@ -49,6 +49,7 @@ const useApi = () => {
         'Request failed';
       setError(msg);
       console.error('API Error:', msg, err);
+      throw err; // Re-throw so callers can handle the real error
     } finally {
       setLoading(false);
     }

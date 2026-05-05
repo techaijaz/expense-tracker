@@ -6,14 +6,16 @@ import api from '@/utils/httpMethods';
 import { setLoans, updateLoan, removeLoan } from '@/redux/loanSlice';
 import { setAccounts, updateAccount } from '@/redux/accountSlice';
 import useFormat from '@/hooks/useFormat';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
+import { Plus, Landmark, Users, Lock } from 'lucide-react';
 import { cn } from '@/utils/utils';
+
+// Sub-components
+import PersonalDebtTab from './loans/PersonalDebtTab';
+import FormalLoansTab from './loans/FormalLoansTab';
+
+// Popups
 import AddLoanPopup from './AddLoanPopup';
 import AddFormalLoanPopup from './AddFormalLoanPopup';
 import PayEMIPopup from './PayEMIPopup';
@@ -23,13 +25,13 @@ import LoanSchedulePopup from './LoanSchedulePopup';
 export default function Loans() {
   const dispatch = useDispatch();
   const { loans } = useSelector((state) => state.loans);
-  const { formatAmount, formatDate, currencySymbol } = useFormat();
+  const { user } = useSelector((state) => state.auth);
+  const { formatAmount } = useFormat();
 
+  // Tab & Popup States
   const [activeTab, setActiveTab] = useState('PERSONAL');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editLoan, setEditLoan] = useState(null);
-
-  // Formal Loans State
   const [formalLoans, setFormalLoans] = useState([]);
   const [isFormalLoanOpen, setIsFormalLoanOpen] = useState(false);
   const [isPayEMIOpen, setIsPayEMIOpen] = useState(false);
@@ -37,16 +39,30 @@ export default function Loans() {
   const [isScheduleOpen, setIsScheduleOpen] = useState(false);
   const [selectedFormalLoan, setSelectedFormalLoan] = useState(null);
 
-  // Filters
+  // Filter States
   const [partyFilter, setPartyFilter] = useState('ALL');
   const [dateFilter, setDateFilter] = useState(null);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-
-  // UI State
-  const [expandedParties, setExpandedParties] = useState(new Set());
   const [parties, setParties] = useState([]);
+  const [expandedParties, setExpandedParties] = useState(new Set());
 
-  // Fetch on mount
+  // Plan logic
+  const plan = user?.user?.plan || user?.plan || 'basic';
+  const isPro = plan === 'pro';
+
+  const activePersonalParties = useMemo(() => {
+    const pending = loans.filter((l) => !l.status || l.status === 'PENDING');
+    const uniqueParties = new Set(
+      pending.map((l) => l.party?._id).filter((id) => id),
+    );
+    return uniqueParties.size;
+  }, [loans]);
+
+  const personalLimitReached = !isPro && activePersonalParties >= 5;
+  const formalLimitReached =
+    !isPro && formalLoans.filter((l) => l.status === 'ACTIVE').length >= 1;
+
+  // Data Fetching
   const fetchFormalLoans = async () => {
     try {
       const res = await api.get('/formal-loans');
@@ -56,7 +72,7 @@ export default function Loans() {
     }
   };
 
-  useEffect(() => {
+  const fetchAllLoansData = () => {
     api
       .get('/loans')
       .then((res) => dispatch(setLoans(res.data.data || res.data)))
@@ -70,9 +86,16 @@ export default function Loans() {
       .then((res) => dispatch(setAccounts(res.data.data || res.data)))
       .catch(() => {});
     fetchFormalLoans();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  };
+
+  useEffect(() => {
+    fetchAllLoansData();
+    window.addEventListener('refetch-system-metrics', fetchAllLoansData);
+    return () =>
+      window.removeEventListener('refetch-system-metrics', fetchAllLoansData);
   }, []);
 
+  // Handlers
   const handleDelete = async (loanId) => {
     if (
       !window.confirm(
@@ -84,7 +107,6 @@ export default function Loans() {
       await api.delete(`/loans/${loanId}`);
       dispatch(removeLoan(loanId));
       toast.success('Record deleted successfully');
-      // Refresh accounts to show balance reversal
       api
         .get('/account')
         .then((res) => dispatch(setAccounts(res.data.data || res.data)));
@@ -95,15 +117,12 @@ export default function Loans() {
 
   const toggleExpand = (partyId) => {
     const newExpanded = new Set(expandedParties);
-    if (newExpanded.has(partyId)) {
-      newExpanded.delete(partyId);
-    } else {
-      newExpanded.add(partyId);
-    }
+    if (newExpanded.has(partyId)) newExpanded.delete(partyId);
+    else newExpanded.add(partyId);
     setExpandedParties(newExpanded);
   };
 
-  // Metrics (Personal)
+  // Metrics Calculations
   const metrics = useMemo(() => {
     const pending = loans.filter((l) => !l.status || l.status === 'PENDING');
     const totalLent = pending
@@ -120,7 +139,6 @@ export default function Loans() {
     };
   }, [loans]);
 
-  // Metrics (Formal)
   const formalMetrics = useMemo(() => {
     const active = formalLoans.filter((l) => l.status === 'ACTIVE');
     const totalOutstanding = active.reduce(
@@ -128,26 +146,16 @@ export default function Loans() {
       0,
     );
     const monthlyEMI = active.reduce((s, l) => s + l.emiAmount, 0);
-    const totalInterestPaid = formalLoans.reduce(
-      (s, l) => s + (l.totalInterest - (l.currentPendingInterest || 0)),
-      0,
-    );
-    // Simplified interest paid if tracked, otherwise 0 for now
     return {
       totalOutstanding,
       monthlyEMI,
-      totalInterestPaid: 0, // Need backend support/tracking for accurate historical interest paid
       activeCount: active.length,
     };
   }, [formalLoans]);
 
-  // Grouped and Filtered Loans (Consolidated by Party)
   const consolidatedLedger = useMemo(() => {
-    // 1. Group by party
     const partyGroups = loans.reduce((acc, loan) => {
       const partyId = loan.party?._id || 'unknown';
-
-      // Apply filters early to loans within group
       const matchesParty = partyFilter === 'ALL' || partyId === partyFilter;
       const matchesDate =
         !dateFilter ||
@@ -168,7 +176,7 @@ export default function Loans() {
         };
       }
 
-      const amt = loan.amount || 0;
+      const amt = Number(loan.amount) || 0;
       if (loan.type === 'LENT') {
         acc[partyId].netBalance += amt;
         acc[partyId].totalLent += amt;
@@ -178,11 +186,9 @@ export default function Loans() {
       }
 
       acc[partyId].loans.push(loan);
-
       const loanDate = loan.date || loan.createdAt;
-      if (new Date(loanDate) > new Date(acc[partyId].lastActivity)) {
+      if (new Date(loanDate) > new Date(acc[partyId].lastActivity))
         acc[partyId].lastActivity = loanDate;
-      }
 
       return acc;
     }, {});
@@ -192,825 +198,217 @@ export default function Loans() {
     );
   }, [loans, partyFilter, dateFilter]);
 
-  const { user } = useSelector((state) => state.auth);
-  const plan = user?.user?.plan || user?.plan || 'basic';
-  const isPro = plan === 'pro';
-
-  const personalLimitReached =
-    !isPro &&
-    loans.filter((l) => !l.status || l.status === 'PENDING').length >= 1;
-  const formalLimitReached =
-    !isPro && formalLoans.filter((l) => l.status === 'ACTIVE').length >= 1;
-
-  const handleAddPersonal = () => {
-    if (personalLimitReached) {
-      toast.error(
-        'Basic plan limit reached (1 active personal debt). Upgrade to PRO to add more.',
-      );
-      return;
-    }
-    setIsDialogOpen(true);
-  };
-
-  const handleAddFormal = () => {
-    if (formalLimitReached) {
-      toast.error(
-        'Basic plan limit reached (1 active formal loan). Upgrade to PRO to add more.',
-      );
-      return;
-    }
-    setIsFormalLoanOpen(true);
-  };
-
   return (
-    <>
-      <div className="page-body">
-        {/* Header Action Row */}
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '20px',
-          }}
-        >
-          <div className="loan-tabs" style={{ marginBottom: 0 }}>
-            <div
-              className={`loan-tab ${activeTab === 'PERSONAL' ? 'active' : ''}`}
-              onClick={() => setActiveTab('PERSONAL')}
-            >
-              👥 Personal Debt
-            </div>
-            <div
-              className={`loan-tab ${activeTab === 'FORMAL' ? 'active' : ''}`}
-              onClick={() => setActiveTab('FORMAL')}
-            >
-              🏦 Formal Loans
-            </div>
+    <div className="page-body bg-[var(--bg)] min-h-screen pb-24 md:pb-12">
+      <div className="max-w-[1400px] mx-auto w-full">
+        {/* Header Section */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 mb-10 px-1">
+          <div className="space-y-2">
+            <h1 className="text-2xl md:text-4xl font-black text-foreground tracking-tight flex items-center gap-3 text-balance">
+              Debt{' '}
+              <span className="text-accent drop-shadow-[0_0_20px_rgba(var(--accent-glow),0.5)]">
+                Center
+              </span>
+            </h1>
+            <p className="text-[13px] md:text-sm text-muted-foreground font-medium max-w-sm leading-relaxed opacity-80">
+              Orchestrate personal commitments and formal protocols in one
+              command center.
+            </p>
           </div>
 
-          <div>
-            {activeTab === 'FORMAL' ? (
-              <button className="btn-new" onClick={handleAddFormal}>
-                {formalLimitReached ? '🔒' : '+'} Add Formal Loan
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-5">
+            {/* Premium Sliding Tabs */}
+            <div className="relative flex p-1 bg-muted/20 backdrop-blur-xl border border-border/40 rounded-[22px] w-full sm:w-auto overflow-hidden shadow-inner group">
+              <div
+                className="absolute inset-y-1 rounded-[18px] bg-accent shadow-[0_0_20px_rgba(var(--accent-glow),0.3)] transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] border border-white/10"
+                style={{
+                  left: '4px',
+                  width: 'calc(50% - 6px)',
+                  transform:
+                    activeTab === 'PERSONAL'
+                      ? 'translateX(0)'
+                      : 'translateX(calc(100% + 4px))',
+                }}
+              />
+              <button
+                onClick={() => setActiveTab('PERSONAL')}
+                className={cn(
+                  'relative z-10 flex-1 sm:w-44 py-3.5 rounded-[18px] flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] transition-colors duration-500',
+                  activeTab === 'PERSONAL'
+                    ? 'text-white'
+                    : 'text-muted-foreground/60 hover:text-foreground',
+                )}
+              >
+                <Users
+                  className={cn(
+                    'h-4 w-4 transition-transform duration-500',
+                    activeTab === 'PERSONAL' && 'scale-110',
+                  )}
+                />
+                Personal
               </button>
-            ) : (
-              <button className="btn-new" onClick={handleAddPersonal}>
-                {personalLimitReached ? '🔒' : '+'} Record Commitment
+              <button
+                onClick={() => {
+                  if (!isPro) {
+                    toast.error('Pro subscription required');
+                    return;
+                  }
+                  setActiveTab('FORMAL');
+                }}
+                className={cn(
+                  'relative z-10 flex-1 sm:w-44 py-3.5 rounded-[18px] flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] transition-colors duration-500',
+                  activeTab === 'FORMAL'
+                    ? 'text-white'
+                    : 'text-muted-foreground/60 hover:text-foreground',
+                  !isPro && 'opacity-90',
+                )}
+              >
+                {!isPro && (
+                  <Lock className="h-4 w-4 text-yellow-400 drop-shadow-[0_0_12px_rgba(250,204,21,0.4)] animate-pulse" />
+                )}
+                <Landmark
+                  className={cn(
+                    'h-4 w-4 transition-transform duration-500',
+                    activeTab === 'FORMAL' && 'scale-110',
+                  )}
+                />
+                Formal
               </button>
-            )}
+            </div>
+
+            <div className="hidden sm:block">
+              {activeTab === 'FORMAL' ? (
+                <Button
+                  onClick={() =>
+                    formalLimitReached
+                      ? toast.error(
+                          'Basic plan limit reached (1 active formal loan). Upgrade to PRO.',
+                        )
+                      : setIsFormalLoanOpen(true)
+                  }
+                  className="h-14 px-10 gap-3 bg-gradient-to-r from-accent to-accent/80 hover:opacity-90 rounded-[22px] shadow-2xl shadow-accent/20 text-white font-black text-[11px] uppercase tracking-widest transition-all hover:scale-[1.03] active:scale-[0.97] border-none group"
+                >
+                  {formalLimitReached ? (
+                    <Lock className="h-4 w-4" />
+                  ) : (
+                    <Plus className="h-4 w-4 group-hover:rotate-90 transition-transform duration-300" />
+                  )}
+                  New Protocol
+                </Button>
+              ) : (
+                <Button
+                  onClick={() =>
+                    personalLimitReached
+                      ? toast.error(
+                          'Basic plan limit reached (5 active parties). Upgrade to PRO.',
+                        )
+                      : setIsDialogOpen(true)
+                  }
+                  className="h-14 px-10 gap-3 bg-gradient-to-r from-accent to-accent/80 hover:opacity-90 rounded-[22px] shadow-2xl shadow-accent/20 text-white font-black text-[11px] uppercase tracking-widest transition-all hover:scale-[1.03] active:scale-[0.97] border-none group"
+                >
+                  {personalLimitReached ? (
+                    <Lock className="h-4 w-4" />
+                  ) : (
+                    <Plus className="h-4 w-4 group-hover:rotate-90 transition-transform duration-300" />
+                  )}
+                  New Commitment
+                </Button>
+              )}
+            </div>
           </div>
         </div>
 
         {activeTab === 'PERSONAL' && (
-          <>
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(4, 1fr)',
-                gap: '12px',
-                marginBottom: '20px',
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <PersonalDebtTab
+              metrics={metrics}
+              consolidatedLedger={consolidatedLedger}
+              parties={parties}
+              partyFilter={partyFilter}
+              setPartyFilter={setPartyFilter}
+              dateFilter={dateFilter}
+              setDateFilter={setDateFilter}
+              isCalendarOpen={isCalendarOpen}
+              setIsCalendarOpen={setIsCalendarOpen}
+              expandedParties={expandedParties}
+              toggleExpand={toggleExpand}
+              onEdit={(l) => {
+                setEditLoan(l);
+                setIsDialogOpen(true);
               }}
-            >
-              <div className="kpi-card green">
-                <div className="kpi-label">Total Lent</div>
-                <div className="kpi-val" style={{ fontSize: '18px' }}>
-                  {formatAmount(metrics.totalLent)}
-                </div>
-                <div className="kpi-change neutral">Active receivables</div>
-              </div>
-              <div className="kpi-card red">
-                <div className="kpi-label">Total Borrowed</div>
-                <div className="kpi-val" style={{ fontSize: '18px' }}>
-                  {formatAmount(metrics.totalBorrowed)}
-                </div>
-                <div className="kpi-change neutral">Active payables</div>
-              </div>
-              <div className="kpi-card blue">
-                <div className="kpi-label">Net Position</div>
-                <div className="kpi-val" style={{ fontSize: '18px' }}>
-                  {metrics.netPosition >= 0 ? '+' : '-'}
-                  {formatAmount(Math.abs(metrics.netPosition))}
-                </div>
-                <div
-                  className={`kpi-change ${metrics.netPosition >= 0 ? 'up' : 'down'}`}
-                >
-                  {metrics.netPosition >= 0
-                    ? 'You are owed more'
-                    : 'You owe more'}
-                </div>
-              </div>
-              <div className="kpi-card purple">
-                <div className="kpi-label">Active Debts</div>
-                <div className="kpi-val" style={{ fontSize: '18px' }}>
-                  {metrics.activeCount}
-                </div>
-                <div className="kpi-change neutral">Open records</div>
-              </div>
-            </div>
-
-            <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-              <div
-                style={{
-                  padding: '12px 16px',
-                  borderBottom: '1px solid var(--border)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: '12px',
-                }}
-              >
-                <div className="card-title" style={{ whiteSpace: 'nowrap' }}>
-                  Active Ledger
-                </div>
-
-                <div
-                  style={{
-                    display: 'flex',
-                    gap: '8px',
-                    alignItems: 'center',
-                    flex: 1,
-                    justifyContent: 'flex-end',
-                  }}
-                >
-                  {/* Party Dropdown */}
-                  <select
-                    value={partyFilter}
-                    onChange={(e) => setPartyFilter(e.target.value)}
-                    className="form-input"
-                    style={{
-                      width: '160px',
-                      height: '32px',
-                      fontSize: '11px',
-                      padding: '0 8px',
-                      marginBottom: 0,
-                    }}
-                  >
-                    <option value="ALL">All Counterparties</option>
-                    {parties.map((p) => (
-                      <option key={p._id} value={p._id}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </select>
-
-                  {/* Date Filter */}
-                  <Popover
-                    open={isCalendarOpen}
-                    onOpenChange={setIsCalendarOpen}
-                  >
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          'justify-start text-left font-normal border-none hover:bg-surface-container-high',
-                          !dateFilter && 'text-muted-foreground',
-                        )}
-                        style={{
-                          backgroundColor: 'var(--bg4)',
-                          color: !dateFilter ? 'var(--text3)' : 'var(--text)',
-                          height: '32px',
-                          fontSize: '11px',
-                          padding: '0 10px',
-                        }}
-                      >
-                        <span
-                          className="material-symbols-outlined mr-2"
-                          style={{ fontSize: '14px' }}
-                        >
-                          event
-                        </span>
-                        {dateFilter ? (
-                          format(dateFilter, 'PP')
-                        ) : (
-                          <span>Date filter…</span>
-                        )}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent
-                      className="w-auto p-0 z-[100]"
-                      align="end"
-                      style={{
-                        backgroundColor: 'var(--bg3)',
-                        border: '1px solid var(--border)',
-                      }}
-                    >
-                      <div
-                        style={{
-                          padding: '8px',
-                          borderBottom: '1px solid var(--border)',
-                          display: 'flex',
-                          justifyContent: 'flex-end',
-                        }}
-                      >
-                        <button
-                          onClick={() => {
-                            setDateFilter(null);
-                            setIsCalendarOpen(false);
-                          }}
-                          style={{
-                            fontSize: '10px',
-                            color: 'var(--accent)',
-                            background: 'none',
-                            border: 'none',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          Clear Date
-                        </button>
-                      </div>
-                      <Calendar
-                        mode="single"
-                        selected={dateFilter}
-                        onSelect={(d) => {
-                          setDateFilter(d);
-                          setIsCalendarOpen(false);
-                        }}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-              </div>
-
-              <div
-                className="debt-head"
-                style={{
-                  gridTemplateColumns: '40px 1fr 120px 140px 140px 100px',
-                }}
-              >
-                <div />
-                <div>Party</div>
-                <div>Net Direction</div>
-                <div>Total Principal</div>
-                <div>Net Balance</div>
-                <div>Action</div>
-              </div>
-              {consolidatedLedger.length === 0 ? (
-                <div
-                  style={{
-                    padding: '30px',
-                    textAlign: 'center',
-                    color: 'var(--text3)',
-                  }}
-                >
-                  No debt records found.
-                </div>
-              ) : (
-                consolidatedLedger.map((group) => {
-                  const partyName = group.party?.name || 'Unknown';
-                  const pInitial = partyName[0] || '?';
-                  const isExpanded = expandedParties.has(group._id);
-
-                  const isOwed = group.netBalance > 0;
-                  const isOwe = group.netBalance < 0;
-                  const isSettled = group.netBalance === 0;
-
-                  const avatarColor = isOwed
-                    ? 'var(--green)'
-                    : isOwe
-                      ? 'var(--red)'
-                      : 'var(--text3)';
-
-                  return (
-                    <div
-                      key={group._id}
-                      style={{ borderBottom: '1px solid var(--border)' }}
-                    >
-                      <div
-                        className="debt-row"
-                        style={{
-                          gridTemplateColumns:
-                            '40px 1fr 120px 140px 140px 100px',
-                          cursor: 'pointer',
-                        }}
-                        onClick={() => toggleExpand(group._id)}
-                      >
-                        <div
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                          }}
-                        >
-                          <span
-                            className="material-symbols-outlined"
-                            style={{
-                              fontSize: '18px',
-                              color: 'var(--text3)',
-                              transition: 'transform 0.2s',
-                              transform: isExpanded ? 'rotate(90deg)' : 'none',
-                            }}
-                          >
-                            chevron_right
-                          </span>
-                        </div>
-
-                        <div style={{ display: 'flex', alignItems: 'center' }}>
-                          <div
-                            className="party-avatar"
-                            style={{
-                              background: avatarColor,
-                              width: '32px',
-                              height: '32px',
-                              fontSize: '12px',
-                            }}
-                          >
-                            {pInitial}
-                          </div>
-                          <div>
-                            <div style={{ fontSize: '13px', fontWeight: 600 }}>
-                              {partyName}
-                            </div>
-                            <div
-                              style={{
-                                fontSize: '11px',
-                                color: 'var(--text2)',
-                              }}
-                            >
-                              {group.party?.relation || 'Contact'}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div>
-                          {isSettled ? (
-                            <span className="direction-badge settled">
-                              Settled
-                            </span>
-                          ) : isOwed ? (
-                            <span className="direction-badge lent">
-                              Receivable
-                            </span>
-                          ) : (
-                            <span className="direction-badge borrowed">
-                              Payable
-                            </span>
-                          )}
-                        </div>
-
-                        <div
-                          style={{
-                            fontFamily: 'var(--mono)',
-                            fontSize: '12px',
-                          }}
-                        >
-                          <span style={{ color: 'var(--green)' }}>
-                            +{formatAmount(group.totalLent)}
-                          </span>
-                          <br />
-                          <span style={{ color: 'var(--red)' }}>
-                            -{formatAmount(group.totalBorrowed)}
-                          </span>
-                        </div>
-
-                        <div
-                          style={{
-                            fontFamily: 'var(--mono)',
-                            fontWeight: 600,
-                            color: isSettled
-                              ? 'var(--green)'
-                              : isOwed
-                                ? 'var(--green)'
-                                : 'var(--red)',
-                          }}
-                        >
-                          {isOwe ? '-' : ''}
-                          {formatAmount(Math.abs(group.netBalance))}
-                        </div>
-
-                        <div>
-                          {!isSettled && (
-                            <button
-                              className="btn-outline"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setIsDialogOpen(true);
-                                // We could pre-select the party here if AddLoanPopup supported a defaultPartyId
-                              }}
-                              style={{ fontSize: '11px', padding: '5px 10px' }}
-                            >
-                              {isOwed ? 'Collect' : 'Pay'}
-                            </button>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Expanded Transaction List */}
-                      {isExpanded && (
-                        <div
-                          style={{
-                            background: 'var(--bg4)',
-                            padding: '12px 16px 12px 56px',
-                            borderTop: '1px solid var(--border)',
-                          }}
-                        >
-                          <div
-                            style={{
-                              fontSize: '11px',
-                              fontWeight: 700,
-                              color: 'var(--text3)',
-                              marginBottom: '8px',
-                              textTransform: 'uppercase',
-                              letterSpacing: '0.5px',
-                            }}
-                          >
-                            Transaction History
-                          </div>
-                          <table
-                            style={{
-                              width: '100%',
-                              borderCollapse: 'collapse',
-                            }}
-                          >
-                            <thead>
-                              <tr
-                                style={{
-                                  textAlign: 'left',
-                                  borderBottom: '1px solid var(--border)',
-                                }}
-                              >
-                                <th
-                                  style={{
-                                    padding: '6px 0',
-                                    fontSize: '10px',
-                                    color: 'var(--text3)',
-                                  }}
-                                >
-                                  Date
-                                </th>
-                                <th
-                                  style={{
-                                    padding: '6px 0',
-                                    fontSize: '10px',
-                                    color: 'var(--text3)',
-                                  }}
-                                >
-                                  Type
-                                </th>
-                                <th
-                                  style={{
-                                    padding: '6px 0',
-                                    fontSize: '10px',
-                                    color: 'var(--text3)',
-                                  }}
-                                >
-                                  Account
-                                </th>
-                                <th
-                                  style={{
-                                    padding: '6px 0',
-                                    fontSize: '10px',
-                                    color: 'var(--text3)',
-                                    textAlign: 'right',
-                                  }}
-                                >
-                                  Amount
-                                </th>
-                                <th
-                                  style={{
-                                    padding: '6px 0',
-                                    fontSize: '10px',
-                                    color: 'var(--text3)',
-                                    textAlign: 'right',
-                                    width: '80px',
-                                  }}
-                                >
-                                  Actions
-                                </th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {group.loans.map((loan) => (
-                                <tr
-                                  key={loan._id}
-                                  style={{
-                                    borderBottom:
-                                      '1px solid rgba(255,255,255,0.05)',
-                                  }}
-                                >
-                                  <td
-                                    style={{
-                                      padding: '8px 0',
-                                      fontSize: '12px',
-                                    }}
-                                  >
-                                    {format(new Date(loan.date), 'dd MMM yyyy')}
-                                  </td>
-                                  <td
-                                    style={{
-                                      padding: '8px 0',
-                                      fontSize: '12px',
-                                    }}
-                                  >
-                                    <span
-                                      style={{
-                                        color:
-                                          loan.type === 'LENT'
-                                            ? 'var(--green)'
-                                            : 'var(--red)',
-                                        fontWeight: 500,
-                                      }}
-                                    >
-                                      {loan.type}
-                                    </span>
-                                  </td>
-                                  <td
-                                    style={{
-                                      padding: '8px 0',
-                                      fontSize: '12px',
-                                      color: 'var(--text2)',
-                                    }}
-                                  >
-                                    {loan.accountId?.name || 'Account'}
-                                  </td>
-                                  <td
-                                    style={{
-                                      padding: '8px 0',
-                                      fontSize: '12px',
-                                      textAlign: 'right',
-                                      fontWeight: 600,
-                                    }}
-                                  >
-                                    {formatAmount(loan.amount)}
-                                  </td>
-                                  <td
-                                    style={{
-                                      padding: '8px 0',
-                                      textAlign: 'right',
-                                    }}
-                                  >
-                                    <div
-                                      style={{
-                                        display: 'flex',
-                                        gap: '8px',
-                                        justifyContent: 'flex-end',
-                                      }}
-                                    >
-                                      <span
-                                        className="material-symbols-outlined"
-                                        style={{
-                                          fontSize: '18px',
-                                          color: 'var(--accent)',
-                                          cursor: 'pointer',
-                                          opacity: 0.8,
-                                        }}
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setEditLoan(loan);
-                                          setIsDialogOpen(true);
-                                        }}
-                                      >
-                                        edit_square
-                                      </span>
-                                      <span
-                                        className="material-symbols-outlined"
-                                        style={{
-                                          fontSize: '18px',
-                                          color: 'var(--red)',
-                                          cursor: 'pointer',
-                                          opacity: 0.8,
-                                        }}
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleDelete(loan._id);
-                                        }}
-                                      >
-                                        delete
-                                      </span>
-                                    </div>
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </>
+              onDelete={handleDelete}
+              onAction={() => setIsDialogOpen(true)}
+              formatAmount={formatAmount}
+            />
+          </div>
         )}
+
         {activeTab === 'FORMAL' && (
-          <>
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(4, 1fr)',
-                gap: '12px',
-                marginBottom: '20px',
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <FormalLoansTab
+              formalMetrics={formalMetrics}
+              formalLoans={formalLoans}
+              formatAmount={formatAmount}
+              onPrepay={(l) => {
+                setSelectedFormalLoan(l);
+                setIsPrepayOpen(true);
               }}
-            >
-              <div className="kpi-card red">
-                <div className="kpi-label">Total Outstanding</div>
-                <div className="kpi-val" style={{ fontSize: '18px' }}>
-                  {formatAmount(formalMetrics.totalOutstanding)}
-                </div>
-              </div>
-              <div className="kpi-card amber">
-                <div className="kpi-label">Monthly EMI</div>
-                <div className="kpi-val" style={{ fontSize: '18px' }}>
-                  {formatAmount(formalMetrics.monthlyEMI)}
-                </div>
-              </div>
-              <div className="kpi-card blue">
-                <div className="kpi-label">Interest Paid</div>
-                <div className="kpi-val" style={{ fontSize: '18px' }}>
-                  {formatAmount(formalMetrics.totalInterestPaid)}
-                </div>
-              </div>
-              <div className="kpi-card purple">
-                <div className="kpi-label">Active Loans</div>
-                <div className="kpi-val" style={{ fontSize: '18px' }}>
-                  {formalMetrics.activeCount}
-                </div>
-              </div>
-            </div>
-
-            {formalLoans.length === 0 ? (
-              <div
-                className="card"
-                style={{
-                  padding: '40px',
-                  textAlign: 'center',
-                  color: 'var(--text3)',
-                }}
-              >
-                No formal loans recorded. Click "+ Add Formal Loan" to get
-                started.
-              </div>
-            ) : (
-              formalLoans.map((loan) => {
-                const completedPct =
-                  ((loan.principal - loan.outstandingBalance) /
-                    loan.principal) *
-                  100;
-
-                return (
-                  <div key={loan._id} className="formal-loan-card">
-                    <div className="loan-card-header">
-                      <div>
-                        <div
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '10px',
-                            marginBottom: '4px',
-                          }}
-                        >
-                          <span
-                            className={`loan-type-badge ${loan.loanType.toLowerCase()}`}
-                          >
-                            {loan.loanType === 'CAR'
-                              ? '🚗'
-                              : loan.loanType === 'HOME'
-                                ? '🏠'
-                                : '💼'}{' '}
-                            {loan.loanType} Loan
-                          </span>
-                          <span
-                            style={{ fontSize: '11px', color: 'var(--text3)' }}
-                          >
-                            {loan.bankName}
-                          </span>
-                        </div>
-                        <div style={{ fontSize: '18px', fontWeight: '700' }}>
-                          {loan.loanType} Loan — {loan.bankName}
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <button
-                          className="btn-outline"
-                          style={{ fontSize: '12px' }}
-                          onClick={() => {
-                            setSelectedFormalLoan(loan);
-                            setIsPrepayOpen(true);
-                          }}
-                        >
-                          Prepay Calc
-                        </button>
-                        <button
-                          className="btn-new"
-                          style={{ fontSize: '12px' }}
-                          onClick={() => {
-                            setSelectedFormalLoan(loan);
-                            setIsPayEMIOpen(true);
-                          }}
-                        >
-                          Pay EMI →
-                        </button>
-                      </div>
-                    </div>
-                    <div className="loan-progress-wrap">
-                      <div
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          fontSize: '12px',
-                          color: 'var(--text2)',
-                          marginBottom: '6px',
-                        }}
-                      >
-                        {/* We don't track paid count directly yet, but can estimate from outstanding */}
-                        <span>{completedPct.toFixed(1)}% complete</span>
-                        <span>{loan.status}</span>
-                      </div>
-                      <div className="loan-progress-bar">
-                        <div
-                          className="loan-progress-fill"
-                          style={{ width: `${completedPct}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                    <div className="loan-stats">
-                      <div className="loan-stat">
-                        <div
-                          className="loan-stat-val"
-                          style={{ color: 'var(--red)' }}
-                        >
-                          {formatAmount(loan.outstandingBalance)}
-                        </div>
-                        <div className="loan-stat-label">Outstanding</div>
-                      </div>
-                      <div className="loan-stat">
-                        <div
-                          className="loan-stat-val"
-                          style={{ color: 'var(--accent)' }}
-                        >
-                          {formatAmount(loan.emiAmount)}
-                        </div>
-                        <div className="loan-stat-label">Monthly EMI</div>
-                      </div>
-                      <div className="loan-stat">
-                        <div
-                          className="loan-stat-val"
-                          style={{ color: 'var(--amber)' }}
-                        >
-                          {loan.interestRate}%
-                        </div>
-                        <div className="loan-stat-label">Interest Rate</div>
-                      </div>
-                      <div className="loan-stat">
-                        <div
-                          className="loan-stat-val"
-                          style={{ color: 'var(--green)' }}
-                        >
-                          {loan.tenureMonths} mo.
-                        </div>
-                        <div className="loan-stat-label">Total Tenure</div>
-                      </div>
-                    </div>
-                    <div
-                      style={{
-                        marginTop: '12px',
-                        paddingTop: '12px',
-                        borderTop: '1px solid var(--border)',
-                        display: 'flex',
-                        gap: '16px',
-                        fontSize: '12px',
-                        color: 'var(--text2)',
-                      }}
-                    >
-                      <span>Principal: {formatAmount(loan.principal)}</span>
-                      <span>Next Due: {formatDate(loan.startDate)}</span>
-                      <span style={{ marginLeft: 'auto' }}>
-                        <span
-                          className="form-link"
-                          style={{ cursor: 'pointer' }}
-                          onClick={() => {
-                            setSelectedFormalLoan(loan);
-                            setIsScheduleOpen(true);
-                          }}
-                        >
-                          View Schedule →
-                        </span>
-                      </span>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </>
+              onSchedule={(l) => {
+                setSelectedFormalLoan(l);
+                setIsScheduleOpen(true);
+              }}
+              onPayEMI={(l) => {
+                setSelectedFormalLoan(l);
+                setIsPayEMIOpen(true);
+              }}
+            />
+          </div>
         )}
       </div>
 
+      {/* Mobile FAB */}
+      <div className="fixed bottom-8 right-8 z-50 sm:hidden">
+        <Button
+          size="icon"
+          className="h-16 w-16 rounded-full shadow-2xl animate-in zoom-in duration-500 bg-accent hover:opacity-90 text-white shadow-accent/40 border-none"
+          onClick={() =>
+            activeTab === 'FORMAL'
+              ? formalLimitReached
+                ? toast.error('Limit reached')
+                : setIsFormalLoanOpen(true)
+              : personalLimitReached
+                ? toast.error('Limit reached')
+                : setIsDialogOpen(true)
+          }
+        >
+          {activeTab === 'FORMAL' ? (
+            formalLimitReached ? (
+              <Lock className="h-6 w-6" />
+            ) : (
+              <Plus className="h-6 w-6" />
+            )
+          ) : personalLimitReached ? (
+            <Lock className="h-6 w-6" />
+          ) : (
+            <Plus className="h-6 w-6" />
+          )}
+        </Button>
+      </div>
+
+      {/* Popups */}
       <AddLoanPopup
         open={isDialogOpen}
-        setOpen={(val) => {
-          setIsDialogOpen(val);
-          if (!val) setEditLoan(null); // Reset editLoan when closing
+        setOpen={(v) => {
+          setIsDialogOpen(v);
+          if (!v) setEditLoan(null);
         }}
         editLoan={editLoan}
       />
-
       <AddFormalLoanPopup
         open={isFormalLoanOpen}
         setOpen={setIsFormalLoanOpen}
         onSaved={fetchFormalLoans}
       />
-
       {selectedFormalLoan && (
         <>
           <PayEMIPopup
@@ -1035,6 +433,6 @@ export default function Loans() {
           />
         </>
       )}
-    </>
+    </div>
   );
 }

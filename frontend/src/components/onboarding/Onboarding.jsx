@@ -31,6 +31,7 @@ const Onboarding = () => {
     dateFormat: 'DD/MM/YYYY',
     decimalPlaces: 2,
     theme: 'dark',
+    accentColor: 'lightblue',
     fiscalYear: 'April – March',
     account: {
       type: 'Bank Account',
@@ -87,6 +88,7 @@ const Onboarding = () => {
           dateFormat: onboardingData.dateFormat,
           decimalPlaces: onboardingData.decimalPlaces,
           theme: onboardingData.theme,
+          accentColor: onboardingData.accentColor || 'lightblue',
           fiscalYear: fiscalYearMap[onboardingData.fiscalYear] || 'APR-MAR',
         },
         account: onboardingData.account.name
@@ -149,21 +151,21 @@ const Onboarding = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#080B12] text-[#EEF0F8] font-body relative overflow-hidden flex items-center justify-center p-4">
+    <div className="min-h-screen bg-bg text-text font-body relative overflow-hidden flex items-center justify-center p-4">
       {/* Background Glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[radial-gradient(circle,rgba(91,141,239,0.06)_0%,transparent_70%)] pointer-events-none"></div>
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-[radial-gradient(circle,var(--accent-glow)_0%,transparent_70%)] pointer-events-none"></div>
 
       <style>{`
-        body { background: #080B12; }
         .onboard-card {
-          background: #0E1220;
-          border: 1px solid rgba(255,255,255,0.1);
+          background: var(--bg2);
+          border: 1px solid var(--border);
           border-radius: 20px;
-          color: #EEF0F8;
+          color: var(--text);
+          box-shadow: 0 10px 40px -10px rgba(0,0,0,0.1);
         }
-        .prog-step { height: 3px; border-radius: 2px; flex: 1; background: #1C2235; }
-        .prog-step.done { background: #5B8DEF; }
-        .prog-step.active { background: #5B8DEF; opacity: 0.6; }
+        .prog-step { height: 3px; border-radius: 2px; flex: 1; background: var(--bg4); }
+        .prog-step.done { background: var(--accent); }
+        .prog-step.active { background: var(--accent); opacity: 0.6; }
       `}</style>
 
       {/* Steps Rendering */}

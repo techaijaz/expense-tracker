@@ -1,3 +1,4 @@
+import mongoose from 'mongoose'
 import budgetModel from '../model/budgetModel.js'
 import budgetPeriodModel from '../model/budgetPeriodModel.js'
 import budgetService from '../service/budgetService.js'
@@ -57,7 +58,13 @@ export default {
     deleteBudget: async (req, res, next) => {
         try {
             const { id } = req.params
-            await budgetModel.findByIdAndUpdate(id, { isActive: false })
+            const userId = req.authenticatedUser._id
+            const budget = await budgetModel.findOneAndUpdate(
+                { _id: id, userId }, 
+                { isActive: false },
+                { new: true }
+            )
+            if (!budget) return httpError(next, 'Budget not found', req, 404)
             httpResponse(req, res, 200, 'Budget deactivated', null)
         } catch (error) {
             httpError(next, error, req, 500)

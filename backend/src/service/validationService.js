@@ -77,6 +77,7 @@ export const validationTransectionBody = Joi.object({
     debtType: Joi.string().optional().allow(null, ''),
     dueDate: Joi.date().optional().allow(null, ''),
     interestRate: Joi.number().optional().default(0),
+    pendingStatus: Joi.boolean().optional().default(false),
 })
 
 export const validationLoanBody = Joi.object({

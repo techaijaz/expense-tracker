@@ -7,10 +7,12 @@ const ThemeContext = createContext(null);
 
 export function ThemeProvider({ children }) {
   const location = useLocation();
-  const user = useSelector((state) => state.auth.user?.user);
+  const user = useSelector((state) => state.auth.user);
 
   const [theme, setTheme] = useState(() => {
-    return localStorage.getItem('aiexpenser-theme') || 'dark';
+    const saved = localStorage.getItem('aiexpenser-theme');
+    if (saved) return saved;
+    return 'system';
   });
   
   const [accentColor, setAccentColor] = useState(() => {
@@ -24,49 +26,41 @@ export function ThemeProvider({ children }) {
   // Hydrate from DB when user logs in or preferences are updated
   useEffect(() => {
     if (user?.preferences) {
-      if (user.preferences.theme && user.preferences.theme !== theme) {
-        setTheme(user.preferences.theme);
-      }
-      if (user.preferences.accentColor && user.preferences.accentColor !== accentColor) {
-        setAccentColor(user.preferences.accentColor);
-      }
-      if (user.preferences.language && user.preferences.language !== language) {
-        setLanguage(user.preferences.language);
-      }
+      const { theme: prefTheme, accentColor: prefAccent, language: prefLang } = user.preferences;
+      if (prefTheme && prefTheme !== theme) setTheme(prefTheme);
+      if (prefAccent && prefAccent !== accentColor) setAccentColor(prefAccent);
+      if (prefLang && prefLang !== language) setLanguage(prefLang);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.preferences?.theme, user?.preferences?.accentColor, user?.preferences?.language]);
+  }, [user?.preferences]);
 
   useEffect(() => {
     const root = document.documentElement;
-    // Check if we are on a public auth route
-    const isAuthRoute = location.pathname === '/' || location.pathname === '/signup';
-
-    if (isAuthRoute) {
-      // Force 'dark' theme on auth routes to match redesign
-      root.classList.add('dark');
-      root.classList.remove('light');
-    } else {
-      // Apply user preference
-      if (theme === 'dark') {
+    
+    const applyTheme = (targetTheme) => {
+      let activeTheme = targetTheme;
+      if (targetTheme === 'system') {
+        activeTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+      
+      if (activeTheme === 'dark') {
         root.classList.add('dark');
         root.classList.remove('light');
-      } else if (theme === 'light') {
-        root.classList.remove('dark');
-        root.classList.add('light');
       } else {
-        // system
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        if (prefersDark) {
-          root.classList.add('dark');
-          root.classList.remove('light');
-        } else {
-          root.classList.remove('dark');
-          root.classList.add('light');
-        }
+        root.classList.add('light');
+        root.classList.remove('dark');
       }
+    };
+
+    applyTheme(theme);
+
+    if (theme === 'system') {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const listener = () => applyTheme('system');
+      mediaQuery.addEventListener('change', listener);
+      return () => mediaQuery.removeEventListener('change', listener);
     }
-  }, [theme, location.pathname]);
+  }, [theme]);
 
   useEffect(() => {
     // Only save to localStorage when theme updates

@@ -17,54 +17,36 @@ const categorySchema = z.object({
 });
 
 const ICONS = [
-  '🍔',
-  '🛒',
-  '🏠',
-  '🚗',
-  '✈️',
-  '💊',
-  '🎮',
-  '📚',
-  '💡',
-  '👕',
-  '💳',
-  '💰',
-  '📈',
-  '🏋️',
-  '🎵',
-  '🎁',
-  '☕',
-  '🔧',
-  '📱',
-  '🐾',
+  '🍔', '🛒', '🏠', '🚗', '✈️', '💊', '🎮', '📚', '💡', '👕',
+  '💳', '💰', '📈', '🏋️', '🎵', '🎁', '☕', '🔧', '📱', '🐾',
 ];
 
 const TYPE_CONFIG = {
   INCOME: {
     label: 'Income',
     icon: 'trending_up',
-    color: '#a8edca',
-    bg: 'rgba(168,237,202,0.1)',
-    border: 'rgba(168,237,202,0.3)',
+    color: 'var(--green)',
+    bg: 'var(--green-bg)',
+    border: 'var(--green-border)',
   },
   EXPENSE: {
     label: 'Expense',
     icon: 'shopping_cart',
-    color: '#f97171',
-    bg: 'rgba(249,113,113,0.1)',
-    border: 'rgba(249,113,113,0.3)',
+    color: 'var(--red)',
+    bg: 'var(--red-bg)',
+    border: 'var(--red-border)',
   },
   TRANSFER: {
     label: 'Transfer',
     icon: 'sync_alt',
-    color: 'var(--accent-color)',
-    bg: 'var(--hover-bg)',
-    border: 'var(--hover-bg)',
+    color: 'var(--accent)',
+    bg: 'var(--accent-glow)',
+    border: 'rgba(91,141,239,0.15)',
   },
 };
 
 const AddCategoryPopup = ({
-  open,
+  open = true,
   onClose,
   onSave,
   editCategory = null,
@@ -73,7 +55,7 @@ const AddCategoryPopup = ({
   const dispatch = useDispatch();
   const { data, error, loading, makeRequest } = useApi();
   const [selectedIcon, setSelectedIcon] = useState('🏷️');
-  const [focusedField, setFocusedField] = useState(null);
+  const handledRef = useRef(false);
 
   const {
     register,
@@ -90,14 +72,17 @@ const AddCategoryPopup = ({
   const selectedType = watch('type');
 
   useEffect(() => {
-    if (editCategory) {
-      setValue('name', editCategory.name || '');
-      setValue('type', editCategory.type || defaultType);
-      setValue('icon', editCategory.icon || '🏷️');
-      setSelectedIcon(editCategory.icon || '🏷️');
-    } else {
-      reset({ name: '', type: defaultType, icon: '🏷️' });
-      setSelectedIcon('🏷️');
+    if (open) {
+      if (editCategory) {
+        setValue('name', editCategory.name || '');
+        setValue('type', editCategory.type || defaultType);
+        setValue('icon', editCategory.icon || '🏷️');
+        setSelectedIcon(editCategory.icon || '🏷️');
+      } else {
+        reset({ name: '', type: defaultType, icon: '🏷️' });
+        setSelectedIcon('🏷️');
+      }
+      handledRef.current = false;
     }
   }, [editCategory, open, reset, setValue, defaultType]);
 
@@ -123,7 +108,7 @@ const AddCategoryPopup = ({
       toast.error('Limit reached (10 categories). Upgrade to PRO.');
       return;
     }
-    handledRef.current = false; // reset for this new submission
+    handledRef.current = false;
     const payload = {
       name: formData.name,
       type: formData.type,
@@ -153,75 +138,62 @@ const AddCategoryPopup = ({
         dispatch(addCatagory(data));
       }
       toast.success(editCategory ? 'Category updated.' : 'Category added.');
-      reset({ name: '', type: 'EXPENSE', icon: '🏷️' });
-      setSelectedIcon('🏷️');
       if (onSave) onSave(data._id);
+      onClose();
     }
-  }, [data]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [data, editCategory, dispatch, onSave, onClose]);
 
   if (!open) return null;
 
-  const inputClass = (field) =>
-    `w-full py-[11px] px-3.5 rounded-[10px] text-on-surface text-sm outline-none transition-all duration-200 font-body ${
-      focusedField === field
-        ? 'bg-surface-variant border-surface-variant shadow-[0_0_0_3px_var(--hover-bg)] border'
-        : 'bg-secondary-container border border-secondary-container'
-    }`;
-
   return (
     <div
-      className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
+      className="fixed inset-0 z-[3000] flex items-center justify-center p-4 transition-all duration-300"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-md" />
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-md animate-in fade-in duration-300" />
 
       {/* Modal */}
-      <div className="relative z-10 w-full max-w-[460px] bg-card border border-secondary-container rounded-[20px] py-8 px-[30px] shadow-[0_40px_80px_rgba(0,0,0,0.6)]">
+      <div className="relative z-10 w-full max-w-[480px] bg-bg2 border border-border rounded-3xl p-8 shadow-2xl animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
         {/* Header */}
-        <div className="flex justify-between items-center mb-6">
+        <header className="mb-6 flex justify-between items-start">
           <div>
-            <h2 className="text-lg font-extrabold text-on-surface tracking-[-0.02em] mb-1">
+            <h3 className="text-xl font-black text-text tracking-tight mb-1">
               {editCategory ? 'Edit Category' : 'New Category'}
               {limitReached && ' 🔒'}
-            </h2>
-            <p className="text-xs text-on-surface-variant">
+            </h3>
+            <p className="text-xs text-text3 font-medium">
               {limitReached
                 ? 'Basic plan limit reached (10 categories).'
-                : 'Organize your transactions with a custom category'}
+                : 'Define a custom classification for your ledger.'}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="bg-secondary-container border border-secondary-container rounded-lg px-2 py-1.5 cursor-pointer text-on-surface-variant flex items-center"
+            className="w-8 h-8 flex items-center justify-center bg-bg3 hover:bg-bg4 border border-border rounded-lg text-text3 transition-all"
           >
-            <span
-              className="material-symbols-outlined text-lg"
-              style={{ fontVariationSettings: "'FILL' 0" }}
-            >
-              close
-            </span>
+            <span className="material-symbols-outlined text-lg">close</span>
           </button>
-        </div>
+        </header>
 
-        <form onSubmit={handleSubmit(onSubmit)}>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {/* Type selector */}
-          <div className="mb-5">
-            <label className="block text-[11px] font-bold text-on-surface-variant uppercase tracking-[0.08em] mb-2.5">
+          <div className="space-y-2.5">
+            <label className="block text-[10px] font-bold text-text3 uppercase tracking-[0.2em] ml-1">
               Category Type
             </label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-2.5">
               {Object.entries(TYPE_CONFIG).map(([key, conf]) => (
                 <label
                   key={key}
-                  className={`flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl cursor-pointer border-[1.5px] transition-all duration-200`}
+                  className={`flex flex-col items-center justify-center gap-2 p-3 rounded-xl cursor-pointer border-[1.5px] transition-all duration-300 ${
+                    selectedType === key 
+                      ? 'shadow-sm translate-y-[-1px]' 
+                      : 'bg-bg3 border-border grayscale opacity-60 hover:grayscale-0 hover:opacity-100'
+                  }`}
                   style={{
-                    backgroundColor:
-                      selectedType === key ? conf.bg : 'var(--input-bg)',
-                    borderColor:
-                      selectedType === key ? conf.border : 'var(--input-bg)',
+                    backgroundColor: selectedType === key ? conf.bg : undefined,
+                    borderColor: selectedType === key ? conf.border : undefined,
                   }}
                 >
                   <input
@@ -231,20 +203,18 @@ const AddCategoryPopup = ({
                     className="hidden"
                   />
                   <span
-                    className="material-symbols-outlined text-[20px]"
+                    className="material-symbols-outlined text-[22px]"
                     style={{
-                      color:
-                        selectedType === key ? conf.color : 'var(--text-muted)',
+                      color: selectedType === key ? conf.color : 'var(--text3)',
                       fontVariationSettings: "'FILL' 0",
                     }}
                   >
                     {conf.icon}
                   </span>
                   <span
-                    className="text-[11px] font-bold tracking-[0.04em]"
+                    className="text-[10px] font-black tracking-widest uppercase"
                     style={{
-                      color:
-                        selectedType === key ? conf.color : 'var(--text-muted)',
+                      color: selectedType === key ? conf.color : 'var(--text3)',
                     }}
                   >
                     {conf.label}
@@ -253,46 +223,40 @@ const AddCategoryPopup = ({
               ))}
             </div>
             {errors.type && (
-              <p className="mt-1.5 text-[11px] text-error">
+              <p className="mt-1.5 text-[11px] font-medium text-red">
                 {errors.type.message}
               </p>
             )}
           </div>
 
           {/* Name */}
-          <div className="mb-5">
-            <label className="block text-[11px] font-bold text-on-surface-variant uppercase tracking-[0.08em] mb-2">
+          <div className="space-y-2">
+            <label className="block text-[10px] font-bold text-text3 uppercase tracking-[0.2em] ml-1">
               Category Name
             </label>
             <input
               type="text"
               {...register('name')}
               disabled={limitReached}
-              placeholder={
-                limitReached
-                  ? 'Limit reached...'
-                  : 'e.g. Groceries, Salary, Rent…'
-              }
-              className={inputClass('name')}
-              onFocus={() => setFocusedField('name')}
-              onBlur={() => setFocusedField(null)}
+              placeholder={limitReached ? 'Limit reached...' : 'e.g. Groceries, Rent…'}
+              className="w-full bg-bg3 border border-border rounded-xl py-3 px-4 text-text focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent/40 transition-all placeholder:text-text3/30 text-sm font-medium"
             />
             {errors.name && (
-              <p className="mt-1.5 text-[11px] text-error">
+              <p className="mt-1.5 text-[11px] font-medium text-red">
                 {errors.name.message}
               </p>
             )}
           </div>
 
           {/* Icon picker */}
-          <div className="mb-6">
-            <label className="block text-[11px] font-bold text-on-surface-variant uppercase tracking-[0.08em] mb-2">
-              Icon &nbsp;
-              <span className="text-on-surface-variant font-normal normal-case">
-                Selected: {selectedIcon}
+          <div className="space-y-2">
+            <label className="block text-[10px] font-bold text-text3 uppercase tracking-[0.2em] ml-1">
+              Identity Icon &nbsp;
+              <span className="text-text3/40 font-medium normal-case">
+                {selectedIcon}
               </span>
             </label>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-2 max-h-[120px] overflow-y-auto pr-1 hide-scrollbar">
               {ICONS.map((ic) => (
                 <button
                   key={ic}
@@ -302,10 +266,10 @@ const AddCategoryPopup = ({
                     setSelectedIcon(ic);
                     setValue('icon', ic);
                   }}
-                  className={`w-9 h-9 text-lg rounded-lg cursor-pointer border-[1.5px] transition-all duration-150 ${
+                  className={`w-10 h-10 text-xl rounded-xl cursor-pointer border-[1.5px] transition-all duration-200 ${
                     selectedIcon === ic
-                      ? 'bg-surface-variant border-surface-variant'
-                      : 'bg-secondary-container border-secondary-container'
+                      ? 'bg-accent-glow border-accent'
+                      : 'bg-bg3 border-border hover:border-text3/30'
                   } ${limitReached ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   {ic}
@@ -315,34 +279,31 @@ const AddCategoryPopup = ({
           </div>
 
           {/* Actions */}
-          <div className="flex gap-2.5">
+          <div className="flex gap-4 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 p-3 bg-secondary-container border border-secondary-container rounded-[10px] text-on-surface-variant text-[13px] font-semibold cursor-pointer"
+              className="flex-1 h-12 bg-bg3 border border-border hover:bg-bg4 text-text3 hover:text-text rounded-2xl text-[10px] font-bold uppercase tracking-widest transition-all"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading || limitReached}
-              className={`flex-[2] p-3 border-none rounded-[10px] text-background text-[13px] font-bold flex items-center justify-center gap-2 ${
+              className={`flex-[2] h-12 rounded-2xl text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-accent/20 transition-all flex items-center justify-center gap-2 ${
                 loading || limitReached
-                  ? 'bg-surface-variant cursor-not-allowed text-primary'
-                  : 'bg-primary cursor-pointer'
+                  ? 'bg-bg4 cursor-not-allowed text-text3'
+                  : 'bg-gradient-to-r from-accent to-accent2 hover:scale-[1.02] active:scale-[0.98]'
               }`}
             >
               {loading ? (
-                <>
-                  <div className="w-3.5 h-3.5 border-2 border-[rgba(6,20,35,0.3)] border-t-background rounded-full animate-spin" />{' '}
-                  Saving...
-                </>
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
                 <>
                   <span className="material-symbols-outlined text-base font-semibold">
                     {limitReached ? 'lock' : 'check'}
                   </span>
-                  {editCategory ? 'Update Category' : 'Create Category'}
+                  {editCategory ? 'Update' : 'Confirm'}
                 </>
               )}
             </button>

@@ -10,10 +10,14 @@ import RecurringHistoryPopup from './RecurringHistoryPopup';
 import { DeleteConfirmModal } from './SharedComponents';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import { useMediaQuery } from '@/hooks/use-media-query';
 
 dayjs.extend(relativeTime);
 
 const Recurring = () => {
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
+  const isMobile = useMediaQuery('(max-width: 640px)');
+  
   const [tasks, setTasks] = useState([]);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
@@ -133,54 +137,21 @@ const Recurring = () => {
   };
 
   return (
-    <div className="page-body p-6 min-h-screen bg-[#080B12]">
-      {/* KPI Header */}
-      <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard
-          label="Est. Monthly Outflow"
-          value={formatAmount(stats.monthlyOutflow, currency)}
-          color="red"
-          icon="💸"
-          subtext="Projected recurring expenses"
-        />
-        <KpiCard
-          label="Active Rules"
-          value={stats.count}
-          color="blue"
-          icon="⚙️"
-          subtext={`${stats.autoCount} automation protocols active`}
-        />
-        <KpiCard
-          label="Next Execution"
-          value={stats.nextDue ? dayjs(stats.nextDue).format('D MMM') : 'N/A'}
-          color="amber"
-          icon="🕒"
-          subtext={
-            stats.nextDue ? dayjs(stats.nextDue).fromNow() : 'No upcoming tasks'
-          }
-        />
-        <KpiCard
-          label="Compliance Rate"
-          value="100%"
-          color="green"
-          icon="✅"
-          subtext="All standing orders processed"
-        />
-      </div>
-
-      {/* Header Actions */}
-      <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-bold tracking-tight text-[#EEF0F8]">
+    <div className="page-body p-4 sm:p-6 md:p-8 min-h-screen bg-bg pb-32 sm:pb-8">
+      {/* Header Section */}
+      <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div className="space-y-1">
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-text">
             Standing Orders
-          </h2>
-          <p className="text-xs text-[#8892B0]">
+          </h1>
+          <p className="text-sm text-text3 font-medium">
             Manage autonomous and assisted recurring transactions.
           </p>
         </div>
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          <div className="relative flex-1 sm:w-64">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs opacity-40">
+
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div className="relative group flex-1 sm:w-64 md:w-80">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg opacity-40 group-focus-within:opacity-100 group-focus-within:text-accent transition-all">
               🔍
             </span>
             <input
@@ -188,44 +159,81 @@ const Recurring = () => {
               placeholder="Search protocols..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full h-10 bg-[#0E1220] border border-white/5 rounded-xl px-9 text-xs text-[#EEF0F8] outline-none focus:border-[#5B8DEF]/30"
+              className="w-full h-12 bg-bg2 border border-border/60 rounded-2xl pl-12 pr-4 text-sm text-text font-medium outline-none focus:border-accent/40 focus:ring-4 focus:ring-accent/5 transition-all placeholder:text-text3/30"
             />
           </div>
-          <button
-            onClick={handleAddNew}
-            className="flex h-10 items-center gap-2 rounded-xl bg-[#5B8DEF] px-5 text-xs font-bold text-white transition-all hover:bg-[#4070D4] hover:-translate-y-0.5 shadow-lg shadow-[#5B8DEF]/10"
-          >
-            <span>{limitReached ? '🔒' : '+'}</span> Establish Rule
-          </button>
+          {!isMobile && (
+            <button
+              onClick={handleAddNew}
+              className="h-12 flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-accent to-accent2 px-6 text-[11px] font-black uppercase tracking-widest text-white shadow-xl shadow-accent/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <span className="text-sm">{limitReached ? '🔒' : '+'}</span> Establish Rule
+            </button>
+          )}
         </div>
       </div>
 
+      {/* KPI Overview */}
+      <div className="mb-10 flex flex-wrap gap-4">
+        <KpiCard
+          label="Est. Monthly Outflow"
+          value={formatAmount(stats.monthlyOutflow, currency)}
+          type="expense"
+          icon="💸"
+          subtext="Projected recurring expenses"
+        />
+        <KpiCard
+          label="Active Protocols"
+          value={stats.count}
+          type="accent"
+          icon="⚙️"
+          subtext={`${stats.autoCount} automation rules active`}
+        />
+        <KpiCard
+          label="Next Execution"
+          value={stats.nextDue ? dayjs(stats.nextDue).format('D MMM') : 'N/A'}
+          type="warning"
+          icon="🕒"
+          subtext={
+            stats.nextDue ? dayjs(stats.nextDue).fromNow() : 'No upcoming tasks'
+          }
+        />
+        <KpiCard
+          label="System Health"
+          value="100%"
+          type="income"
+          icon="✅"
+          subtext="All standing orders processed"
+        />
+      </div>
+
+      {/* Grid List */}
       {loading && tasks.length === 0 ? (
-        <div className="flex h-64 flex-col items-center justify-center space-y-4 opacity-50">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#5B8DEF] border-t-transparent" />
-          <p className="text-xs font-mono tracking-tighter text-[#5B8DEF]">
-            Synchronizing rules from cloud…
+        <div className="flex h-64 flex-col items-center justify-center space-y-6">
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-accent border-t-transparent shadow-lg shadow-accent/10" />
+          <p className="text-xs font-black uppercase tracking-widest text-accent animate-pulse">
+            Synchronizing rules…
           </p>
         </div>
       ) : tasks.length === 0 ? (
         <div
           onClick={handleAddNew}
-          className="flex h-64 cursor-pointer flex-col items-center justify-center rounded-[32px] border-2 border-dashed border-white/5 bg-white/[0.01] transition-all hover:bg-white/[0.03] hover:border-white/10"
+          className="flex h-80 cursor-pointer flex-col items-center justify-center rounded-[40px] border-2 border-dashed border-border/40 bg-bg2/30 transition-all hover:bg-bg2/50 hover:border-accent/40 group"
         >
-          <div className="mb-4 text-5xl opacity-40">
+          <div className="mb-6 text-6xl group-hover:scale-110 transition-transform duration-500 grayscale opacity-40 group-hover:grayscale-0 group-hover:opacity-100">
             {limitReached ? '🔒' : '🤖'}
           </div>
-          <p className="text-sm font-semibold text-[#EEF0F8]">
+          <p className="text-lg font-black text-text tracking-tight">
             Zero automation rules found
           </p>
-          <p className="mt-1 text-xs text-[#4A5578]">
+          <p className="mt-2 text-sm text-text3 font-medium max-w-[280px] text-center px-4">
             {limitReached
-              ? 'Upgrade to PRO to automate transactions'
-              : 'Click to automate your first recurring transaction'}
+              ? 'Upgrade to PRO to unlock advanced automation protocols.'
+              : 'Deploy your first recurring protocol to automate your financial life.'}
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">
+        <div className="flex flex-wrap gap-6">
           {filteredTasks.map((task) => (
             <RecurringCard
               key={task._id}
@@ -247,20 +255,34 @@ const Recurring = () => {
             />
           ))}
 
-          <div
+          {!limitReached && (
+            <div
+              onClick={handleAddNew}
+              className="flex min-h-[220px] w-full sm:w-[calc(50%-12px)] xl:w-[calc(33.33%-16px)] cursor-pointer flex-col items-center justify-center rounded-[32px] border-2 border-dashed border-border/40 bg-bg2/20 transition-all hover:bg-bg2/40 hover:border-accent/40 group"
+            >
+              <div className="w-12 h-12 flex items-center justify-center rounded-2xl bg-bg3 text-2xl text-text3 group-hover:bg-accent group-hover:text-white transition-all duration-300 shadow-sm">
+                +
+              </div>
+              <div className="text-[11px] font-black uppercase tracking-widest text-text mt-4">
+                New Protocol
+              </div>
+              <div className="mt-1 text-[10px] font-medium text-text3">
+                Deploy automated ledger rule
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Mobile FAB */}
+      {isMobile && !limitReached && !isPopupOpen && !isHistoryOpen && !isDeleteOpen && (
+        <div className="fixed right-6 bottom-24 z-[99999] isolate">
+          <button
             onClick={handleAddNew}
-            className="flex min-h-[180px] cursor-pointer flex-col items-center justify-center rounded-[28px] border-2 border-dashed border-white/5 bg-white/[0.01] transition-all hover:bg-white/[0.03] group"
+            className="h-16 w-16 flex items-center justify-center rounded-2xl bg-gradient-to-br from-accent to-accent2 text-white shadow-[0_20px_50px_rgba(0,0,0,0.3),0_0_20px_var(--accent-glow)] active:scale-95 transition-all animate-in fade-in zoom-in duration-300 backdrop-blur-md border border-white/20"
           >
-            <div className="text-2xl text-[#4A5578] group-hover:text-[#5B8DEF] transition-colors">
-              {limitReached ? '🔒' : '+'}
-            </div>
-            <div className="text-xs font-bold text-[#EEF0F8] mt-2">
-              New Protocol
-            </div>
-            <div className="mt-1 text-[10px] text-[#4A5578]">
-              {limitReached ? 'Limit Reached' : 'Deploy automated ledger rule'}
-            </div>
-          </div>
+            <span className="text-3xl font-light">+</span>
+          </button>
         </div>
       )}
 
@@ -290,35 +312,44 @@ const Recurring = () => {
   );
 };
 
-const KpiCard = ({ label, value, color, icon, subtext }) => {
-  const colorMap = {
-    blue: 'border-b-[#5B8DEF]',
-    red: 'border-b-[#FF6B6B]',
-    green: 'border-b-[#2DD4A0]',
-    amber: 'border-b-[#F5A623]',
+const KpiCard = ({ label, value, type, icon, subtext }) => {
+  const typeStyles = {
+    accent: 'border-b-accent shadow-accent/5',
+    income: 'border-b-green shadow-green/5',
+    expense: 'border-b-red shadow-red/5',
+    warning: 'border-b-amber shadow-amber/5',
   };
 
   return (
     <div
       className={cn(
-        'relative overflow-hidden rounded-[24px] border-b-4 bg-[#0E1220] p-6 border border-white/5 shadow-xl transition-transform hover:scale-[1.02]',
-        colorMap[color],
+        'group relative overflow-hidden rounded-[32px] border-b-[6px] bg-bg2 p-7 border border-border/40 shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98]',
+        'w-full sm:w-[calc(50%-8px)] lg:w-[calc(25%-12px)]',
+        typeStyles[type] || typeStyles.accent,
       )}
     >
-      <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-white/[0.03] text-xl">
-        {icon}
-      </div>
-      <div className="text-[10px] font-extrabold uppercase tracking-widest text-[#4A5578]">
-        {label}
-      </div>
-      <div className="mt-1.5 font-mono text-2xl font-bold tracking-tighter text-[#EEF0F8]">
-        {value}
-      </div>
-      {subtext && (
-        <div className="mt-2.5 text-[10px] font-medium text-[#8892B0] opacity-80">
-          {subtext}
+      <div className="flex items-start justify-between mb-4">
+        <div className="h-12 w-12 flex items-center justify-center rounded-2xl bg-bg3/50 text-2xl group-hover:scale-110 transition-transform">
+          {icon}
         </div>
-      )}
+        <div className="h-1 w-12 rounded-full bg-border/40" />
+      </div>
+      <div className="space-y-1">
+        <div className="text-[10px] font-black uppercase tracking-[0.2em] text-text3">
+          {label}
+        </div>
+        <div className="font-mono text-3xl font-black tracking-tighter text-text">
+          {value}
+        </div>
+        {subtext && (
+          <div className="text-[10px] font-medium text-text3 opacity-70">
+            {subtext}
+          </div>
+        )}
+      </div>
+      
+      {/* Decorative Glow */}
+      <div className="absolute -right-4 -top-4 w-24 h-24 bg-accent/5 blur-3xl rounded-full" />
     </div>
   );
 };
@@ -336,29 +367,37 @@ const RecurringCard = ({
   return (
     <div
       className={cn(
-        'group relative rounded-[28px] border bg-[#0E1220] p-6 transition-all hover:shadow-2xl hover:border-white/10',
+        'group relative rounded-[36px] border bg-bg2 p-7 transition-all duration-300 hover:shadow-2xl hover:translate-y-[-4px]',
+        'w-full sm:w-[calc(50%-12px)] xl:w-[calc(33.33%-16px)]',
         isActive
-          ? 'border-white/5 shadow-lg shadow-black/20'
-          : 'border-white/5 opacity-60 grayscale-[0.5]',
+          ? 'border-border/60 shadow-lg shadow-black/10'
+          : 'border-border/40 opacity-60 grayscale-[0.5]',
       )}
     >
       {/* Header Info */}
-      <div className="mb-5 flex items-start justify-between">
+      <div className="mb-6 flex items-start justify-between">
         <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-[18px] bg-[#141928] text-2xl border border-white/5 group-hover:scale-110 transition-transform">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-bg3/50 text-3xl border border-border/40 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500">
             {task.categoryId?.icon || (task.type === 'TRANSFER' ? '⇄' : '📝')}
           </div>
           <div>
-            <h3 className="text-sm font-extrabold text-[#EEF0F8] leading-none mb-1.5">
+            <h3 className="text-base font-black text-text tracking-tight mb-1">
               {task.title}
             </h3>
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold text-[#8892B0] uppercase tracking-wide">
-                {task.accountId?.name}{' '}
-                {task.toAccountId ? `→ ${task.toAccountId?.name}` : ''}
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <span className="text-[10px] font-black text-text3 uppercase tracking-widest">
+                {task.accountId?.name}
               </span>
-              <span className="h-1 w-1 rounded-full bg-[#4A5578]" />
-              <span className="text-[10px] font-bold text-[#5B8DEF] uppercase tracking-wide">
+              {task.toAccountId && (
+                <>
+                  <span className="text-text3/30">→</span>
+                  <span className="text-[10px] font-black text-accent uppercase tracking-widest">
+                    {task.toAccountId?.name}
+                  </span>
+                </>
+              )}
+              <div className="h-1 w-1 rounded-full bg-border/60 mx-1" />
+              <span className="text-[10px] font-black text-accent uppercase tracking-widest">
                 {task.frequency}
               </span>
             </div>
@@ -369,29 +408,29 @@ const RecurringCard = ({
         <button
           onClick={onToggle}
           className={cn(
-            'relative h-6 w-11 rounded-full p-1 transition-all duration-300',
-            isActive ? 'bg-[#2DD4A0]' : 'bg-[#1C2235]',
+            'relative h-7 w-12 rounded-full p-1.5 transition-all duration-500 ease-in-out border border-black/5',
+            isActive ? 'bg-green' : 'bg-bg4',
           )}
         >
           <div
             className={cn(
-              'h-4 w-4 rounded-full bg-white shadow-md transition-transform duration-300',
+              'h-4 w-4 rounded-full bg-white shadow-lg transition-transform duration-500 ease-in-out',
               isActive ? 'translate-x-5' : 'translate-x-0',
             )}
           />
         </button>
       </div>
 
-      {/* Financials */}
-      <div className="mb-5 bg-[#141928] rounded-2xl p-4 flex items-center justify-between border border-white/[0.02]">
+      {/* Financials Section */}
+      <div className="mb-6 bg-bg3/30 rounded-3xl p-5 flex items-center justify-between border border-border/20 backdrop-blur-sm">
         <div>
-          <p className="text-[9px] font-bold uppercase tracking-widest text-[#4A5578] mb-1">
-            Execution Amount
+          <p className="text-[9px] font-black uppercase tracking-widest text-text3 mb-1.5">
+            Protocol Amount
           </p>
           <p
             className={cn(
-              'font-mono text-xl font-black tracking-tight',
-              task.type === 'INCOME' ? 'text-[#2DD4A0]' : 'text-[#EEF0F8]',
+              'font-mono text-2xl font-black tracking-tighter',
+              task.type === 'INCOME' ? 'text-green' : 'text-text',
             )}
           >
             {task.type === 'INCOME' ? '+' : '-'}
@@ -399,57 +438,60 @@ const RecurringCard = ({
           </p>
         </div>
         <div className="text-right">
-          <p className="text-[9px] font-bold uppercase tracking-widest text-[#4A5578] mb-1">
+          <p className="text-[9px] font-black uppercase tracking-widest text-text3 mb-1.5">
             Next Settlement
           </p>
-          <p className="text-[11px] font-bold text-[#8892B0]">
-            {formatDate(task.nextDueDate)}
+          <p className="text-xs font-black text-text tracking-tight">
+            {dayjs(task.nextDueDate).format('DD MMM, YYYY')}
           </p>
         </div>
       </div>
 
       {/* Footer Actions */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <div
             className={cn(
-              'px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-tighter transition-colors',
+              'px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-colors',
               task.entryType === 'auto'
-                ? 'bg-[#5B8DEF]/10 text-[#5B8DEF]'
-                : 'bg-[#F5A623]/10 text-[#F5A623]',
+                ? 'bg-accent/10 text-accent'
+                : 'bg-warning/10 text-warning',
             )}
           >
             {task.entryType === 'auto' ? 'Autonomous' : 'Assisted'}
           </div>
           <button
             onClick={onHistory}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 text-[9px] font-bold text-[#8892B0] hover:bg-white/10 hover:text-[#EEF0F8] transition-all"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-bg3 text-[9px] font-black uppercase tracking-widest text-text3 hover:bg-bg4 hover:text-text transition-all"
           >
-            <span>📜</span> View Logs
+            <span>📜</span> Logs
           </button>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-2.5">
           <button
             onClick={onEdit}
-            className="h-8 w-8 flex items-center justify-center rounded-xl bg-[#141928] text-[#8892B0] hover:text-[#5B8DEF] hover:bg-[#5B8DEF]/10 transition-all border border-white/5"
+            className="h-10 w-10 flex items-center justify-center rounded-2xl bg-bg3 text-text3 hover:text-accent hover:bg-accent/10 transition-all border border-border/40 hover:border-accent/40"
             title="Configure Rule"
           >
-            <span className="material-symbols-outlined !text-[16px]">
+            <span className="material-symbols-outlined !text-[18px]">
               settings
             </span>
           </button>
           <button
             onClick={onDelete}
-            className="h-8 w-8 flex items-center justify-center rounded-xl bg-[#141928] text-[#8892B0] hover:text-[#FF6B6B] hover:bg-[#FF6B6B]/10 transition-all border border-white/5"
+            className="h-10 w-10 flex items-center justify-center rounded-2xl bg-bg3 text-text3 hover:text-red hover:bg-red/10 transition-all border border-border/40 hover:border-red/40"
             title="Terminate Protocol"
           >
-            <span className="material-symbols-outlined !text-[16px]">
+            <span className="material-symbols-outlined !text-[18px]">
               close
             </span>
           </button>
         </div>
       </div>
+
+      {/* Hover Gradient Overlay */}
+      <div className="absolute inset-0 rounded-[36px] bg-gradient-to-br from-accent/5 to-transparent opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-500" />
     </div>
   );
 };

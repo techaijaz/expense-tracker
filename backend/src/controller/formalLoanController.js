@@ -77,7 +77,7 @@ export default {
     getLoanDetails: async (req, res, next) => {
         try {
             const { id } = req.params
-            const loan = await formalLoanModel.findById(id)
+            const loan = await formalLoanModel.findOne({ _id: id, userId: req.authenticatedUser._id, isDeleted: false })
             if (!loan) return httpError(next, new Error('Loan not found'), req, 404)
 
             const schedule = await loanScheduleModel.find({ loanId: id }).sort({ installmentNo: 1 })
@@ -90,11 +90,11 @@ export default {
     payEMI: async (req, res, next) => {
         try {
             const { scheduleId } = req.body
-            const installment = await loanScheduleModel.findById(scheduleId)
+            const installment = await loanScheduleModel.findOne({ _id: scheduleId, userId: req.authenticatedUser._id })
             if (!installment) return httpError(next, new Error('Installment not found'), req, 404)
             if (installment.status === 'PAID') return httpError(next, new Error('EMI already paid'), req, 400)
 
-            const loan = await formalLoanModel.findById(installment.loanId)
+            const loan = await formalLoanModel.findOne({ _id: installment.loanId, userId: req.authenticatedUser._id, isDeleted: false })
             if (!loan) return httpError(next, new Error('Loan not found'), req, 404)
 
             // Create Transaction Entry using databseService (which handles its own session)
@@ -138,7 +138,7 @@ export default {
     prepayLoan: async (req, res, next) => {
         try {
             const { loanId, amount, accountId, date = new Date() } = req.body
-            const loan = await formalLoanModel.findById(loanId)
+            const loan = await formalLoanModel.findOne({ _id: loanId, userId: req.authenticatedUser._id, isDeleted: false })
             if (!loan) return httpError(next, new Error('Loan not found'), req, 404)
             if (amount > loan.outstandingBalance) return httpError(next, new Error('Prepayment amount exceeds outstanding balance'), req, 400)
 
@@ -206,7 +206,7 @@ export default {
     simulatePrepayment: async (req, res, next) => {
         try {
             const { loanId, extraAmount } = req.body
-            const loan = await formalLoanModel.findById(loanId)
+            const loan = await formalLoanModel.findOne({ _id: loanId, userId: req.authenticatedUser._id, isDeleted: false })
             if (!loan) return httpError(next, new Error('Loan not found'), req, 404)
 
             const currentOutstanding = loan.outstandingBalance

@@ -12,6 +12,13 @@ import { DateRangePicker } from './DateRangePicker';
 import { DeleteConfirmModal } from './SharedComponents';
 import TransectionPopup from './TransectionPopup';
 import { toast } from 'sonner';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import api from '@/utils/httpMethods';
 
 export default function Transections() {
@@ -51,6 +58,7 @@ export default function Transections() {
   });
   const [page, setPage] = useState(1);
   const [limit] = useState(20);
+  const [overview, setOverview] = useState(null);
 
   // Fetch Parties
   useEffect(() => {
@@ -110,6 +118,23 @@ export default function Transections() {
     fetchTransactions();
   }, [fetchTransactions]);
 
+  // Fetch Overview for Trends
+  useEffect(() => {
+    const fetchOverview = async () => {
+      try {
+        const params = {
+          startDate: dateRange?.from?.toISOString(),
+          endDate: dateRange?.to?.toISOString(),
+        };
+        const res = await api.get('/reports/overview', { params });
+        setOverview(res.data.data);
+      } catch (e) {
+        console.error('Failed to fetch overview');
+      }
+    };
+    fetchOverview();
+  }, [dateRange]);
+
   useEffect(() => {
     if (data) {
       dispatch(setTransections(data?.data || data?.transactions || data));
@@ -121,11 +146,12 @@ export default function Transections() {
     [transections],
   );
 
-  // Summary
-  const inflow = list
+  // Summary — use overview API totals (full date-range), fall back to paginated list if not loaded yet
+  // The /reports/overview endpoint returns: { currentMonth: { income, expense, savings }, comparison: {...} }
+  const inflow = overview?.currentMonth?.income ?? list
     .filter((t) => t && ['INCOME', 'income'].includes(t.type || t.categoryType))
     .reduce((acc, curr) => acc + (curr.amount || 0), 0);
-  const outflow = list
+  const outflow = overview?.currentMonth?.expense ?? list
     .filter(
       (t) => t && ['EXPENSE', 'expense'].includes(t.type || t.categoryType),
     )
@@ -184,6 +210,18 @@ export default function Transections() {
     const typeName = (t.type || 'expense').toLowerCase();
     if (typeName === 'income') return { cls: 'txn-amount credit', prefix: '+' };
     if (typeName === 'transfer') return { cls: 'txn-amount', prefix: '' };
+    if (typeName === 'debt') {
+      // BORROWED = money received (+), LENT = money paid out (-)
+      const sub = (t.debtType || '').toUpperCase();
+      if (sub === 'BORROWED') return { cls: 'txn-amount credit', prefix: '+' };
+      return { cls: 'txn-amount debit', prefix: '-' }; // LENT or unknown
+    }
+    if (typeName === 'repayment') {
+      // REPAYMENT_IN = collecting back (money received, +), REPAYMENT_OUT = paying back (-)
+      const sub = (t.debtType || '').toUpperCase();
+      if (sub === 'REPAYMENT_IN' || sub === 'REPAY_IN') return { cls: 'txn-amount credit', prefix: '+' };
+      return { cls: 'txn-amount debit', prefix: '-' };
+    }
     return { cls: 'txn-amount debit', prefix: '-' };
   };
 
@@ -197,37 +235,46 @@ export default function Transections() {
   return (
     <div className="txn-page-wrap">
       {/* ── SUMMARY KPI CARDS ── */}
-      <div className="txn-kpi-row">
-        <div className="kpi-card green">
+      <div className="flex flex-wrap gap-4 mb-4">
+        <div className="kpi-card green flex-1 min-w-full md:min-w-[calc(50%-0.5rem)] lg:min-w-0">
           <div className="kpi-label">Total Inflow</div>
           <div className="kpi-val" style={{ fontSize: 20 }}>
             {formatAmount(inflow)}
           </div>
-          <div className="kpi-change up">↑ +12% vs last month</div>
+          {overview?.comparison?.incomeChange !== undefined && inflow > 0 && (
+            <div className={`kpi-change ${overview.comparison.incomeChange >= 0 ? 'up' : 'down'}`}>
+              {overview.comparison.incomeChange >= 0 ? '↑' : '↓'} {Math.abs(overview.comparison.incomeChange)}% vs last month
+            </div>
+          )}
         </div>
-        <div className="kpi-card red">
+        <div className="kpi-card red flex-1 min-w-full md:min-w-[calc(50%-0.5rem)] lg:min-w-0">
           <div className="kpi-label">Total Outflow</div>
           <div className="kpi-val" style={{ fontSize: 20 }}>
             {formatAmount(outflow)}
           </div>
-          <div className="kpi-change down">↓ -5% vs last month</div>
+          {overview?.comparison?.expenseChange !== undefined && outflow > 0 && (
+            <div className={`kpi-change ${overview.comparison.expenseChange <= 0 ? 'up' : 'down'}`}>
+              {overview.comparison.expenseChange <= 0 ? '↓' : '↑'} {Math.abs(overview.comparison.expenseChange)}% vs last month
+            </div>
+          )}
         </div>
-        <div className="kpi-card blue">
+        <div className="kpi-card blue flex-1 min-w-full md:min-w-full lg:min-w-0">
           <div className="kpi-label">Net Precision</div>
           <div className="kpi-val" style={{ fontSize: 20 }}>
             {formatAmount(netPrecision)}
           </div>
-          <div className="kpi-change up">↑ +2.4% vs last month</div>
+          {overview?.comparison?.savingsChange !== undefined && (inflow > 0 || outflow > 0) && (
+            <div className={`kpi-change ${overview.comparison.savingsChange >= 0 ? 'up' : 'down'}`}>
+              {overview.comparison.savingsChange >= 0 ? '↑' : '↓'} {Math.abs(overview.comparison.savingsChange)}% vs last month
+            </div>
+          )}
         </div>
       </div>
 
       {/* ── FILTER BAR (row 1) ── */}
-      <div className="txn-filter-bar">
+      <div className="txn-filter-bar grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
         {/* Search */}
-        <div
-          className="filter-group search-wrap"
-          style={{ position: 'relative' }}
-        >
+        <div className="filter-group search-wrap">
           <label>Search</label>
           <div style={{ position: 'relative' }}>
             <span className="search-icon">🔍</span>
@@ -249,46 +296,54 @@ export default function Transections() {
         {/* Flow Type */}
         <div className="filter-group">
           <label>Flow Type</label>
-          <select
-            className="filter-input"
+          <Select
             value={type}
-            onChange={(e) => {
-              setType(e.target.value);
+            onValueChange={(val) => {
+              setType(val);
               setPage(1);
             }}
           >
-            <option value="all">All Flows</option>
-            <option value="expense">Expense</option>
-            <option value="income">Income</option>
-            <option value="transfer">Transfer</option>
-            <option value="debt">Debt</option>
-          </select>
+            <SelectTrigger className="filter-input">
+              <SelectValue placeholder="All Flows" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Flows</SelectItem>
+              <SelectItem value="expense">Expense</SelectItem>
+              <SelectItem value="income">Income</SelectItem>
+              <SelectItem value="transfer">Transfer</SelectItem>
+              <SelectItem value="debt">Debt</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Account */}
         <div className="filter-group">
           <label>Account</label>
-          <select
-            className="filter-input"
+          <Select
             value={account}
-            onChange={(e) => {
-              setAccount(e.target.value);
+            onValueChange={(val) => {
+              setAccount(val);
               setPage(1);
             }}
           >
-            <option value="all">All Accounts</option>
-            {accounts.map((a) => (
-              <option key={a._id} value={a._id}>
-                {a.name}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger className="filter-input">
+              <SelectValue placeholder="All Accounts" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Accounts</SelectItem>
+              {accounts.filter(a => !a.isDeleted).map((a) => (
+                <SelectItem key={a._id} value={a._id}>
+                  {a.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
       {/* ── FILTER BAR (row 2) ── */}
       <div
-        className="txn-filter-bar2"
+        className="txn-filter-bar2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4 items-end"
         style={{
           opacity: isPro ? 1 : 0.6,
           pointerEvents: isPro ? 'auto' : 'none',
@@ -296,50 +351,56 @@ export default function Transections() {
       >
         <div className="filter-group">
           <label>Category {!isPro && '🔒'}</label>
-          <select
-            className="filter-input"
+          <Select
             value={category}
-            onChange={(e) => {
-              setCategory(e.target.value);
+            onValueChange={(val) => {
+              setCategory(val);
               setPage(1);
             }}
             disabled={!isPro}
           >
-            <option value="all">All Categories</option>
-            {categories.map((c) => (
-              <option key={c._id} value={c._id}>
-                {c.icon} {c.name}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger className="filter-input">
+              <SelectValue placeholder="All Categories" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              {categories.map((c) => (
+                <SelectItem key={c._id} value={c._id}>
+                  {c.icon} {c.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div className="filter-group">
           <label>Party (Debt) {!isPro && '🔒'}</label>
-          <select
-            className="filter-input"
+          <Select
             value={party}
-            onChange={(e) => {
-              setParty(e.target.value);
+            onValueChange={(val) => {
+              setParty(val);
               setPage(1);
             }}
             disabled={!isPro}
           >
-            <option value="all">All Parties</option>
-            {parties.map((p) => (
-              <option key={p._id} value={p._id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger className="filter-input">
+              <SelectValue placeholder="All Parties" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Parties</SelectItem>
+              {parties.map((p) => (
+                <SelectItem key={p._id} value={p._id}>
+                  {p.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
-        <div
-          className="filter-group"
-          style={{ display: 'flex', alignItems: 'flex-end' }}
-        >
+        <div className="filter-group">
           <button
             className="txn-clear-btn"
             onClick={() => {
+              // Clear everything in one go - React 18 will batch these updates
               setSearch('');
               setDebouncedSearch('');
               setCategory('all');
@@ -364,8 +425,8 @@ export default function Transections() {
 
       {/* ── TRANSACTION TABLE ── */}
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-        {/* Table Header */}
-        <div className="txn-head">
+        {/* Table Header - Hidden on Mobile */}
+        <div className="txn-head hidden md:grid">
           <div>Type</div>
           <div>Description</div>
           <div>Category</div>
@@ -374,7 +435,7 @@ export default function Transections() {
         </div>
 
         {/* Body */}
-        {loading ? (
+        {loading && list.length === 0 ? (
           <div className="txn-empty-state">
             <div className="txn-spinner" />
             <span>Synchronizing Ledger…</span>
@@ -392,17 +453,51 @@ export default function Transections() {
             </div>
           </div>
         ) : (
-          list.filter(Boolean).map((t) => {
-            const badge = getTypeBadge(t);
-            const amtDisplay = getAmountDisplay(t);
-            const typeName = (t.type || 'expense').toLowerCase();
-            const isDebt = typeName === 'debt';
-            const isTransfer = typeName === 'transfer';
+          <div className={loading ? 'txn-loading' : ''}>
+            {list.filter(Boolean).map((t) => {
+              const badge = getTypeBadge(t);
+              const amtDisplay = getAmountDisplay(t);
+              const typeName = (t.type || 'expense').toLowerCase();
+              const isDebt = typeName === 'debt';
+              const isTransfer = typeName === 'transfer';
 
-            return (
-              <div key={t._id} className="txn-row">
-                {/* Type */}
-                <div>
+              return (
+                <div key={t._id} className="txn-row flex flex-col md:grid">
+                  {/* Mobile Header Row */}
+                <div className="flex items-center justify-between md:hidden mb-2">
+                  <span className={badge.cls}>{badge.label}</span>
+                  <div className="flex items-center gap-2">
+                    <span className={amtDisplay.cls}>
+                      {amtDisplay.prefix}
+                      {formatAmount(t.amount)}
+                    </span>
+                    <div className="flex gap-1">
+                      <button
+                        className="icon-btn"
+                        style={{ width: 24, height: 24, fontSize: 10 }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEdit(t);
+                        }}
+                      >
+                        ✏️
+                      </button>
+                      <button
+                        className="icon-btn"
+                        style={{ width: 24, height: 24, fontSize: 10, color: 'var(--red)' }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteClick(t._id);
+                        }}
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Desktop: Type (Col 1) */}
+                <div className="hidden md:block">
                   <span className={badge.cls}>{badge.label}</span>
                   {isDebt && t.partyId && (
                     <div
@@ -417,7 +512,7 @@ export default function Transections() {
                   )}
                 </div>
 
-                {/* Description + Account */}
+                {/* Description + Account (Col 2) */}
                 <div>
                   <div className="txn-desc">
                     {t.title || '— No description —'}
@@ -433,21 +528,21 @@ export default function Transections() {
                   </div>
                 </div>
 
-                {/* Category */}
-                <div>
+                {/* Category (Col 3) */}
+                <div className="mt-2 md:mt-0">
                   <span className="txn-cat">
                     {t.categoryId?.icon && <span>{t.categoryId.icon}</span>}
                     {t.categoryId?.name || 'Unclassified'}
                   </span>
                 </div>
 
-                {/* Date */}
-                <div className="txn-date">{formatDate(t.date)}</div>
+                {/* Date (Col 4) */}
+                <div className="txn-date mt-1 md:mt-0">{formatDate(t.date)}</div>
 
-                {/* Amount + Actions */}
+                {/* Amount + Actions (Col 5) - Desktop Only layout here */}
                 <div
+                  className="hidden md:flex"
                   style={{
-                    display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'flex-end',
                     gap: 6,
@@ -482,17 +577,31 @@ export default function Transections() {
                     </button>
                   </div>
                 </div>
-              </div>
-            );
-          })
+                
+                {/* Mobile Only: Party Info if Debt */}
+                {isDebt && t.partyId && (
+                  <div
+                    className="md:hidden mt-1"
+                    style={{
+                      fontSize: 10,
+                      color: 'var(--amber)',
+                    }}
+                  >
+                    👤 {t.partyId.name}
+                  </div>
+                )}
+                </div>
+              );
+            })}
+          </div>
         )}
 
         {/* ── PAGINATION FOOTER ── */}
-        <div className="txn-pagination">
-          <span>
+        <div className="txn-pagination flex-col sm:flex-row gap-4">
+          <span className="text-center sm:text-left">
             Showing {startRecord}–{endRecord} of {totalRecords} records
           </span>
-          <div style={{ display: 'flex', gap: 4 }}>
+          <div style={{ display: 'flex', gap: 4, justifyContent: 'center' }}>
             <button
               className="icon-btn txn-page-btn"
               onClick={() => setPage(1)}
@@ -508,8 +617,8 @@ export default function Transections() {
               ⟨
             </button>
 
-            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-              const start = Math.max(1, Math.min(totalPages - 4, page - 2));
+            {Array.from({ length: Math.min(totalPages, 3) }, (_, i) => {
+              const start = Math.max(1, Math.min(totalPages - 2, page - 1));
               const pageNum = start + i;
               if (pageNum < 1 || pageNum > totalPages) return null;
               return (
@@ -558,24 +667,18 @@ export default function Transections() {
           min-height: 100%;
         }
 
-        /* KPI Row */
-        .txn-kpi-row {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 14px;
-          margin-bottom: 16px;
+        /* KPI Row removed - using flexbox classes */
+        .txn-loading {
+          opacity: 0.6;
+          pointer-events: none;
+          transition: opacity 0.2s ease-in-out;
         }
 
-        /* Filter Bar Row 1 */
         .txn-filter-bar {
           background: var(--bg2);
           border: 1px solid var(--border);
           border-radius: var(--r) var(--r) 0 0;
           padding: 16px;
-          display: grid;
-          grid-template-columns: 1fr auto auto auto;
-          gap: 12px;
-          align-items: end;
         }
 
         /* Filter Bar Row 2 */
@@ -585,11 +688,13 @@ export default function Transections() {
           border-top: none;
           border-radius: 0 0 var(--r) var(--r);
           padding: 12px 16px;
-          display: grid;
-          grid-template-columns: 1fr 1fr auto;
-          gap: 12px;
           margin-bottom: 16px;
-          align-items: end;
+        }
+
+        @media (max-width: 768px) {
+          .txn-page-wrap { padding: 12px; }
+          .txn-filter-bar { border-radius: var(--r); margin-bottom: 8px; border-bottom: 1px solid var(--border); }
+          .txn-filter-bar2 { border-radius: var(--r); border-top: 1px solid var(--border); }
         }
 
         .filter-group label {
@@ -653,8 +758,6 @@ export default function Transections() {
 
         /* Table */
         .txn-head {
-          display: grid;
-          grid-template-columns: 110px 1fr 130px 90px 160px;
           gap: 12px;
           padding: 8px 16px;
           border-bottom: 1px solid var(--border);
@@ -665,15 +768,21 @@ export default function Transections() {
           font-weight: 600;
         }
         .txn-row {
-          display: grid;
-          grid-template-columns: 110px 1fr 130px 90px 160px;
-          gap: 12px;
           padding: 12px 16px;
           border-bottom: 1px solid var(--border);
-          align-items: center;
           transition: background .1s;
           cursor: pointer;
         }
+
+        @media (min-width: 768px) {
+          .txn-head, .txn-row {
+            display: grid;
+            grid-template-columns: 110px 1fr 130px 90px 160px;
+            gap: 12px;
+            align-items: center;
+          }
+        }
+
         .txn-row:last-child { border-bottom: none; }
         .txn-row:hover { background: var(--bg3); }
         .txn-row:hover .txn-row-actions { opacity: 1 !important; }

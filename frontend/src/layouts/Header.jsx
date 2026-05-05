@@ -1,35 +1,38 @@
 import { useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useSelector, useDispatch } from 'react-redux';
 import { DateRangePicker } from '@/components/DateRangePicker';
 import { setDateRange } from '@/redux/dashboardSlice';
+import AddAccounts from '@/components/AddAccounts';
 
-const PAGE_META = {
-  '/dashboard': { title: 'Dashboard', sub: 'Global overview' },
+const getPageMeta = (t) => ({
+  '/dashboard': { title: t('common.dashboard'), sub: 'Global overview' },
   '/transactions': {
-    title: 'Transactions',
+    title: t('common.transactions'),
     sub: 'Asset Ledger · All movements',
   },
-  '/accounts': { title: 'Accounts', sub: 'All your accounts' },
-  '/loans': { title: 'Loans', sub: 'Debt & Lending tracker' },
-  '/reports': { title: 'Reports', sub: 'Financial analytics' },
-  '/budget': { title: 'Budget', sub: 'Monthly spending limits' },
-  '/recurring': { title: 'Recurring', sub: 'Subscriptions & fixed payments' },
-  '/net-worth': { title: 'Net Worth', sub: 'Assets vs Liabilities' },
-  '/categories': { title: 'Categories', sub: 'Transaction categories' },
+  '/accounts': { title: t('common.accounts'), sub: 'Manage your financial hubs and liquidity' },
+  '/loans': { title: t('common.loans'), sub: 'Debt & Lending tracker' },
+  '/reports': { title: t('common.reports'), sub: 'Financial analytics' },
+  '/budget': { title: t('common.budget'), sub: 'Monthly spending limits' },
+  '/recurring': { title: t('common.recurring'), sub: 'Subscriptions & fixed payments' },
+  '/net-worth': { title: t('common.net_worth'), sub: 'Assets vs Liabilities' },
+  '/categories': { title: t('common.categories'), sub: 'Transaction categories' },
   '/settings': {
-    title: 'Settings',
+    title: t('common.settings'),
     sub: 'Configuration · Identity · Preferences',
   },
-};
+});
 
 export default function Header({ onMenuToggle, onNewTransaction }) {
+  const { t } = useTranslation();
   const location = useLocation();
   const dispatch = useDispatch();
   const user = useSelector((state) => state.auth.user);
   const { dateRange } = useSelector((state) => state.dashboard);
 
-  const meta = PAGE_META[location.pathname] || {
-    title: 'Dashboard',
+  const meta = getPageMeta(t)[location.pathname] || {
+    title: t('common.dashboard'),
     sub: 'Global overview',
   };
 
@@ -64,6 +67,9 @@ export default function Header({ onMenuToggle, onNewTransaction }) {
     to: dateRange.to ? new Date(dateRange.to) : null,
   };
 
+  const userObj = user?.user || user;
+  const plan = userObj?.plan || 'basic';
+
   return (
     <header className="topbar">
       {/* Mobile Hamburger */}
@@ -97,13 +103,29 @@ export default function Header({ onMenuToggle, onNewTransaction }) {
 
         {/* Export — only on transactions */}
         {location.pathname === '/transactions' && (
-          <button className="btn-outline hidden sm:flex">⬇ Export</button>
+          <button className="btn-outline hidden sm:flex">⬇ {t('common.export')}</button>
+        )}
+
+        {/* Add Account — only on accounts */}
+        {location.pathname === '/accounts' && (
+          <div className="hidden sm:flex">
+            <AddAccounts 
+              btnLabel="Add Account" 
+              customTrigger={
+                <button className="btn-new">
+                  {plan === 'basic' ? <span className="mr-1 text-[14px]">🔒</span> : <span style={{ fontSize: 16 }}>+</span>}
+                  <span className="hidden md:inline">Add Account</span>
+                  <span className="md:hidden">Add</span>
+                </button>
+              }
+            />
+          </div>
         )}
 
         {/* New Transaction */}
         <button onClick={onNewTransaction} className="btn-new">
           <span style={{ fontSize: 16 }}>+</span>
-          <span className="hidden sm:inline">New Transaction</span>
+          <span className="hidden sm:inline">{t('common.new_transaction')}</span>
           <span className="sm:hidden">New</span>
         </button>
 

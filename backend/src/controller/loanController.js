@@ -53,7 +53,7 @@ export default {
             })
 
             // Populate for response
-            const populated = await Loan.findById(loan._id).populate('party', 'name relation').populate('accountId', 'name type')
+            const populated = await Loan.findOne({ _id: loan._id, user: userId }).populate('party', 'name relation').populate('accountId', 'name type')
 
             httpResponse(req, res, 201, 'Loan created successfully', {
                 loan: populated,
@@ -123,7 +123,7 @@ export default {
             if (type !== undefined) loan.type = type
 
             await loan.save()
-            const populated = await Loan.findById(loan._id).populate('party', 'name relation').populate('accountId', 'name type')
+            const populated = await Loan.findOne({ _id: loan._id, user: req.authenticatedUser._id }).populate('party', 'name relation').populate('accountId', 'name type')
 
             httpResponse(req, res, 200, 'Loan updated successfully', populated)
         } catch (error) {
@@ -189,7 +189,7 @@ export default {
             loan.status = 'PAID'
             await loan.save()
 
-            const populated = await Loan.findById(loan._id).populate('party', 'name relation').populate('accountId', 'name type')
+            const populated = await Loan.findOne({ _id: loan._id, user: userId }).populate('party', 'name relation').populate('accountId', 'name type')
 
             httpResponse(req, res, 200, 'Loan settled successfully', {
                 loan: populated,

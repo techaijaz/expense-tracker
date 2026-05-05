@@ -421,7 +421,7 @@ const NetWorth = () => {
                 </p>
               </div>
 
-              <div className="flex h-[32px] min-w-[190px] rounded-xl border border-white/10 bg-[#141928] overflow-hidden">
+              <div className="flex h-[32px] min-w-[190px] rounded-xl border border-border bg-bg3 overflow-hidden">
                 {[
                   { id: '12M', label: '12 MONTHS' },
                   { id: 'ALL', label: 'ALL TIME' },
@@ -429,10 +429,10 @@ const NetWorth = () => {
                   <div
                     key={range.id}
                     onClick={() => setTimeRange(range.id)}
-                    className={`flex-1 flex items-center justify-center px-4 text-[9px] font-extrabold cursor-pointer transition-all border-r border-white/5 last:border-r-0 ${
+                    className={`flex-1 flex items-center justify-center px-4 text-[9px] font-extrabold cursor-pointer transition-all border-r border-border last:border-r-0 ${
                       timeRange === range.id
-                        ? 'bg-[#5B8DEF] text-white'
-                        : 'text-[#8892B0] hover:bg-white/[0.05]'
+                        ? 'bg-accent text-white'
+                        : 'text-text3 hover:bg-bg4'
                     }`}
                   >
                     {range.label}
@@ -574,7 +574,7 @@ const NetWorth = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="flex flex-wrap gap-6">
           {[
             {
               label: 'FORMAL LOANS',
@@ -601,7 +601,7 @@ const NetWorth = () => {
               badge: 'PRIVATE',
             },
           ].map((item, i) => (
-            <div key={i} className="account-card group shadow-sm">
+            <div key={i} className="account-card group shadow-sm" style={{ flex: '1 1 calc(33.333% - 16px)', minWidth: '280px' }}>
               <div className="flex justify-between items-start mb-6 transition-transform group-hover:-translate-y-1 duration-300">
                 <div
                   className={`w-10 h-10 rounded-xl bg-${item.color}-bg flex items-center justify-center text-${item.color}`}
@@ -642,7 +642,7 @@ const NetWorth = () => {
             <h3 className="text-xl font-bold text-text">Asset Portfolio</h3>
           </div>
 
-          <div className="flex h-[32px] min-w-[300px] rounded-xl border border-white/10 bg-[#141928] overflow-hidden self-start sm:self-auto">
+          <div className="flex h-[32px] min-w-[300px] rounded-xl border border-border bg-bg3 overflow-hidden self-start sm:self-auto">
             {[
               { id: 'Investments', label: 'INVESTMENTS' },
               { id: 'Physical Assets', label: 'PHYSICAL ASSETS' },
@@ -650,10 +650,10 @@ const NetWorth = () => {
               <div
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 flex items-center justify-center px-6 text-[9px] font-extrabold cursor-pointer transition-all border-r border-white/5 last:border-r-0 ${
+                className={`flex-1 flex items-center justify-center px-6 text-[9px] font-extrabold cursor-pointer transition-all border-r border-border last:border-r-0 ${
                   activeTab === tab.id
-                    ? 'bg-[#5B8DEF] text-white'
-                    : 'text-[#8892B0] hover:bg-white/[0.05]'
+                    ? 'bg-accent text-white'
+                    : 'text-text3 hover:bg-bg4'
                 }`}
               >
                 {tab.label}
@@ -663,7 +663,7 @@ const NetWorth = () => {
         </div>
 
         <div className="bg-bg2/10 border border-white/5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.02),0_4px_24px_-4px_rgba(0,0,0,0.3)] rounded-[28px] p-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="flex flex-wrap gap-6">
             {activeTab === 'Investments' ? (
               <>
                 {investmentItems.map((item) => {
@@ -674,6 +674,7 @@ const NetWorth = () => {
                     <div
                       key={item._id}
                       className="account-card group !p-6 flex flex-col justify-between overflow-hidden relative shadow-sm hover:shadow-xl hover:shadow-accent/5 transition-all duration-500"
+                      style={{ flex: '1 1 calc(33.333% - 16px)', minWidth: '280px' }}
                     >
                       <div className="flex items-center justify-between mb-8">
                         <div className="w-12 h-12 rounded-xl bg-bg3 flex items-center justify-center text-accent/80 group-hover:bg-accent/10 group-hover:text-accent transition-colors">
@@ -687,7 +688,7 @@ const NetWorth = () => {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent
                             align="end"
-                            className="w-48 bg-[#1a1f2e] border-white/5 shadow-2xl"
+                            className="w-48 bg-bg2 border-border shadow-2xl"
                           >
                             <DropdownMenuItem
                               onClick={() => setAccountToEdit(item)}
@@ -760,6 +761,7 @@ const NetWorth = () => {
                   <div
                     key={asset._id}
                     className="account-card group !p-6 flex flex-col justify-between overflow-hidden relative shadow-sm hover:shadow-xl hover:shadow-accent/5 transition-all duration-500"
+                    style={{ flex: '1 1 calc(33.333% - 16px)', minWidth: '280px' }}
                     onClick={() => setAssetToEdit(asset)}
                   >
                     <div className="flex items-center justify-between mb-8">
@@ -784,7 +786,7 @@ const NetWorth = () => {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent
                           align="end"
-                          className="w-48 bg-[#1a1f2e] border-white/5 shadow-2xl"
+                          className="w-48 bg-bg2 border-border shadow-2xl"
                         >
                           <DropdownMenuItem
                             onClick={() => setAssetToEdit(asset)}

@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '@/redux/authSlice';
 import SubscriptionPopup from '@/components/SubscriptionPopup';
@@ -7,6 +8,7 @@ import { toast } from 'sonner';
 import api from '@/utils/httpMethods';
 
 export default function SideMenu({ isOpen, setIsOpen }) {
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth);
@@ -93,19 +95,19 @@ export default function SideMenu({ isOpen, setIsOpen }) {
 
         {/* Navigation */}
         <nav className="sidebar-nav">
-          <NavItem to="/dashboard" icon="📊" label="Dashboard" />
-          <NavItem to="/transactions" icon="↔️" label="Transactions" />
-          <NavItem to="/accounts" icon="🏦" label="Accounts" />
+          <NavItem to="/dashboard" icon="📊" label={t('common.dashboard')} />
+          <NavItem to="/transactions" icon="↔️" label={t('common.transactions')} />
+          <NavItem to="/accounts" icon="🏦" label={t('common.accounts')} />
 
-          <div className="nav-section">Finance</div>
-          <NavItem to="/budget" icon="💰" label="Budget" />
-          <NavItem to="/recurring" icon="🔄" label="Recurring" />
-          <NavItem to="/loans" icon="🤝" label="Loans" />
-          <NavItem to="/net-worth" icon="📈" label="Net Worth" proOnly />
+          <div className="nav-section">{t('common.finance')}</div>
+          <NavItem to="/budget" icon="💰" label={t('common.budget')} />
+          <NavItem to="/recurring" icon="🔄" label={t('common.recurring')} />
+          <NavItem to="/loans" icon="🤝" label={t('common.loans')} />
+          <NavItem to="/net-worth" icon="📈" label={t('common.net_worth')} proOnly />
 
-          <div className="nav-section">Insights</div>
-          <NavItem to="/reports" icon="📋" label="Reports" proOnly />
-          <NavItem to="/settings" icon="⚙️" label="Settings" />
+          <div className="nav-section">{t('common.insights')}</div>
+          <NavItem to="/reports" icon="📋" label={t('common.reports')} proOnly />
+          <NavItem to="/settings" icon="⚙️" label={t('common.settings')} />
 
           {userData?.role === 'admin' && (
             <>
@@ -133,7 +135,7 @@ export default function SideMenu({ isOpen, setIsOpen }) {
           </div>
           <button onClick={handleLogout} className="nav-item w-full text-left">
             <span className="nav-icon">🚪</span>
-            <span>Logout</span>
+            <span>{t('common.logout')}</span>
           </button>
         </div>
 

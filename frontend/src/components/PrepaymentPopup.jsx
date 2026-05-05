@@ -4,6 +4,43 @@ import { toast } from 'sonner';
 import { formatAmount } from '@/utils/format';
 import api from '@/utils/httpMethods';
 import { updateAccount } from '@/redux/accountSlice';
+import { useMediaQuery } from '@/hooks/use-media-query';
+import { cn } from '@/utils/utils';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerDescription,
+  DrawerFooter,
+} from '@/components/ui/drawer';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { 
+  Loader2, 
+  TrendingDown, 
+  Sparkles, 
+  Banknote, 
+  ShieldCheck, 
+  ChevronRight,
+  Info,
+  CalendarDays
+} from 'lucide-react';
 
 export default function PrepaymentPopup({
   open,
@@ -13,6 +50,7 @@ export default function PrepaymentPopup({
   outstanding,
   onPaid,
 }) {
+  const isDesktop = useMediaQuery('(min-width: 768px)');
   const dispatch = useDispatch();
   const { accounts = [] } = useSelector((state) => state.accounts);
   const preferences = useSelector(
@@ -87,228 +125,177 @@ export default function PrepaymentPopup({
     }
   };
 
-  if (!open) return null;
-
-  return (
-    <div className="modal-overlay">
-      <div
-        style={{ position: 'absolute', inset: 0 }}
-        onClick={() => setOpen(false)}
-      ></div>
-      <div className="modal modal-sm" style={{ zIndex: 11 }}>
-        <div className="modal-close" onClick={() => setOpen(false)}>
-          ✕
-        </div>
-        <div className="modal-title">Prepayment Calculator</div>
-        <div className="modal-sub">
-          {loanName} · Outstanding{' '}
-          {formatAmount(outstanding, currency, decimalPlaces)}
-        </div>
-
-        <div className="form-group">
-          <label className="form-label">Extra Amount to Pay</label>
-          <input
+  const FormContent = (
+    <div className="space-y-6 py-2">
+      {/* Input Section */}
+      <div className="space-y-3">
+        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 ml-1 flex items-center gap-2">
+          <TrendingDown className="w-4 h-4 text-emerald-500" />
+          Extra Payout Amount
+        </Label>
+        <div className="relative group">
+          <span className="absolute left-5 top-1/2 -translate-y-1/2 text-2xl font-black text-emerald-500">₹</span>
+          <Input
             type="number"
-            className="form-input"
-            placeholder="₹ 50,000"
+            placeholder="0.00"
+            className="h-16 text-3xl font-black pl-10 bg-muted/30 border-border rounded-2xl focus:ring-2 focus:ring-emerald-500/20 transition-all placeholder:text-muted-foreground/20 text-foreground"
             value={extraAmount}
             onChange={(e) => setExtraAmount(e.target.value)}
           />
         </div>
+      </div>
 
-        <div
-          style={{
-            background: 'var(--accent-glow)',
-            border: '1px solid rgba(91,141,239,0.2)',
-            borderRadius: 'var(--r)',
-            padding: '16px',
-            margin: '16px 0',
-          }}
-        >
-          <div
-            style={{
-              fontSize: '11px',
-              color: 'var(--text3)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.08em',
-              fontWeight: 600,
-              marginBottom: '12px',
-            }}
-          >
-            Prepayment Impact
-          </div>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: '12px',
-            }}
-          >
-            <div
-              style={{
-                textAlign: 'center',
-                padding: '12px',
-                background: 'var(--bg3)',
-                border: '1px solid var(--border)',
-                borderRadius: 'var(--r2)',
-              }}
-            >
-              <div
-                style={{
-                  fontSize: '18px',
-                  fontWeight: 700,
-                  fontFamily: 'var(--mono)',
-                  color: 'var(--green)',
-                }}
-              >
-                {simulating ? '...' : simulation?.emisSaved || 0}
-              </div>
-              <div
-                style={{
-                  fontSize: '10px',
-                  color: 'var(--text2)',
-                  marginTop: '3px',
-                }}
-              >
-                EMIs saved
-              </div>
-            </div>
-            <div
-              style={{
-                textAlign: 'center',
-                padding: '12px',
-                background: 'var(--bg3)',
-                border: '1px solid var(--border)',
-                borderRadius: 'var(--r2)',
-              }}
-            >
-              <div
-                style={{
-                  fontSize: '18px',
-                  fontWeight: 700,
-                  fontFamily: 'var(--mono)',
-                  color: 'var(--green)',
-                }}
-              >
-                {simulating
-                  ? '...'
-                  : formatAmount(
-                      simulation?.interestSaved || 0,
-                      currency,
-                      decimalPlaces,
-                    )}
-              </div>
-              <div
-                style={{
-                  fontSize: '10px',
-                  color: 'var(--text2)',
-                  marginTop: '3px',
-                }}
-              >
-                Interest saved
-              </div>
-            </div>
-            <div
-              style={{
-                textAlign: 'center',
-                padding: '12px',
-                background: 'var(--bg3)',
-                border: '1px solid var(--border)',
-                borderRadius: 'var(--r2)',
-              }}
-            >
-              <div
-                style={{
-                  fontSize: '18px',
-                  fontWeight: 700,
-                  fontFamily: 'var(--mono)',
-                  color: 'var(--accent)',
-                }}
-              >
-                {simulating
-                  ? '...'
-                  : formatAmount(
-                      simulation?.newOutstanding ||
-                        outstanding - (parseFloat(extraAmount) || 0),
-                      currency,
-                      decimalPlaces,
-                    )}
-              </div>
-              <div
-                style={{
-                  fontSize: '10px',
-                  color: 'var(--text2)',
-                  marginTop: '3px',
-                }}
-              >
-                New outstanding
-              </div>
-            </div>
-            <div
-              style={{
-                textAlign: 'center',
-                padding: '12px',
-                background: 'var(--bg3)',
-                border: '1px solid var(--border)',
-                borderRadius: 'var(--r2)',
-              }}
-            >
-              <div
-                style={{
-                  fontSize: '18px',
-                  fontWeight: 700,
-                  fontFamily: 'var(--mono)',
-                  color: 'var(--amber)',
-                }}
-              >
-                {simulating ? '...' : simulation?.newTenureMonths || '—'}
-              </div>
-              <div
-                style={{
-                  fontSize: '10px',
-                  color: 'var(--text2)',
-                  marginTop: '3px',
-                }}
-              >
-                EMIs remaining
-              </div>
-            </div>
-          </div>
+      {/* Impact Grid Section */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between px-1">
+          <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-amber-500" />
+            Projected Savings Protocol
+          </Label>
+          {simulating && <Loader2 className="w-3 h-3 animate-spin text-primary" />}
         </div>
+        
+        <div className="grid grid-cols-2 gap-4">
+          <div className="p-5 rounded-2xl border border-emerald-500/10 bg-emerald-500/5 space-y-1.5 shadow-sm relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-12 h-12 bg-emerald-500/5 rounded-full -mr-6 -mt-6 blur-xl" />
+            <p className="text-[9px] font-bold text-emerald-500/70 uppercase tracking-widest relative z-10">Interest Saved</p>
+            <p className="text-xl font-black text-emerald-500 relative z-10">
+              {simulating ? '...' : formatAmount(simulation?.interestSaved || 0, currency, decimalPlaces)}
+            </p>
+          </div>
+          
+          <div className="p-5 rounded-2xl border border-emerald-500/10 bg-emerald-500/5 space-y-1.5 shadow-sm relative overflow-hidden">
+            <p className="text-[9px] font-bold text-emerald-500/70 uppercase tracking-widest">EMIs Saved</p>
+            <p className="text-xl font-black text-emerald-500">
+              {simulating ? '...' : simulation?.emisSaved || 0}
+            </p>
+          </div>
 
-        <div className="form-group">
-          <label className="form-label">Pay From Account</label>
-          <select
-            className="form-input"
-            value={selectedAccountId}
-            onChange={(e) => setSelectedAccountId(e.target.value)}
-          >
-            <option value="" disabled>
-              Select account
-            </option>
-            {accounts.map((a) => (
-              <option key={a._id} value={a._id}>
-                {a.name} (Bal:{' '}
-                {formatAmount(a.balance, currency, decimalPlaces)})
-              </option>
-            ))}
-          </select>
-        </div>
+          <div className="p-5 rounded-2xl border border-border bg-muted/30 space-y-1.5 shadow-sm">
+            <p className="text-[9px] font-bold text-muted-foreground/70 uppercase tracking-widest">New Balance</p>
+            <p className="text-xl font-black text-foreground">
+              {simulating ? '...' : formatAmount(simulation?.newOutstanding || (outstanding - (parseFloat(extraAmount) || 0)), currency, decimalPlaces)}
+            </p>
+          </div>
 
-        <div className="modal-actions" style={{ marginTop: '20px' }}>
-          <button className="btn-cancel" onClick={() => setOpen(false)}>
-            Cancel
-          </button>
-          <button
-            className="btn-save"
-            onClick={handlePrepay}
-            disabled={loading || simulating || !extraAmount}
-            style={{ flex: 1 }}
-          >
-            {loading ? 'Processing...' : 'Confirm Prepayment'}
-          </button>
+          <div className="p-5 rounded-2xl border border-border bg-muted/30 space-y-1.5 shadow-sm">
+            <p className="text-[9px] font-bold text-muted-foreground/70 uppercase tracking-widest">New Tenure</p>
+            <p className="text-xl font-black text-amber-500">
+              {simulating ? '...' : `${simulation?.newTenureMonths || '—'} m`}
+            </p>
+          </div>
         </div>
       </div>
+
+      {/* Source Account Selection */}
+      <div className="space-y-3 pt-2">
+        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 ml-1 flex items-center gap-2">
+          <Banknote className="w-4 h-4 text-primary" />
+          Funding Source
+        </Label>
+        <Select value={selectedAccountId} onValueChange={setSelectedAccountId}>
+          <SelectTrigger className="h-14 bg-muted/30 border-border rounded-2xl text-sm font-semibold focus:ring-2 focus:ring-primary/20 shadow-sm transition-all">
+            <SelectValue placeholder="Select payment account" />
+          </SelectTrigger>
+          <SelectContent className="rounded-2xl border-border bg-background">
+            {accounts.map((acc) => (
+              <SelectItem key={acc._id} value={acc._id} className="rounded-xl focus:bg-muted">
+                <div className="flex justify-between items-center w-full min-w-[260px] py-1">
+                  <span className="font-bold">{acc.name}</span>
+                  <span className="text-[11px] font-black text-primary bg-primary/10 px-2 py-0.5 rounded-md ml-4">
+                    {formatAmount(acc.balance, currency, decimalPlaces)}
+                  </span>
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
     </div>
+  );
+
+  const ActionButtons = (
+    <div className="flex flex-col sm:flex-row gap-3 w-full">
+      <Button 
+        variant="ghost" 
+        onClick={() => setOpen(false)} 
+        disabled={loading} 
+        className="flex-1 h-14 rounded-2xl font-bold text-muted-foreground order-2 sm:order-1 bg-muted/50 hover:bg-muted"
+      >
+        Cancel
+      </Button>
+      <Button 
+        onClick={handlePrepay}
+        disabled={loading || simulating || !extraAmount}
+        className="flex-[2] h-14 rounded-2xl bg-gradient-to-r from-primary to-primary/80 text-primary-foreground font-black px-6 shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98] order-1 sm:order-2"
+      >
+        {loading ? (
+          <span className="flex items-center gap-2">
+             <Loader2 className="animate-spin w-4 h-4" />
+             Optimizing...
+          </span>
+        ) : (
+          <span className="flex items-center gap-2">
+            Confirm Prepayment
+            <ChevronRight className="w-4 h-4" />
+          </span>
+        )}
+      </Button>
+    </div>
+  );
+
+  if (isDesktop) {
+    return (
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-[520px] p-0 bg-background border-border rounded-[2.5rem] overflow-hidden shadow-2xl">
+          <div className="px-8 pt-8 pb-4">
+            <DialogHeader className="mb-6">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center shadow-inner border border-primary/10">
+                  <CalendarDays className="text-primary w-6 h-6" />
+                </div>
+                <div>
+                  <DialogTitle className="text-2xl font-black tracking-tight text-foreground">Prepayment Protocol</DialogTitle>
+                  <DialogDescription className="text-xs font-bold text-muted-foreground uppercase tracking-[0.15em] mt-0.5">
+                    {loanName} · Outstanding: <span className="text-foreground">{formatAmount(outstanding, currency, decimalPlaces)}</span>
+                  </DialogDescription>
+                </div>
+              </div>
+            </DialogHeader>
+            {FormContent}
+            <div className="mt-8 pb-6">
+              {ActionButtons}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  return (
+    <Drawer open={open} onOpenChange={setOpen}>
+      <DrawerContent className="bg-background rounded-t-[2.5rem] border-border">
+        <div className="mx-auto w-12 h-1.5 bg-muted rounded-full mt-3 mb-2" />
+        <DrawerHeader className="text-left px-6">
+          <div className="flex items-center gap-4">
+             <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/10">
+                <CalendarDays className="text-primary w-6 h-6" />
+              </div>
+              <div>
+                <DrawerTitle className="text-2xl font-black tracking-tight text-foreground">Prepayment</DrawerTitle>
+                <DrawerDescription className="text-xs font-bold text-muted-foreground uppercase tracking-[0.15em] mt-0.5">
+                  {loanName} optimization
+                </DrawerDescription>
+              </div>
+          </div>
+        </DrawerHeader>
+        <div className="px-6 pb-6 overflow-y-auto max-h-[75vh]">
+          {FormContent}
+        </div>
+        <DrawerFooter className="px-6 pt-4 pb-10 border-t border-border bg-muted/10">
+          {ActionButtons}
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
   );
 }

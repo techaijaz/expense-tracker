@@ -134,16 +134,16 @@ const Reports = () => {
     <div className="page-body">
       {/* Top Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-text mb-1">
+        <div className="mb-4 md:mb-0">
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-text font-headline mb-1">
             Reports & Analytics
           </h1>
-          <p className="text-text2 text-sm">
+          <p className="text-text2 text-xs md:text-sm">
             Visualizing your financial ecosystem
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 md:gap-3">
           {/* Combined Period Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -153,24 +153,24 @@ const Reports = () => {
                 <ChevronDown className="w-3 h-3 opacity-50" />
               </button>
             </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-                className="bg-bg2 border-border text-text min-w-[160px]"
-              >
-                {periods.map((p) => {
-                  const locked = !isPro && p.id !== 'monthly';
-                  return (
-                    <DropdownMenuItem
-                      key={p.id}
-                      onClick={() => !locked && setPeriod(p.id)}
-                      className={`cursor-pointer gap-2 ${period === p.id ? 'text-accent font-bold bg-accent-glow' : 'text-text2'} ${locked ? 'opacity-50 grayscale' : ''}`}
-                    >
-                      {p.label}
-                      {locked && <span className="text-[10px] ml-auto">🔒</span>}
-                    </DropdownMenuItem>
-                  );
-                })}
-              </DropdownMenuContent>
+            <DropdownMenuContent
+              align="end"
+              className="bg-bg2 border-border text-text min-w-[160px]"
+            >
+              {periods.map((p) => {
+                const locked = !isPro && p.id !== 'monthly';
+                return (
+                  <DropdownMenuItem
+                    key={p.id}
+                    onClick={() => !locked && setPeriod(p.id)}
+                    className={`cursor-pointer gap-2 ${period === p.id ? 'text-accent font-bold bg-accent-glow' : 'text-text2'} ${locked ? 'opacity-50 grayscale' : ''}`}
+                  >
+                    {p.label}
+                    {locked && <span className="text-[10px] ml-auto">🔒</span>}
+                  </DropdownMenuItem>
+                );
+              })}
+            </DropdownMenuContent>
           </DropdownMenu>
 
           {/* Export Dropdown */}
@@ -212,79 +212,89 @@ const Reports = () => {
       </div>
 
       {/* Tabs */}
-      <div className="report-tabs mb-8 inline-flex">
+      <div className="report-tabs mb-8 flex overflow-x-auto hide-scrollbar whitespace-nowrap p-1 bg-bg3/50 backdrop-blur-sm border border-border rounded-xl w-full md:w-fit">
         {['Overview', 'Income', 'Expense', 'Savings', 'Cash Flow'].map(
           (tab) => (
-            <div
+            <button
               key={tab}
-              className={`report-tab ${activeTab === tab ? 'active' : ''}`}
+              className={`report-tab flex-1 md:flex-none px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                activeTab === tab
+                  ? 'bg-bg2 text-accent shadow-sm border border-border/50'
+                  : 'text-text2 hover:text-text hover:bg-bg4/30'
+              }`}
               onClick={() => setActiveTab(tab)}
             >
               {tab}
-            </div>
+            </button>
           ),
         )}
       </div>
 
       {/* Dynamic Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        {(activeTab === 'Overview' || activeTab === 'Income') && (
-          <div className="insight-card group hover:border-green transition-colors duration-300">
-            <div className="flex justify-between items-start mb-4">
-              <div className="insight-label">Total Income</div>
-              <div className="p-2 bg-green-bg rounded-lg text-green">
-                <ArrowUpRight className="w-5 h-5" />
-              </div>
+      <div className="flex flex-wrap gap-4 md:gap-6 mb-8">
+        <div className="insight-card group flex-1 min-w-[260px] p-6 bg-bg2 border border-border rounded-2xl hover:border-green/50 transition-all duration-300 shadow-sm hover:shadow-md">
+          <div className="flex justify-between items-start mb-4">
+            <div className="insight-label text-xs font-bold uppercase tracking-wider text-text3">
+              Total Income
             </div>
-            <div className="insight-val text-green mb-1">
-              {formatCurrency(currentMonth?.income || 0)}
-            </div>
-            <div
-              className={`flex items-center gap-1 text-[11px] font-medium ${comparison?.incomeChange >= 0 ? 'text-green' : 'text-red'}`}
-            >
-              {comparison?.incomeChange >= 0 ? '+' : ''}
-              {comparison?.incomeChange}% vs last {period}
+            <div className="p-2.5 bg-green-bg rounded-xl text-green group-hover:scale-110 transition-transform duration-300">
+              <ArrowUpRight className="w-5 h-5" />
             </div>
           </div>
-        )}
+          <div className="insight-val text-2xl md:text-3xl font-bold font-mono text-green mb-1">
+            {formatCurrency(currentMonth?.income || 0)}
+          </div>
+          <div
+            className={`flex items-center gap-1.5 text-xs font-semibold ${comparison?.incomeChange >= 0 ? 'text-green' : 'text-red'}`}
+          >
+            <TrendingUp
+              className={`w-3.5 h-3.5 ${comparison?.incomeChange >= 0 ? '' : 'rotate-180'}`}
+            />
+            {comparison?.incomeChange >= 0 ? '+' : ''}
+            {comparison?.incomeChange}% vs last {period}
+          </div>
+        </div>
 
-        {(activeTab === 'Overview' || activeTab === 'Expense') && (
-          <div className="insight-card group hover:border-red transition-colors duration-300">
-            <div className="flex justify-between items-start mb-4">
-              <div className="insight-label">Total Expenses</div>
-              <div className="p-2 bg-red-bg rounded-lg text-red">
-                <ArrowDownRight className="w-5 h-5" />
-              </div>
+        <div className="insight-card group flex-1 min-w-[260px] p-6 bg-bg2 border border-border rounded-2xl hover:border-red/50 transition-all duration-300 shadow-sm hover:shadow-md">
+          <div className="flex justify-between items-start mb-4">
+            <div className="insight-label text-xs font-bold uppercase tracking-wider text-text3">
+              Total Expenses
             </div>
-            <div className="insight-val text-red mb-1">
-              {formatCurrency(currentMonth?.expense || 0)}
-            </div>
-            <div
-              className={`flex items-center gap-1 text-[11px] font-medium ${comparison?.expenseChange <= 0 ? 'text-green' : 'text-red'}`}
-            >
-              {comparison?.expenseChange > 0 ? '+' : ''}
-              {comparison?.expenseChange}% vs last {period}
+            <div className="p-2.5 bg-red-bg rounded-xl text-red group-hover:scale-110 transition-transform duration-300">
+              <ArrowDownRight className="w-5 h-5" />
             </div>
           </div>
-        )}
+          <div className="insight-val text-2xl md:text-3xl font-bold font-mono text-red mb-1">
+            {formatCurrency(currentMonth?.expense || 0)}
+          </div>
+          <div
+            className={`flex items-center gap-1.5 text-xs font-semibold ${comparison?.expenseChange <= 0 ? 'text-green' : 'text-red'}`}
+          >
+            <TrendingDown
+              className={`w-3.5 h-3.5 ${comparison?.expenseChange <= 0 ? 'rotate-180' : ''}`}
+            />
+            {comparison?.expenseChange > 0 ? '+' : ''}
+            {comparison?.expenseChange}% vs last {period}
+          </div>
+        </div>
 
         {(activeTab === 'Overview' ||
           activeTab === 'Savings' ||
           activeTab === 'Cash Flow') && (
-          <div className="insight-card group hover:border-accent transition-colors duration-300">
+          <div className="insight-card group flex-1 min-w-[260px] p-6 bg-bg2 border border-border rounded-2xl hover:border-accent/50 transition-all duration-300 shadow-sm hover:shadow-md">
             <div className="flex justify-between items-start mb-4">
-              <div className="insight-label">
+              <div className="insight-label text-xs font-bold uppercase tracking-wider text-text3">
                 {activeTab === 'Cash Flow' ? 'Net Cash Flow' : 'Net Savings'}
               </div>
-              <div className="p-2 bg-accent-glow rounded-lg text-accent">
+              <div className="p-2.5 bg-accent-glow rounded-xl text-accent group-hover:scale-110 transition-transform duration-300">
                 <Wallet className="w-5 h-5" />
               </div>
             </div>
-            <div className="insight-val text-accent mb-1">
+            <div className="insight-val text-2xl md:text-3xl font-bold font-mono text-accent mb-1">
               {formatCurrency(currentMonth?.savings || 0)}
             </div>
-            <div className="insight-sub leading-tight">
-              <span className="font-bold text-text">
+            <div className="text-xs text-text2 font-medium flex items-center gap-1.5">
+              <span className="px-1.5 py-0.5 bg-accent-glow text-accent rounded text-[10px] font-bold">
                 {currentMonth?.income > 0
                   ? Math.round(
                       (currentMonth.savings / currentMonth.income) * 100,
@@ -300,9 +310,11 @@ const Reports = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         {/* Main Trend Chart */}
-        <div className="card h-full min-h-[400px] flex flex-col">
-          <div className="card-header border-b border-border pb-4 mb-6">
-            <div className="card-title">{activeTab} Trend</div>
+        <div className="card h-full min-h-[350px] md:min-h-[450px] flex flex-col p-6 bg-bg2 border border-border rounded-2xl shadow-sm">
+          <div className="card-header border-b border-border/50 pb-4 mb-6">
+            <div className="card-title text-base font-bold text-text">
+              {activeTab} Trend
+            </div>
             <div className="flex items-center gap-4 text-[10px] uppercase tracking-wider font-bold">
               {(activeTab === 'Overview' ||
                 activeTab === 'Income' ||
@@ -328,7 +340,7 @@ const Reports = () => {
               )}
             </div>
           </div>
-          <div className="flex-1 w-full h-[280px]">
+          <div className="flex-1 w-full h-[250px] md:h-[320px]">
             <ResponsiveContainer width="100%" height="100%">
               {activeTab === 'Savings' ? (
                 <AreaChart
@@ -346,12 +358,42 @@ const Reports = () => {
                       <stop
                         offset="5%"
                         stopColor="var(--purple)"
-                        stopOpacity={0.3}
+                        stopOpacity={0.4}
                       />
                       <stop
                         offset="95%"
                         stopColor="var(--purple)"
                         stopOpacity={0}
+                      />
+                    </linearGradient>
+                    <linearGradient
+                      id="colorAccent"
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1"
+                    >
+                      <stop
+                        offset="5%"
+                        stopColor="var(--accent)"
+                        stopOpacity={0.8}
+                      />
+                      <stop
+                        offset="95%"
+                        stopColor="var(--accent)"
+                        stopOpacity={0.4}
+                      />
+                    </linearGradient>
+                    <linearGradient id="colorRed" x1="0" y1="0" x2="0" y2="1">
+                      <stop
+                        offset="5%"
+                        stopColor="var(--red)"
+                        stopOpacity={0.8}
+                      />
+                      <stop
+                        offset="95%"
+                        stopColor="var(--red)"
+                        stopOpacity={0.4}
                       />
                     </linearGradient>
                   </defs>
@@ -425,9 +467,9 @@ const Reports = () => {
                     <Bar
                       dataKey="income"
                       name="Income"
-                      fill="var(--accent)"
-                      radius={[4, 4, 0, 0]}
-                      barSize={period === 'monthly' ? 12 : 30}
+                      fill="url(#colorAccent)"
+                      radius={[6, 6, 0, 0]}
+                      barSize={period === 'monthly' ? 14 : 32}
                     />
                   )}
                   {(activeTab === 'Overview' ||
@@ -436,10 +478,10 @@ const Reports = () => {
                     <Bar
                       dataKey="expense"
                       name="Expense"
-                      fill="var(--red)"
-                      fillOpacity={0.7}
-                      radius={[4, 4, 0, 0]}
-                      barSize={period === 'monthly' ? 12 : 30}
+                      fill="url(#colorRed)"
+                      fillOpacity={0.8}
+                      radius={[6, 6, 0, 0]}
+                      barSize={period === 'monthly' ? 14 : 32}
                     />
                   )}
                 </BarChart>
@@ -452,22 +494,22 @@ const Reports = () => {
         {activeTab === 'Overview' ||
         activeTab === 'Income' ||
         activeTab === 'Expense' ? (
-          <div className="card h-full flex flex-col">
-            <div className="card-header border-b border-border pb-4 mb-6">
-              <div className="card-title">
+          <div className="card h-full flex flex-col p-6 bg-bg2 border border-border rounded-2xl shadow-sm">
+            <div className="card-header border-b border-border/50 pb-4 mb-6">
+              <div className="card-title text-base font-bold text-text">
                 Top {activeTab === 'Income' ? 'Income' : 'Spending'} Categories
               </div>
             </div>
             <div className="top-cats flex-1 flex flex-col gap-6">
               {data.categories.length > 0 ? (
                 data.categories.slice(0, 5).map((cat, idx) => (
-                  <div key={idx} className="flex flex-col gap-2">
+                  <div key={idx} className="flex flex-col gap-3 group/cat">
                     <div className="flex justify-between items-end">
                       <div className="flex items-center gap-3">
-                        <span className="text-[10px] font-bold font-mono text-text3 opacity-50">
-                          0{idx + 1}
+                        <span className="flex items-center justify-center w-6 h-6 rounded-lg bg-bg3 text-[10px] font-bold font-mono text-text3 border border-border group-hover/cat:border-accent/30 group-hover/cat:text-accent transition-colors">
+                          {idx + 1}
                         </span>
-                        <span className="text-sm font-semibold text-text2 uppercase tracking-wide">
+                        <span className="text-sm font-semibold text-text2 tracking-tight group-hover/cat:text-text transition-colors">
                           {cat.categoryName}
                         </span>
                       </div>
@@ -475,9 +517,9 @@ const Reports = () => {
                         {formatCurrency(cat.totalAmount)}
                       </span>
                     </div>
-                    <div className="h-1.5 w-full bg-bg4 rounded-full overflow-hidden">
+                    <div className="h-2 w-full bg-bg3 rounded-full overflow-hidden border border-border/50">
                       <div
-                        className="h-full rounded-full transition-all duration-1000 ease-out"
+                        className="h-full rounded-full transition-all duration-1000 ease-out relative overflow-hidden"
                         style={{
                           width: `${cat.percentageOfTotal}%`,
                           backgroundColor:
@@ -493,12 +535,18 @@ const Reports = () => {
                                       ? 'var(--green)'
                                       : 'var(--teal)',
                         }}
-                      ></div>
+                      >
+                        <div className="absolute inset-0 bg-white/10" />
+                      </div>
                     </div>
-                    <div className="text-[10px] text-text3 font-medium flex gap-1 items-center">
-                      <TrendingDown className="w-3 h-3" />
-                      {cat.percentageOfTotal}% of total{' '}
-                      {activeTab === 'Income' ? 'income' : 'spending'}
+                    <div className="text-[10px] text-text3 font-medium flex gap-1.5 items-center pl-9">
+                      <TrendingUp
+                        className={`w-3 h-3 ${activeTab === 'Income' ? '' : 'rotate-180 text-red/70'}`}
+                      />
+                      <span className="text-text2">
+                        {cat.percentageOfTotal}%
+                      </span>{' '}
+                      of total {activeTab === 'Income' ? 'income' : 'spending'}
                     </div>
                   </div>
                 ))

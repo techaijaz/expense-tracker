@@ -1,3 +1,4 @@
+import mongoose from 'mongoose'
 import budgetModel from '../model/budgetModel.js'
 import budgetPeriodModel from '../model/budgetPeriodModel.js'
 import transactionModel from '../model/transactionModel.js'
@@ -23,8 +24,8 @@ export default {
         const totalSpentResult = await transactionModel.aggregate([
             {
                 $match: {
-                    userId,
-                    categoryId,
+                    userId: new mongoose.Types.ObjectId(userId),
+                    categoryId: new mongoose.Types.ObjectId(categoryId),
                     type: 'expense',
                     date: { $gte: startOfMonth, $lte: endOfMonth },
                     isDeleted: false

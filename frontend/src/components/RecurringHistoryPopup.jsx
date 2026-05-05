@@ -4,8 +4,26 @@ import { formatAmount, getCurrencySymbol } from '@/utils/format';
 import { formatDate } from '@/utils/utils';
 import { useSelector } from 'react-redux';
 import { cn } from '@/utils/utils';
+import { useMediaQuery } from '@/hooks/use-media-query';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from '@/components/ui/drawer';
+import { Button } from '@/components/ui/button';
 
 const RecurringHistoryPopup = ({ open, setOpen, task }) => {
+  const isDesktop = useMediaQuery('(min-width: 768px)');
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -33,91 +51,117 @@ const RecurringHistoryPopup = ({ open, setOpen, task }) => {
     }
   }, [open, task]);
 
-  if (!open) return null;
-
-  return (
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/80 backdrop-blur-md px-4">
-      <div className="relative w-full max-w-[600px] rounded-[24px] border border-white/10 bg-[#0E1220] p-7 shadow-2xl overflow-hidden max-h-[80vh] flex flex-col">
-        <button
-          onClick={() => setOpen(false)}
-          className="absolute right-5 top-5 flex h-8 w-8 items-center justify-center rounded-xl border border-white/5 bg-white/5 text-[#8892B0] hover:text-white transition-colors"
-        >
-          ✕
-        </button>
-
-        <div className="mb-6 shrink-0">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#5B8DEF]/10 text-[#5B8DEF] mb-3 text-xl">
-            📜
+  const HistoryContent = (
+    <div className="flex flex-col h-full max-h-[70vh] md:max-h-[600px]">
+      <div className="flex-1 overflow-y-auto pr-1 hide-scrollbar space-y-3 pb-6">
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-20 opacity-50 space-y-4">
+            <div className="w-10 h-10 border-4 border-accent border-t-transparent rounded-full animate-spin" />
+            <p className="text-[10px] font-black uppercase tracking-widest text-text3 animate-pulse">
+              Searching archives…
+            </p>
           </div>
-          <h2 className="text-xl font-bold tracking-tight text-[#EEF0F8]">
-            Execution History
-          </h2>
-          <p className="mt-0.5 text-xs text-[#8892B0]">
-            Audit trail for{' '}
-            <span className="text-[#EEF0F8] font-bold">{task?.title}</span>
-          </p>
-        </div>
-
-        <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-          {loading ? (
-            <div className="flex flex-col items-center justify-center py-20 opacity-50">
-              <div className="w-8 h-8 border-2 border-[#5B8DEF] border-t-transparent rounded-full animate-spin mb-4" />
-              <p className="text-xs text-[#8892B0]">Searching archives…</p>
+        ) : history.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 bg-bg3/20 rounded-[32px] border border-dashed border-border/40">
+            <div className="text-5xl mb-4 grayscale opacity-30">🗞️</div>
+            <p className="text-sm font-black text-text tracking-tight">
+              No executions recorded
+            </p>
+            <p className="text-[10px] font-medium text-text3 mt-1 text-center px-10 leading-relaxed">
+              This protocol has not generated any transactions yet. The first run will appear here.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-2.5">
+            <div className="grid grid-cols-3 px-5 pb-1 text-[9px] font-black text-text3 uppercase tracking-[0.2em]">
+              <span>Execution Date</span>
+              <span>Account</span>
+              <span className="text-right">Settlement</span>
             </div>
-          ) : history.length === 0 ? (
-            <div className="text-center py-20 bg-white/[0.02] rounded-2xl border border-dashed border-white/5">
-              <div className="text-3xl mb-3">🗞️</div>
-              <p className="text-sm font-semibold text-[#EEF0F8]">
-                No executions recorded
-              </p>
-              <p className="text-[11px] text-[#4A5578] mt-1 text-center px-10">
-                This task has not generated any transactions yet. The first run
-                will appear here.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <div className="grid grid-cols-3 px-3 pb-2 text-[10px] font-bold text-[#4A5578] uppercase tracking-widest">
-                <span>Date</span>
-                <span>Account</span>
-                <span className="text-right">Amount</span>
-              </div>
-              {history.map((t) => (
-                <div
-                  key={t._id}
-                  className="grid grid-cols-3 items-center p-3.5 bg-[#141928] border border-white/5 rounded-2xl hover:border-[#5B8DEF]/20 transition-all"
-                >
-                  <div className="text-xs font-medium text-[#EEF0F8]">
-                    {formatDate(t.date)}
-                  </div>
-                  <div className="text-[11px] text-[#8892B0]">
-                    {t.accountId?.name || 'Unknown'}
-                  </div>
-                  <div
-                    className={cn(
-                      'text-xs font-bold font-mono text-right',
-                      t.type === 'income' ? 'text-[#2DD4A0]' : 'text-[#FF6B6B]',
-                    )}
-                  >
-                    {t.type === 'income' ? '+' : '-'}
-                    {formatAmount(t.amount, currency)}
-                  </div>
+            {history.map((t) => (
+              <div
+                key={t._id}
+                className="grid grid-cols-3 items-center p-4 bg-bg3/30 border border-border/20 rounded-2xl hover:border-accent/40 hover:bg-bg3/50 transition-all group"
+              >
+                <div className="text-xs font-black text-text tracking-tight group-hover:text-accent transition-colors">
+                  {formatDate(t.date)}
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+                <div className="text-[10px] font-bold text-text3 uppercase tracking-widest">
+                  {t.accountId?.name || 'Unknown'}
+                </div>
+                <div
+                  className={cn(
+                    'text-xs font-black font-mono text-right',
+                    t.type === 'income' ? 'text-green' : 'text-text',
+                  )}
+                >
+                  {t.type === 'income' ? '+' : '-'}
+                  {formatAmount(t.amount, currency)}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
-        <div className="mt-6 pt-5 border-t border-white/5 shrink-0 flex justify-end">
-          <button
-            onClick={() => setOpen(false)}
-            className="px-6 py-2.5 bg-[#141928] hover:bg-[#1C2235] text-[#EEF0F8] text-[13px] font-bold rounded-xl transition-all"
-          >
-            Close Logs
-          </button>
-        </div>
+      <div className="pt-6 border-t border-border/40 shrink-0">
+        <Button
+          onClick={() => setOpen(false)}
+          variant="outline"
+          className="w-full h-12 bg-bg3/50 border-border/40 hover:bg-bg3 hover:border-accent/40 rounded-2xl text-[10px] font-black uppercase tracking-widest text-text3 hover:text-text transition-all"
+        >
+          Dismiss Logs
+        </Button>
       </div>
     </div>
+  );
+
+  return (
+    <>
+      {isDesktop ? (
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogContent className="max-w-[600px] bg-bg2 border-border p-8 rounded-[40px] shadow-2xl overflow-hidden">
+            <DialogHeader className="mb-6 space-y-1">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 flex items-center justify-center rounded-2xl bg-accent/10 text-2xl shadow-inner">
+                  📜
+                </div>
+                <div>
+                  <DialogTitle className="text-2xl font-black tracking-tight text-text">
+                    Execution History
+                  </DialogTitle>
+                  <DialogDescription className="text-xs text-text3 font-medium">
+                    Audit trail for <span className="text-text font-black">{task?.title}</span>
+                  </DialogDescription>
+                </div>
+              </div>
+            </DialogHeader>
+            {HistoryContent}
+          </DialogContent>
+        </Dialog>
+      ) : (
+        <Drawer open={open} onOpenChange={setOpen}>
+          <DrawerContent className="bg-bg2 border-border rounded-t-[40px] px-6 pb-8 max-h-[90%] overflow-hidden">
+            <DrawerHeader className="px-0 pt-8 pb-6 space-y-1">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 flex items-center justify-center rounded-2xl bg-accent/10 text-2xl">
+                  📜
+                </div>
+                <div className="text-left">
+                  <DrawerTitle className="text-2xl font-black tracking-tight text-text">
+                    Execution History
+                  </DrawerTitle>
+                  <DrawerDescription className="text-xs text-text3 font-medium">
+                    Audit trail for <span className="text-text font-black">{task?.title}</span>
+                  </DrawerDescription>
+                </div>
+              </div>
+            </DrawerHeader>
+            <div className="mt-2">{HistoryContent}</div>
+          </DrawerContent>
+        </Drawer>
+      )}
+    </>
   );
 };
 

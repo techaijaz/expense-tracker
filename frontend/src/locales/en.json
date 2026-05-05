@@ -8,11 +8,20 @@
     "categories": "Categories",
     "settings": "Settings",
     "loans": "Loans",
+    "budget": "Budget",
+    "recurring": "Recurring",
+    "net_worth": "Net Worth",
+    "reports": "Reports",
     "save": "Save",
     "cancel": "Cancel",
     "delete": "Delete",
     "edit": "Edit",
-    "search": "Search"
+    "search": "Search",
+    "logout": "Logout",
+    "new_transaction": "New Transaction",
+    "export": "Export",
+    "finance": "Finance",
+    "insights": "Insights"
   },
   "onboarding": {
     "welcome": "Welcome to AI Expenser",

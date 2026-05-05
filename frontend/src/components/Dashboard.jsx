@@ -21,6 +21,8 @@ function Dashboard() {
   const [trend, setTrend] = useState([]);
   const [recent, setRecent] = useState([]);
   const [upcoming, setUpcoming] = useState([]);
+  const [budgets, setBudgets] = useState([]);
+  const [refetchTick, setRefetchTick] = useState(0);
 
   const { formatAmount } = useFormat();
   const { user } = useSelector((state) => state.auth);
@@ -46,6 +48,12 @@ function Dashboard() {
   };
 
   useEffect(() => {
+    const handler = () => setRefetchTick((t) => t + 1);
+    window.addEventListener('refetch-system-metrics', handler);
+    return () => window.removeEventListener('refetch-system-metrics', handler);
+  }, []);
+
+  useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         const params = {};
@@ -54,7 +62,7 @@ function Dashboard() {
           params.endDate = dateRange.to;
         }
 
-        const [overviewRes, categoriesRes, trendRes, recentRes, upcomingRes] =
+        const [overviewRes, categoriesRes, trendRes, recentRes, upcomingRes, budgetsRes] =
           await Promise.all([
             axiosInstance.get('/reports/overview', { params }),
             axiosInstance.get('/reports/categories', { params }),
@@ -65,8 +73,9 @@ function Dashboard() {
                 period: params.startDate ? undefined : 'last6months',
               },
             }),
-            axiosInstance.get('/reports/recent'), // Recent transactions usually aren't filtered by date range in these types of dashboards, but we could
-            axiosInstance.get('/reports/upcoming'), // Upcoming payments are future-looking, not historical
+            axiosInstance.get('/reports/recent'),
+            axiosInstance.get('/reports/upcoming'),
+            axiosInstance.get('/budget/performance'),
           ]);
 
         setOverview(overviewRes.data.data);
@@ -74,13 +83,14 @@ function Dashboard() {
         setTrend(trendRes.data.data || []);
         setRecent(recentRes.data.data || []);
         setUpcoming(upcomingRes.data.data || []);
+        setBudgets(budgetsRes.data.data || []);
       } catch (err) {
         console.error('Dashboard fetch error:', err);
       }
     };
 
     fetchDashboardData();
-  }, [dateRange]);
+  }, [dateRange, refetchTick]);
 
   const statsData = {
     totalBalance: formatAmount(overview?.totalBalance || 0),
@@ -113,10 +123,10 @@ function Dashboard() {
     expense: t.expense,
   }));
 
-  const mockBudgets = categories.slice(0, 5).map((c) => ({
-    categoryName: c.categoryName,
-    totalAmount: c.totalAmount,
-    limit: c.totalAmount * 1.2,
+  const displayBudgets = budgets.map((b) => ({
+    categoryName: b.category?.name || 'Unknown',
+    totalAmount: b.spentAmount,
+    limit: b.budgetAmount,
   }));
 
 
@@ -158,14 +168,21 @@ function Dashboard() {
 
       {/* Row 3: Recent Txns | Budget Overview | Upcoming Payments */}
       <div
-        style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}
+        className="flex flex-wrap gap-4"
+        style={{ marginBottom: 24 }}
       >
-        <RecentTransactionsMini
-          transactions={recent}
-          onViewAll={() => navigate('/transactions')}
-        />
-        <BudgetOverview budgets={mockBudgets} />
-        <UpcomingPayments payments={upcoming} />
+        <div style={{ flex: '1 1 300px' }}>
+          <RecentTransactionsMini
+            transactions={recent}
+            onViewAll={() => navigate('/transactions')}
+          />
+        </div>
+        <div style={{ flex: '1 1 300px' }}>
+          <BudgetOverview budgets={displayBudgets} />
+        </div>
+        <div style={{ flex: '1 1 300px' }}>
+          <UpcomingPayments payments={upcoming} />
+        </div>
       </div>
     </div>
   );

@@ -8,11 +8,20 @@
     "categories": "श्रेणियां",
     "settings": "सेटिंग्स",
     "loans": "ऋण",
+    "budget": "बजट",
+    "recurring": "आवर्ती",
+    "net_worth": "नेट वर्थ",
+    "reports": "रिपोर्ट",
     "save": "सहेजें",
     "cancel": "रद्द करें",
     "delete": "हटाएं",
     "edit": "संपादन",
-    "search": "खोजें"
+    "search": "खोजें",
+    "logout": "लॉगआउट",
+    "new_transaction": "नया लेनदेन",
+    "export": "निर्यात",
+    "finance": "वित्त",
+    "insights": "इनसाइट्स"
   },
   "onboarding": {
     "welcome": "AI Expenser में आपका स्वागत है",

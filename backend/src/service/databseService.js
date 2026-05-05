@@ -73,26 +73,27 @@ export default {
     getAccountsByUserId: (userId) => {
         return accountModel.find({ userId, isDeleted: false }).sort({ isDefault: -1, createdAt: -1 })
     },
-    findAccountByAccountType: (type) => {
-        return accountModel.findOne({ type })
+    findAccountByAccountType: (type, userId) => {
+        return accountModel.findOne({ type, userId })
     },
-    findAccountByAccountNumber: (accountNumber) => {
-        return accountModel.findOne({ accountNumber })
+    findAccountByAccountNumber: (accountNumber, userId) => {
+        return accountModel.findOne({ accountNumber, userId })
     },
-    findTrasectionsByAccountId: (accountId) => {
+    findTransactionsByAccountId: (accountId, userId) => {
         return transactionModel.find({ 
+            userId,
             $or: [{ accountId: accountId }, { targetAccountId: accountId }],
             isDeleted: false 
         })
     },
-    updateAccount: async (id, payload) => {
-        return accountModel.findByIdAndUpdate(id, payload, { new: true })
+    updateAccount: async (id, userId, payload) => {
+        return accountModel.findOneAndUpdate({ _id: id, userId }, payload, { new: true })
     },
-    fiendAccountById: (id) => {
-        return accountModel.findById(id)
+    fiendAccountById: (id, userId) => {
+        return accountModel.findOne({ _id: id, userId })
     },
-    addAmount: async (id, payload) => {
-        return accountModel.findByIdAndUpdate(id, payload, { new: true })
+    addAmount: async (id, userId, payload) => {
+        return accountModel.findOneAndUpdate({ _id: id, userId }, payload, { new: true })
     },
     getAllCategories: (userId) => {
         return categoryModel.find({ userId })
@@ -245,7 +246,7 @@ export default {
     createTransaction: async (payload) => {
         return await runInTransaction(async (session) => {
             // 1. Fetch Primary Account
-            const account = await accountModel.findById(payload.accountId).session(session)
+            const account = await accountModel.findOne({ _id: payload.accountId, userId: payload.userId }).session(session)
             if (!account) throw new Error('Account not found')
 
             // 2. Prepare Transaction
@@ -264,6 +265,10 @@ export default {
                 billUrl: payload.billUrl || '',
                 loanId: payload.loanId || null,
                 recurringId: payload.recurringId || null,
+                pendingStatus: payload.pendingStatus || false,
+                debtType: payload.debtType || null,
+                dueDate: payload.dueDate || null,
+                interestRate: payload.interestRate || 0,
             })
 
             // 3. Update Balances based on Type
@@ -283,7 +288,7 @@ export default {
                 if (!payload.targetAccountId) throw new Error('Target account required for transfer')
                 if (account.balance < payload.amount) throw new Error('Insufficient balance')
                 
-                const targetAccount = await accountModel.findById(payload.targetAccountId).session(session)
+                const targetAccount = await accountModel.findOne({ _id: payload.targetAccountId, userId: payload.userId }).session(session)
                 if (!targetAccount) throw new Error('Target account not found')
 
                 account.balance -= payload.amount
@@ -310,22 +315,42 @@ export default {
                 
                 if (payload.partyId) {
                     const debtChange = isLending ? payload.amount : -payload.amount
-                    await partyModel.findByIdAndUpdate(payload.partyId, { $inc: { netDebt: debtChange } }, { session })
+                    const party = await partyModel.findOneAndUpdate({ _id: payload.partyId, userId: payload.userId }, { $inc: { netDebt: debtChange } }, { session })
+                    if (!party) throw new Error('Party not found or unauthorized')
                 }
                 
                 await account.save({ session })
                 updatedAccounts.push(account)
                 transaction.balanceSnapshot = account.balance
+
+                // Also create a linked Loan record so it appears on the Personal Debt page
+                if (payload.partyId && (payload.debtType === 'LENT' || payload.debtType === 'BORROWED')) {
+                    await loanModel.create([{
+                        user: payload.userId,
+                        party: payload.partyId,
+                        accountId: payload.accountId,
+                        amount: payload.amount,
+                        type: payload.debtType,
+                        date: payload.date || new Date(),
+                        interestRate: payload.interestRate || 0,
+                        dueDate: payload.dueDate || null,
+                        status: 'PENDING',
+                        transactionId: transaction._id,
+                    }], session ? { session } : {})
+                }
             } else if (payload.type === 'repayment') {
-                if (payload.debtType === 'REPAY_OUT') {
+                const isRepayOut = payload.debtType === 'REPAYMENT_OUT' || payload.debtType === 'REPAY_OUT'
+                if (isRepayOut) {
                     if (account.balance < payload.amount) throw new Error('Insufficient balance')
                     account.balance -= payload.amount
                 } else {
                     account.balance += payload.amount
                 }
                 if (payload.partyId) {
-                    const change = payload.debtType === 'REPAY_IN' ? -payload.amount : payload.amount
-                    await partyModel.findByIdAndUpdate(payload.partyId, { $inc: { netDebt: change } }, { session })
+                    const isRepayIn = payload.debtType === 'REPAYMENT_IN' || payload.debtType === 'REPAY_IN'
+                    const change = isRepayIn ? -payload.amount : payload.amount
+                    const party = await partyModel.findOneAndUpdate({ _id: payload.partyId, userId: payload.userId }, { $inc: { netDebt: change } }, { session })
+                    if (!party) throw new Error('Party not found or unauthorized')
                 }
                 await account.save({ session })
                 updatedAccounts.push(account)
@@ -351,33 +376,33 @@ export default {
             // Reverse Balances
             const updatedAccounts = []
             if (transaction.type === 'expense') {
-                const acc = await accountModel.findByIdAndUpdate(transaction.accountId, { $inc: { balance: transaction.amount } }, { new: true, session })
+                const acc = await accountModel.findOneAndUpdate({ _id: transaction.accountId, userId }, { $inc: { balance: transaction.amount } }, { new: true, session })
                 updatedAccounts.push(acc)
             } else if (transaction.type === 'income') {
-                const acc = await accountModel.findByIdAndUpdate(transaction.accountId, { $inc: { balance: -transaction.amount } }, { new: true, session })
+                const acc = await accountModel.findOneAndUpdate({ _id: transaction.accountId, userId }, { $inc: { balance: -transaction.amount } }, { new: true, session })
                 updatedAccounts.push(acc)
             } else if (transaction.type === 'transfer') {
-                const accSource = await accountModel.findByIdAndUpdate(transaction.accountId, { $inc: { balance: transaction.amount } }, { new: true, session })
-                const accTarget = await accountModel.findByIdAndUpdate(transaction.targetAccountId, { $inc: { balance: -transaction.amount } }, { new: true, session })
+                const accSource = await accountModel.findOneAndUpdate({ _id: transaction.accountId, userId }, { $inc: { balance: transaction.amount } }, { new: true, session })
+                const accTarget = await accountModel.findOneAndUpdate({ _id: transaction.targetAccountId, userId }, { $inc: { balance: -transaction.amount } }, { new: true, session })
                 updatedAccounts.push(accSource, accTarget)
             } else if (transaction.type === 'debt') {
                 const isLending = transaction.debtType === 'LENT'
                 // Reversal: If LENT originally (spent), then ADD back to account.
                 // If BORROWED originally (received), then SUBTRACT from account.
                 const balanceChange = isLending ? transaction.amount : -transaction.amount
-                const acc = await accountModel.findByIdAndUpdate(transaction.accountId, { $inc: { balance: balanceChange } }, { new: true, session })
+                const acc = await accountModel.findOneAndUpdate({ _id: transaction.accountId, userId }, { $inc: { balance: balanceChange } }, { new: true, session })
                 updatedAccounts.push(acc)
 
                 if (transaction.partyId) {
                     // Reversal: Lending increased debt, so decrease it. Borrowing decreased it, so increase it.
                     const debtChange = isLending ? -transaction.amount : transaction.amount
-                    await partyModel.findByIdAndUpdate(transaction.partyId, { $inc: { netDebt: debtChange } }, { session })
+                    await partyModel.findOneAndUpdate({ _id: transaction.partyId, userId }, { $inc: { netDebt: debtChange } }, { session })
                 }
             } else if (transaction.type === 'repayment') {
                 // Reversal: Repay OUT (spent), add back. Repay IN (received), subtract.
                 const isRepayOut = transaction.debtType === 'REPAYMENT_OUT' || transaction.debtType === 'REPAY_OUT'
                 const balanceChange = isRepayOut ? transaction.amount : -transaction.amount
-                const acc = await accountModel.findByIdAndUpdate(transaction.accountId, { $inc: { balance: balanceChange } }, { new: true, session })
+                const acc = await accountModel.findOneAndUpdate({ _id: transaction.accountId, userId }, { $inc: { balance: balanceChange } }, { new: true, session })
                 updatedAccounts.push(acc)
 
                 if (transaction.partyId) {
@@ -385,13 +410,24 @@ export default {
                     // If Repay IN (LENT direction), change was -amount, so add back +amount.
                     // If Repay OUT (BORROWED direction), change was +amount, so add back -amount.
                     const debtChange = (transaction.debtType === 'REPAYMENT_IN' || transaction.debtType === 'REPAY_IN') ? transaction.amount : -transaction.amount
-                    await partyModel.findByIdAndUpdate(transaction.partyId, { $inc: { netDebt: debtChange } }, { session })
+                    await partyModel.findOneAndUpdate({ _id: transaction.partyId, userId }, { $inc: { netDebt: debtChange } }, { session })
                 }
             }
 
             // Soft Delete
             transaction.isDeleted = true
             await transaction.save({ session })
+
+            // Cascade: If this transaction is linked to a Loan record, soft-delete it too.
+            // We look up by transactionId on the Loan model (Loan stores transactionId reference).
+            // The isDeleted guard prevents infinite loops when the loan controller initiates the delete.
+            if (transaction.type === 'debt' || transaction.type === 'repayment') {
+                const linkedLoan = await loanModel.findOne({ transactionId: transaction._id, isDeleted: false }).session(session)
+                if (linkedLoan) {
+                    linkedLoan.isDeleted = true
+                    await linkedLoan.save({ session })
+                }
+            }
 
             // Update Budget
             if (transaction.categoryId && transaction.type === 'expense') {
@@ -409,31 +445,31 @@ export default {
 
             // Revert balances
             if (oldTransaction.type === 'expense') {
-                await accountModel.findByIdAndUpdate(oldTransaction.accountId, { $inc: { balance: oldTransaction.amount } }, { session })
+                await accountModel.findOneAndUpdate({ _id: oldTransaction.accountId, userId }, { $inc: { balance: oldTransaction.amount } }, { session })
             } else if (oldTransaction.type === 'income') {
-                await accountModel.findByIdAndUpdate(oldTransaction.accountId, { $inc: { balance: -oldTransaction.amount } }, { session })
+                await accountModel.findOneAndUpdate({ _id: oldTransaction.accountId, userId }, { $inc: { balance: -oldTransaction.amount } }, { session })
             } else if (oldTransaction.type === 'transfer') {
-                await accountModel.findByIdAndUpdate(oldTransaction.accountId, { $inc: { balance: oldTransaction.amount } }, { session })
-                await accountModel.findByIdAndUpdate(oldTransaction.targetAccountId, { $inc: { balance: -oldTransaction.amount } }, { session })
+                await accountModel.findOneAndUpdate({ _id: oldTransaction.accountId, userId }, { $inc: { balance: oldTransaction.amount } }, { session })
+                await accountModel.findOneAndUpdate({ _id: oldTransaction.targetAccountId, userId }, { $inc: { balance: -oldTransaction.amount } }, { session })
             } else if (oldTransaction.type === 'debt') {
                 const balanceChange = oldTransaction.debtType === 'LENT' ? oldTransaction.amount : -oldTransaction.amount
-                await accountModel.findByIdAndUpdate(oldTransaction.accountId, { $inc: { balance: balanceChange } }, { session })
+                await accountModel.findOneAndUpdate({ _id: oldTransaction.accountId, userId }, { $inc: { balance: balanceChange } }, { session })
                 if (oldTransaction.partyId) {
                     const debtChange = oldTransaction.debtType === 'LENT' ? -oldTransaction.amount : oldTransaction.amount
-                    await partyModel.findByIdAndUpdate(oldTransaction.partyId, { $inc: { netDebt: debtChange } }, { session })
+                    await partyModel.findOneAndUpdate({ _id: oldTransaction.partyId, userId }, { $inc: { netDebt: debtChange } }, { session })
                 }
             } else if (oldTransaction.type === 'repayment') {
                 const isRepayOut = oldTransaction.debtType === 'REPAYMENT_OUT' || oldTransaction.debtType === 'REPAY_OUT'
                 const balanceChange = isRepayOut ? oldTransaction.amount : -oldTransaction.amount
-                await accountModel.findByIdAndUpdate(oldTransaction.accountId, { $inc: { balance: balanceChange } }, { session })
+                await accountModel.findOneAndUpdate({ _id: oldTransaction.accountId, userId }, { $inc: { balance: balanceChange } }, { session })
                 if (oldTransaction.partyId) {
                     const debtChange = (oldTransaction.debtType === 'REPAYMENT_IN' || oldTransaction.debtType === 'REPAY_IN') ? oldTransaction.amount : -oldTransaction.amount
-                    await partyModel.findByIdAndUpdate(oldTransaction.partyId, { $inc: { netDebt: debtChange } }, { session })
+                    await partyModel.findOneAndUpdate({ _id: oldTransaction.partyId, userId }, { $inc: { netDebt: debtChange } }, { session })
                 }
             }
             
             // Now apply new logic (similar to create)
-            const account = await accountModel.findById(payload.accountId).session(session)
+            const account = await accountModel.findOne({ _id: payload.accountId, userId: userId }).session(session)
             if (!account) throw new Error('New account not found')
 
             if (payload.type === 'expense') {
@@ -444,7 +480,7 @@ export default {
                 account.balance += payload.amount
                 await account.save({ session })
             } else if (payload.type === 'transfer') {
-                const targetAccount = await accountModel.findById(payload.targetAccountId).session(session)
+                const targetAccount = await accountModel.findOne({ _id: payload.targetAccountId, userId: userId }).session(session)
                 if (!targetAccount) throw new Error('New target account not found')
                 account.balance -= payload.amount
                 targetAccount.balance += payload.amount
@@ -456,7 +492,8 @@ export default {
                 else { account.balance += payload.amount }
                 if (payload.partyId) {
                     const debtChange = isLending ? payload.amount : -payload.amount
-                    await partyModel.findByIdAndUpdate(payload.partyId, { $inc: { netDebt: debtChange } }, { session })
+                    const party = await partyModel.findOneAndUpdate({ _id: payload.partyId, userId: userId }, { $inc: { netDebt: debtChange } }, { session })
+                    if (!party) throw new Error('Party not found or unauthorized')
                 }
                 await account.save({ session })
             } else if (payload.type === 'repayment') {
@@ -465,7 +502,8 @@ export default {
                 else { account.balance += payload.amount }
                 if (payload.partyId) {
                     const debtChange = (payload.debtType === 'REPAYMENT_IN' || payload.debtType === 'REPAY_IN') ? -payload.amount : payload.amount
-                    await partyModel.findByIdAndUpdate(payload.partyId, { $inc: { netDebt: debtChange } }, { session })
+                    const party = await partyModel.findOneAndUpdate({ _id: payload.partyId, userId: userId }, { $inc: { netDebt: debtChange } }, { session })
+                    if (!party) throw new Error('Party not found or unauthorized')
                 }
                 await account.save({ session })
             }
@@ -474,6 +512,35 @@ export default {
             Object.assign(oldTransaction, payload)
             oldTransaction.balanceSnapshot = account.balance
             await oldTransaction.save({ session })
+
+            // Sync linked Loan record for debt transactions
+            if (payload.type === 'debt' && payload.partyId && (payload.debtType === 'LENT' || payload.debtType === 'BORROWED')) {
+                const existingLoan = await loanModel.findOne({ transactionId: transactionId, isDeleted: false }).session(session)
+                if (existingLoan) {
+                    existingLoan.amount = payload.amount
+                    existingLoan.party = payload.partyId
+                    existingLoan.accountId = payload.accountId
+                    existingLoan.type = payload.debtType
+                    existingLoan.date = payload.date || existingLoan.date
+                    existingLoan.interestRate = payload.interestRate ?? existingLoan.interestRate
+                    existingLoan.dueDate = payload.dueDate ?? existingLoan.dueDate
+                    await existingLoan.save({ session })
+                } else {
+                    // Create a missing loan record (for old transactions saved before this fix)
+                    await loanModel.create([{
+                        user: userId,
+                        party: payload.partyId,
+                        accountId: payload.accountId,
+                        amount: payload.amount,
+                        type: payload.debtType,
+                        date: payload.date || new Date(),
+                        interestRate: payload.interestRate || 0,
+                        dueDate: payload.dueDate || null,
+                        status: 'PENDING',
+                        transactionId: transactionId,
+                    }], session ? { session } : {})
+                }
+            }
             
             // Update Budget Progress
             if (payload.categoryId && payload.type === 'expense') {
@@ -515,9 +582,47 @@ export default {
             .sort({ createdAt: -1 })
     },
     createRecurringTask: async (payload) => {
+        const { userId, accountId, toAccountId, categoryId } = payload
+        
+        // Verify Account
+        const account = await accountModel.findOne({ _id: accountId, userId })
+        if (!account) throw new Error('Account not found or unauthorized')
+
+        // Verify Target Account (for transfers)
+        if (toAccountId) {
+            const toAccount = await accountModel.findOne({ _id: toAccountId, userId })
+            if (!toAccount) throw new Error('Target account not found or unauthorized')
+        }
+
+        // Verify Category
+        if (categoryId) {
+            const category = await categoryModel.findOne({ _id: categoryId, userId })
+            if (!category) throw new Error('Category not found or unauthorized')
+        }
+
         return recurringModel.create(payload)
     },
     updateRecurringTask: async (id, userId, payload) => {
+        const { accountId, toAccountId, categoryId } = payload
+        
+        // Verify Account
+        if (accountId) {
+            const account = await accountModel.findOne({ _id: accountId, userId })
+            if (!account) throw new Error('New account not found or unauthorized')
+        }
+
+        // Verify Target Account
+        if (toAccountId) {
+            const toAccount = await accountModel.findOne({ _id: toAccountId, userId })
+            if (!toAccount) throw new Error('New target account not found or unauthorized')
+        }
+
+        // Verify Category
+        if (categoryId) {
+            const category = await categoryModel.findOne({ _id: categoryId, userId })
+            if (!category) throw new Error('New category not found or unauthorized')
+        }
+
         return recurringModel.findOneAndUpdate({ _id: id, userId }, payload, { new: true })
     },
     deleteRecurringTask: async (id, userId) => {
@@ -532,9 +637,12 @@ export default {
             .populate('accountId', 'name')
             .sort({ date: -1 })
     },
+    countRecurringTasks: async (userId) => {
+        return recurringModel.countDocuments({ userId })
+    },
     updateUserSubscription: async (userId, planData) => {
-        return userModel.findByIdAndUpdate(
-            userId,
+        return userModel.findOneAndUpdate(
+            { _id: userId },
             { $set: planData },
             { new: true }
         )

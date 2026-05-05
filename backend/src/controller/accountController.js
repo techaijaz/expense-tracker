@@ -150,8 +150,8 @@ export default {
             if (accountNumber !== undefined) updateFields.accountNumber = accountNumber
             if (name !== undefined) updateFields.name = name
             if (creditLimit !== undefined) updateFields.creditLimit = creditLimit
-            if (req.body.billGenerationDate !== undefined) updateFields.billGenerationDate = req.body.billGenerationDate
-            if (req.body.dueDate !== undefined) updateFields.dueDate = req.body.dueDate
+            if (req.body.statementDay !== undefined) updateFields.statementDay = req.body.statementDay
+            if (req.body.dueDay !== undefined) updateFields.dueDay = req.body.dueDay
 
             // Handle "Opening Balance" edit
             if (balance !== undefined) {
@@ -213,7 +213,11 @@ export default {
                 await Account.updateMany({ userId, _id: { $ne: req.params.id }, isDeleted: false }, { $set: { isDefault: false } })
             }
 
-            const account = await Account.findByIdAndUpdate(req.params.id, { $set: updateFields }, { new: true, runValidators: true })
+            const account = await Account.findOneAndUpdate(
+                { _id: req.params.id, userId, isDeleted: false },
+                { $set: updateFields },
+                { new: true, runValidators: true }
+            )
             httpResponse(req, res, 200, 'Account updated successfully', account)
         } catch (error) {
             httpError(next, error, req, 500)
@@ -234,11 +238,8 @@ export default {
                 return httpError(next, new Error('Cash account cannot be deleted.'), req, 400)
             }
 
-            // Cascading soft-delete related data
-            const Transaction = mongoose.model('Transaction')
-
-            // 1. Mark transactions as deleted
-            await Transaction.updateMany({ userId, accountId, isDeleted: false }, { $set: { isDeleted: true } })
+            // 1. We keep transactions as-is (per user request: "related transactions delete nahi hogi")
+            // But we ensure the account is no longer default
 
             // 2. Mark the account itself as deleted
             account.isDeleted = true

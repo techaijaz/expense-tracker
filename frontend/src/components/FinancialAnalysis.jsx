@@ -302,9 +302,9 @@ const FinancialAnalysis = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div className="flex flex-wrap gap-8">
         {/* Row 1: Health Score (4) & Key Metrics (8) */}
-        <div className="lg:col-span-4">
+        <div style={{ flex: '1 1 300px', maxWidth: '100%' }} className="lg:max-w-[calc(33.33% - 22px)] w-full">
           <div className="account-card h-full !p-8 flex flex-col items-center text-center relative overflow-hidden group">
             <div className="absolute inset-0 bg-gradient-to-b from-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
 
@@ -358,10 +358,10 @@ const FinancialAnalysis = () => {
           </div>
         </div>
 
-        <div className="lg:col-span-8 flex flex-col gap-6 relative overflow-hidden group">
+        <div style={{ flex: '1 1 600px', maxWidth: '100%' }} className="lg:max-w-[calc(66.66% - 22px)] w-full flex flex-col gap-6 relative overflow-hidden group">
           <div className="scan-line"></div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-full relative z-10">
-            <div className="account-card p-8 group hover:border-accent/30 transition-colors cursor-default relative overflow-hidden">
+          <div className="flex flex-wrap gap-6 h-full relative z-10">
+            <div style={{ flex: '1 1 300px' }} className="account-card p-8 group hover:border-accent/30 transition-colors cursor-default relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-accent/5 blur-3xl rounded-full"></div>
               <div className="flex justify-between items-start mb-6">
                 <div className="w-12 h-12 rounded-2xl bg-accent/10 flex items-center justify-center text-accent group-hover:scale-110 transition-transform">
@@ -384,7 +384,7 @@ const FinancialAnalysis = () => {
               </p>
             </div>
 
-            <div className="account-card p-8 group hover:border-purple-500/30 transition-colors cursor-default">
+            <div style={{ flex: '1 1 300px' }} className="account-card p-8 group hover:border-purple-500/30 transition-colors cursor-default">
               <div className="flex justify-between items-start mb-6">
                 <div className="w-12 h-12 rounded-2xl bg-purple-500/10 flex items-center justify-center text-purple-500 group-hover:scale-110 transition-transform">
                   <Zap size={24} />
@@ -407,7 +407,7 @@ const FinancialAnalysis = () => {
         </div>
 
         {/* Row 2: Asset Allocation (4) & Interest Efficiency (8) */}
-        <div className="lg:col-span-4">
+        <div style={{ flex: '1 1 300px', maxWidth: '100%' }} className="lg:max-w-[calc(33.33% - 22px)] w-full">
           <div className="account-card h-full !p-8">
             <div className="flex items-center gap-3 mb-8">
               <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center text-accent">
@@ -472,7 +472,7 @@ const FinancialAnalysis = () => {
           </div>
         </div>
 
-        <div className="lg:col-span-8">
+        <div style={{ flex: '1 1 600px', maxWidth: '100%' }} className="lg:max-w-[calc(66.66% - 22px)] w-full">
           <div className="account-card h-full !p-8">
             <div className="flex items-center justify-between mb-10">
               <div className="flex items-center gap-4">
@@ -490,7 +490,7 @@ const FinancialAnalysis = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div className="flex flex-wrap gap-4 mb-8">
               {[
                 {
                   label: 'Credit Cards',
@@ -514,6 +514,7 @@ const FinancialAnalysis = () => {
                 <div
                   key={i}
                   className={`p-6 bg-white/[0.02] rounded-[24px] border ${debt.color} flex flex-col justify-between min-h-[140px] opacity-${debt.val > 0 ? '100' : '40 grayscale'}`}
+                  style={{ flex: '1 1 200px' }}
                 >
                   <div>
                     <div className="text-xs font-bold text-text2 mb-1">
@@ -555,7 +556,7 @@ const FinancialAnalysis = () => {
         </div>
 
         {/* Row 3: Forward Trajectory (12) */}
-        <div className="lg:col-span-12 mt-4">
+        <div style={{ flex: '1 1 100%' }}>
           <div className="relative overflow-hidden group">
             <div className="absolute inset-0 bg-gradient-to-r from-accent/20 to-purple-600/20 rounded-[40px] opacity-100 group-hover:scale-105 transition-transform duration-1000"></div>
             <div className="relative p-10 border border-white/5 rounded-[40px] backdrop-blur-2xl overflow-hidden">
@@ -613,7 +614,7 @@ const FinancialAnalysis = () => {
         </div>
 
         {/* Real-time System Log Bar */}
-        <div className="lg:col-span-12 mt-8 p-4 bg-white/[0.01] border border-white/5 rounded-2xl flex items-center justify-between pointer-events-none opacity-40">
+        <div style={{ flex: '1 1 100%' }} className="mt-8 p-4 bg-white/[0.01] border border-white/5 rounded-2xl flex items-center justify-between pointer-events-none opacity-40">
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-2">
               <div className="w-1.5 h-1.5 rounded-full bg-green animate-pulse"></div>

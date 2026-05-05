@@ -177,6 +177,7 @@ export default function Counterparties() {
 
       {partyModal && (
         <AddPartyPopup
+          open={!!partyModal}
           party={partyModal === 'new' ? null : partyModal}
           onClose={() => setPartyModal(null)}
           onSave={handlePartySaved}

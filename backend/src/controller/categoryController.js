@@ -1,6 +1,8 @@
+import mongoose from 'mongoose'
 import httpResponse from '../util/httpResponse.js'
 import httpError from '../util/httpError.js'
 import Category from '../model/categoryModel.js'
+import userModel from '../model/userModel.js'
 import { validateJoiSchema, validationCategoryBody } from '../service/validationService.js'
 
 // Simple helper to generate a category tree
@@ -25,7 +27,7 @@ export default {
             if (error) return httpError(next, error, req, 422)
 
             const userId = req.authenticatedUser._id
-            const user = await mongoose.model('User').findById(userId).select('plan')
+            const user = await userModel.findById(userId).select('plan')
             const plan = user?.plan || 'basic'
             const count = await Category.countDocuments({ userId, isDeleted: false })
             const limit = plan === 'basic' ? 10 : 100

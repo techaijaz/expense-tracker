@@ -172,41 +172,43 @@ function SignUp() {
   };
 
   const inputClass =
-    'w-full bg-surface-container-lowest border-none rounded-lg px-4 py-3 text-on-surface placeholder:text-outline-variant focus:ring-1 focus:ring-primary/20 transition-all font-body text-sm ghost-border outline-none';
+    'w-full bg-bg3 border border-transparent rounded-lg px-4 py-2.5 md:py-3 text-text placeholder:text-text3/40 focus:ring-1 focus:ring-accent/20 focus:border-accent/40 transition-all font-body text-sm outline-none';
   const labelClass =
-    'font-label text-xs font-semibold uppercase tracking-widest text-on-surface-variant';
+    'font-label text-[10px] font-bold uppercase tracking-[0.2em] text-text3';
 
   return (
-    <div className="bg-surface selection:bg-primary/30 selection:text-primary min-h-screen flex flex-col items-center justify-center p-4 font-body">
-      <div className="w-full max-w-[480px] space-y-8 py-10">
+    <div className="bg-bg text-text selection:bg-accent/30 selection:text-accent min-h-screen flex flex-col items-center justify-center p-4 font-body transition-colors">
+      <div className="w-full max-w-[480px] space-y-3 md:space-y-6 py-2 md:py-6">
         {/* Brand Header */}
-        <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center p-3 rounded-xl bg-surface-container-high mb-4">
-            <span
-              className="material-symbols-outlined text-primary text-3xl"
-              style={{ fontVariationSettings: "'FILL' 1" }}
-            >
-              account_balance_wallet
-            </span>
+        <div className="flex flex-col items-center gap-2 text-center">
+          <div className="flex items-center justify-center gap-3 mb-1">
+            <div className="flex items-center justify-center p-2.5 rounded-xl bg-accent-glow">
+              <span
+                className="material-symbols-outlined text-accent text-2xl md:text-3xl"
+                style={{ fontVariationSettings: "'FILL' 1" }}
+              >
+                account_balance_wallet
+              </span>
+            </div>
+            <h1 className="font-headline text-3xl md:text-4xl font-extrabold tracking-tighter text-text">
+              aiexpenser
+            </h1>
           </div>
-          <h1 className="font-headline text-4xl font-extrabold tracking-tighter text-on-surface">
-            aiexpenser
-          </h1>
-          <p className="font-body text-on-surface-variant tracking-wide">
+          <p className="font-body text-text3 tracking-wide text-xs md:text-sm">
             Design your financial future with precision.
           </p>
         </div>
 
         {/* Main Sign Up Card */}
-        <main className="bg-surface-container rounded-xl p-8 space-y-6 border border-on-surface/10 shadow-2xl relative overflow-hidden">
+        <main className="w-full bg-bg2 rounded-xl p-5 md:p-8 space-y-4 md:space-y-6 border border-border shadow-2xl relative overflow-hidden">
           {/* Subtle Decorative Gradient */}
-          <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary/10 rounded-full blur-[80px]"></div>
+          <div className="absolute -top-24 -right-24 w-48 h-48 bg-accent/5 rounded-full blur-[80px]"></div>
 
           <header className="relative z-10">
-            <h2 className="font-headline text-2xl font-bold text-on-surface">
+            <h2 className="font-headline text-xl md:text-2xl font-bold text-text">
               Create your account
             </h2>
-            <p className="font-body text-sm text-on-surface-variant mt-1">
+            <p className="font-body text-xs md:text-sm text-text3 mt-1">
               Start your journey to premium wealth management.
             </p>
           </header>
@@ -217,8 +219,8 @@ function SignUp() {
             id="signup-form"
           >
             {/* Name Fields Row */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
+            <div className="flex flex-wrap gap-4 w-full">
+              <div className="flex-1 min-w-[200px] space-y-1.5">
                 <label className={labelClass} htmlFor="firstName">
                   First Name
                 </label>
@@ -235,7 +237,7 @@ function SignUp() {
                   </p>
                 )}
               </div>
-              <div className="space-y-1.5">
+              <div className="flex-1 min-w-[200px] space-y-1.5">
                 <label className={labelClass} htmlFor="lastName">
                   Last Name
                 </label>
@@ -301,7 +303,7 @@ function SignUp() {
                 <div className="relative flex items-center justify-center">
                   <input
                     {...register('consent')}
-                    className="peer appearance-none w-5 h-5 rounded-md border border-on-surface/10 bg-surface-container-lowest checked:bg-primary checked:border-primary transition-all cursor-pointer"
+                    className="peer appearance-none w-5 h-5 rounded-md border border-border2 bg-bg3 checked:bg-accent checked:border-accent transition-all cursor-pointer"
                     id="consent"
                     type="checkbox"
                   />
@@ -310,27 +312,27 @@ function SignUp() {
                   </span>
                 </div>
                 <label
-                  className="text-[11px] text-on-surface-variant font-medium cursor-pointer select-none leading-relaxed"
+                  className="text-[11px] text-text3 font-medium cursor-pointer select-none leading-relaxed"
                   htmlFor="consent"
                 >
                   I acknowledge the architectural standards and agree to the{' '}
-                  <span className="text-primary font-bold hover:underline underline-offset-4">
+                  <span className="text-accent font-bold hover:underline underline-offset-4">
                     Terms of Vault
                   </span>
                 </label>
               </div>
               {errors.consent && (
-                <p className="text-[10px] text-error px-1 animate-in fade-in slide-in-from-top-1">
+                <p className="text-[10px] text-red px-1 animate-in fade-in slide-in-from-top-1">
                   {errors.consent.message}
                 </p>
               )}
             </div>
 
             {/* Action Buttons */}
-            <div className="pt-2 space-y-3">
+            <div className="pt-1 md:pt-2 space-y-3">
               <button
                 disabled={isLoading}
-                className="w-full editorial-gradient py-3.5 rounded-lg text-white font-label text-xs font-bold uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full bg-gradient-to-r from-accent to-accent2 py-3 rounded-xl text-white font-label text-[10px] md:text-[11px] font-bold uppercase tracking-widest shadow-lg shadow-accent/20 hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 type="submit"
               >
                 {isLoading ? (
@@ -339,18 +341,18 @@ function SignUp() {
                 {isLoading ? 'Creating Account...' : 'Create Account'}
               </button>
 
-              <div className="relative py-2">
+              <div className="relative my-3 md:my-4">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-on-surface/5"></div>
+                  <div className="w-full border-t border-border"></div>
                 </div>
-                <div className="relative flex justify-center text-[10px] uppercase tracking-tighter">
-                  <span className="bg-surface-container px-4 text-on-surface-variant font-medium">
+                <div className="relative flex justify-center text-[9px] uppercase tracking-widest">
+                  <span className="bg-bg2 px-3 text-text3/60 font-black">
                     Or architectural access
                   </span>
                 </div>
               </div>
 
-              <div className="flex justify-center">
+              <div className="flex justify-center mt-2 md:mt-4">
                 <GoogleLogin
                   onSuccess={onGoogleSuccess}
                   onError={() => toast.error('Google Sign Up Failed')}
@@ -364,21 +366,21 @@ function SignUp() {
             </div>
           </form>
 
-          <footer className="pt-6 border-t border-on-surface/5 flex flex-col items-center gap-4">
-            <div className="flex items-start gap-3 bg-surface-container-lowest/50 p-3 rounded-lg ghost-border">
-              <span className="material-symbols-outlined text-primary text-sm">
+          <footer className="pt-4 flex flex-col items-center gap-4">
+            <div className="flex items-start gap-3 bg-bg3 p-3 rounded-lg border border-border">
+              <span className="material-symbols-outlined text-accent text-sm">
                 shield
               </span>
-              <p className="font-body text-[11px] leading-relaxed text-on-surface-variant">
+              <p className="font-body text-[11px] leading-relaxed text-text3">
                 Your data is completely private. We don't require bank account
                 credentials. All encryption follows high-tier Swiss financial
                 standards.
               </p>
             </div>
-            <p className="text-sm font-body text-on-surface-variant">
+            <p className="text-sm font-body text-text3">
               Already have an account?
               <Link
-                className="text-primary font-semibold hover:underline underline-offset-4 ml-1"
+                className="text-accent font-semibold hover:underline underline-offset-4 ml-1"
                 to="/"
               >
                 Sign in

@@ -8,6 +8,7 @@ import {
   removeAccount,
 } from '@/redux/accountSlice';
 import AddAccounts from './AddAccounts';
+import SubscriptionPopup from './SubscriptionPopup';
 import useFormat from '@/hooks/useFormat';
 import {
   Dialog,
@@ -22,17 +23,17 @@ import { Input } from '@/components/ui/input';
 
 // ─── Account type config ──────────────────────────────────────────────────────
 const ACCOUNT_TYPE_CONFIG = {
-  BANK: {
-    emoji: '🏛',
-    label: 'Bank',
-    badgeClass: 'acc-type-badge bank',
-    balanceColor: 'var(--accent)',
-  },
   CASH: {
     emoji: '💵',
     label: 'Cash',
     badgeClass: 'acc-type-badge cash',
     balanceColor: 'var(--green)',
+  },
+  BANK: {
+    emoji: '🏛',
+    label: 'Bank',
+    badgeClass: 'acc-type-badge bank',
+    balanceColor: 'var(--accent)',
   },
   INVESTMENT: {
     emoji: '📈',
@@ -47,7 +48,7 @@ const ACCOUNT_TYPE_CONFIG = {
     balanceColor: 'var(--red)',
     isNegative: true,
   },
-  EWALLET: {
+  WALLET: {
     emoji: '📱',
     label: 'E-Wallet',
     badgeClass: 'acc-type-badge ewallet',
@@ -63,31 +64,39 @@ const getTypeConfig = (type) =>
     balanceColor: 'var(--accent)',
   };
 
-// ─── Card Dropdown Menu ───────────────────────────────────────────────────────
 function AccountMenu({
   account,
   onSetDefault,
   onToggleActive,
   onEdit,
   onDelete,
+  onOpenChange,
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const isCash = account.type === 'CASH';
 
+
   useEffect(() => {
     const handler = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target)) {
+        setOpen(false);
+        onOpenChange?.(false);
+      }
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
   return (
-    <div className="relative" ref={ref}>
+    <div style={{ position: 'relative' }} ref={ref}>
       <div
         className="acc-menu"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => {
+          const next = !open;
+          setOpen(next);
+          onOpenChange?.(next);
+        }}
         title="Account options"
       >
         ⋮
@@ -99,13 +108,12 @@ function AccountMenu({
             position: 'absolute',
             right: 0,
             top: '36px',
-            zIndex: 50,
+            zIndex: 100,
             width: '200px',
             background: 'var(--bg4)',
             border: '1px solid var(--border2)',
             borderRadius: 'var(--r)',
             boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-            overflow: 'hidden',
           }}
         >
           {/* Toggle Active */}
@@ -113,6 +121,7 @@ function AccountMenu({
             onClick={() => {
               onToggleActive();
               setOpen(false);
+              onOpenChange?.(false);
             }}
             disabled={isCash}
             style={{
@@ -146,6 +155,7 @@ function AccountMenu({
             onClick={() => {
               onSetDefault();
               setOpen(false);
+              onOpenChange?.(false);
             }}
             disabled={account.isDefault}
             style={{
@@ -180,6 +190,7 @@ function AccountMenu({
             onClick={() => {
               onEdit();
               setOpen(false);
+              onOpenChange?.(false);
             }}
             style={{
               width: '100%',
@@ -212,6 +223,7 @@ function AccountMenu({
               onClick={() => {
                 onDelete();
                 setOpen(false);
+                onOpenChange?.(false);
               }}
               style={{
                 width: '100%',
@@ -306,21 +318,11 @@ export default function Accounts() {
   const [loading, setLoading] = useState(false);
   const [editingAccount, setEditingAccount] = useState(null);
   const [deletingAccount, setDeletingAccount] = useState(null);
+  const [isSubscriptionOpen, setIsSubscriptionOpen] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState(null);
   const [deleteInput, setDeleteInput] = useState('');
-  const plan = user?.user?.plan || 'basic';
-
-  // Avatar initials from user
-  const userInitials = useMemo(() => {
-    const name = user?.user?.name || '';
-    return (
-      name
-        .split(' ')
-        .map((n) => n[0])
-        .join('')
-        .toUpperCase()
-        .slice(0, 2) || 'U'
-    );
-  }, [user]);
+  const userObj = user?.user || user;
+  const plan = userObj?.plan || 'basic';
 
   // Fetch accounts
   useEffect(() => {
@@ -376,7 +378,9 @@ export default function Accounts() {
     try {
       await api.delete(`/account/${account._id}`);
       dispatch(removeAccount(account._id));
-      toast.success(`"${account.name}" and all related data removed.`);
+      toast.success(
+        `"${account.name}" has been deleted. Related transactions remain in your history.`,
+      );
       setDeletingAccount(null);
       setDeleteInput('');
     } catch (e) {
@@ -387,10 +391,12 @@ export default function Accounts() {
   // ── Derived stats ────────────────────────────────────────────────────────
   const netLiquidity = useMemo(() => {
     if (!accounts) return 0;
-    return accounts.reduce((sum, acc) => {
-      const bal = Number(acc.balance || 0);
-      return acc.type === 'CREDIT_CARD' ? sum - Math.abs(bal) : sum + bal;
-    }, 0);
+    return accounts
+      .filter((a) => !a.isDeleted)
+      .reduce((sum, acc) => {
+        const bal = Number(acc.balance || 0);
+        return acc.type === 'CREDIT_CARD' ? sum - Math.abs(bal) : sum + bal;
+      }, 0);
   }, [accounts]);
 
   const allocation = useMemo(() => {
@@ -401,355 +407,339 @@ export default function Accounts() {
       cash = 0,
       other = 0,
       totalPositive = 0;
-    accounts.forEach((acc) => {
-      if (acc.type === 'CREDIT_CARD') return;
-      const bal = Math.max(0, Number(acc.balance || 0));
-      totalPositive += bal;
-      if (acc.type === 'BANK') banking += bal;
-      else if (acc.type === 'INVESTMENT') investments += bal;
-      else if (acc.type === 'CASH') cash += bal;
-      else other += bal;
-    });
+    accounts
+      .filter((a) => !a.isDeleted)
+      .forEach((acc) => {
+        if (acc.type === 'CREDIT_CARD') return;
+        const bal = Math.max(0, Number(acc.balance || 0));
+        totalPositive += bal;
+        if (acc.type === 'BANK') banking += bal;
+        else if (acc.type === 'INVESTMENT') investments += bal;
+        else if (acc.type === 'CASH') cash += bal;
+        else other += bal;
+      });
     return { banking, investments, cash, other, total: totalPositive || 1 };
   }, [accounts]);
 
   // ── Render ───────────────────────────────────────────────────────────────
   return (
-    <div className="main-content">
-      {/* Page Body */}
-      <div className="page-body">
-        {/* Plan Banner */}
-        {plan === 'basic' && (
-          <div
-            style={{
-              background: 'var(--amber-bg)',
-              border: '1px solid var(--amber-border)',
-              borderRadius: 'var(--r)',
-              padding: '10px 14px',
-              marginBottom: '16px',
-              fontSize: '12px',
-              color: 'var(--amber)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-            }}
-          >
-            ⭐{' '}
-            <span>
-              <b>Basic Plan:</b> 1 bank account limit.{' '}
-              <a
-                href="#"
-                style={{
-                  color: 'var(--accent)',
-                  fontWeight: 600,
-                  marginLeft: 4,
-                }}
-              >
-                Upgrade to Pro for unlimited →
-              </a>
-            </span>
-          </div>
-        )}
-
-        {/* Accounts Grid */}
-        <div className="accounts-grid">
-          {loading ? (
-            <>
-              <SkeletonCard />
-              <SkeletonCard />
-              <SkeletonCard />
-            </>
-          ) : accounts && accounts.length > 0 ? (
-            <>
-              {accounts.map((account) => {
-                const cfg = getTypeConfig(account.type);
-                const balanceInt = Number(account.balance || 0);
-                const isInactive = !account.isActive;
-
-                return (
-                  <div
-                    key={account._id}
-                    className="account-card"
-                    style={{
-                      opacity: isInactive ? 0.5 : 1,
-                      filter: isInactive ? 'grayscale(0.6)' : 'none',
-                      borderColor: account.isDefault
-                        ? 'var(--accent)'
-                        : undefined,
-                      position: 'relative',
-                    }}
-                  >
-                    {/* Inactive badge */}
-                    {isInactive && (
-                      <div
-                        style={{
-                          position: 'absolute',
-                          top: '10px',
-                          left: '50%',
-                          transform: 'translateX(-50%)',
-                          background: 'var(--bg4)',
-                          border: '1px solid var(--border2)',
-                          borderRadius: 'var(--r2)',
-                          padding: '2px 8px',
-                          fontSize: '10px',
-                          fontWeight: 700,
-                          color: 'var(--text3)',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.1em',
-                          zIndex: 2,
-                        }}
-                      >
-                        INACTIVE
-                      </div>
-                    )}
-
-                    {/* Header row: badge + menu */}
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                      }}
-                    >
-                      <span className={cfg.badgeClass}>
-                        {cfg.emoji} {cfg.label}
-                      </span>
-                      <AccountMenu
-                        account={account}
-                        onSetDefault={() => handleSetDefault(account)}
-                        onToggleActive={() => handleToggleActive(account)}
-                        onEdit={() => setEditingAccount(account)}
-                        onDelete={() => setDeletingAccount(account)}
-                      />
-                    </div>
-
-                    {/* Account name */}
-                    <div className="acc-name">
-                      {account.name}
-                      {account.isDefault && (
-                        <span className="acc-default">★ Default</span>
-                      )}
-                    </div>
-
-                    {/* Account number / subtitle */}
-                    <div className="acc-num">
-                      {account.type === 'CASH'
-                        ? 'Always available'
-                        : account.accountNumber
-                          ? `•••• •••• •••• ${account.accountNumber}`
-                          : '—'}
-                    </div>
-
-                    {/* Balance */}
-                    <div
-                      className="acc-balance"
-                      style={{ color: cfg.balanceColor }}
-                    >
-                      {cfg.isNegative
-                        ? `${formatAmount(Math.abs(balanceInt))}${balanceInt < 0 ? ' Owed' : ''}`
-                        : formatAmount(balanceInt)}
-                    </div>
-
-                    {/* Credit limit if applicable */}
-                    {cfg.isNegative && account.creditLimit > 0 && (
-                      <div
-                        style={{
-                          fontSize: '11px',
-                          color: 'var(--text3)',
-                          marginTop: '6px',
-                          fontFamily: 'var(--mono)',
-                        }}
-                      >
-                        Limit: {formatAmount(account.creditLimit)}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-
-              {/* Add Account placeholder card */}
-              <AddAccounts
-                customTrigger={
-                  <div
-                    className="account-card"
-                    style={{
-                      border: '1px dashed var(--border2)',
-                      opacity: 0.6,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <div style={{ textAlign: 'center', padding: '20px 0' }}>
-                      <div style={{ fontSize: '28px', marginBottom: '8px' }}>
-                        +
-                      </div>
-                      <div
-                        style={{
-                          fontSize: '13px',
-                          fontWeight: 600,
-                          color: 'var(--text)',
-                        }}
-                      >
-                        Add Account
-                      </div>
-                      <div
-                        style={{
-                          fontSize: '11px',
-                          color: 'var(--text3)',
-                          marginTop: '4px',
-                        }}
-                      >
-                        {plan === 'basic'
-                          ? 'Pro required for more accounts'
-                          : 'Add a new account'}
-                      </div>
-                    </div>
-                  </div>
-                }
-              />
-            </>
-          ) : (
-            /* Empty state */
+    <div className="page-body pt-0">
+      {/* Net Liquidity + Allocation (Moved to Top) */}
+      {accounts && accounts.length > 0 && (
+        <div className="net-liquidity mb-8">
+          {/* Left: Net Liquidity */}
+          <div>
             <div
               style={{
-                gridColumn: '1 / -1',
-                padding: '60px 20px',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                border: '1px dashed var(--border2)',
-                borderRadius: 'var(--r3)',
-                gap: '12px',
+                fontSize: '11px',
+                color: 'var(--text3)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.08em',
+                fontWeight: 600,
+                marginBottom: '8px',
               }}
             >
-              <div style={{ fontSize: '40px' }}>🏦</div>
-              <div
-                style={{
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  color: 'var(--text2)',
-                }}
-              >
-                No accounts in your ecosystem
-              </div>
-              <div style={{ fontSize: '12px', color: 'var(--text3)' }}>
-                Initialize a new account to begin tracking liquidity.
-              </div>
-              <AddAccounts
-                customTrigger={
-                  <button className="btn-new" style={{ marginTop: '8px' }}>
-                    + Initialize Account
-                  </button>
-                }
-              />
+              Net Liquidity
             </div>
-          )}
-        </div>
-
-        {/* Net Liquidity + Allocation (only if accounts exist) */}
-        {accounts && accounts.length > 0 && (
-          <div className="net-liquidity">
-            {/* Left: Net Liquidity */}
-            <div>
-              <div
-                style={{
-                  fontSize: '11px',
-                  color: 'var(--text3)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.08em',
-                  fontWeight: 600,
-                  marginBottom: '8px',
-                }}
-              >
-                Net Liquidity
-              </div>
-              <div
-                style={{
-                  fontSize: '36px',
-                  fontWeight: 700,
-                  fontFamily: 'var(--mono)',
-                  color: netLiquidity >= 0 ? 'var(--accent)' : 'var(--red)',
-                  letterSpacing: '-1px',
-                }}
-              >
-                {formatAmount(netLiquidity)}
-              </div>
-              <div
-                style={{
-                  fontSize: '12px',
-                  color: 'var(--green)',
-                  marginTop: '6px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                }}
-              >
-                ↑ Active Portfolio
-              </div>
+            <div
+              style={{
+                fontSize: 'clamp(24px, 5vw, 36px)',
+                fontWeight: 700,
+                fontFamily: 'var(--mono)',
+                color: netLiquidity >= 0 ? 'var(--accent)' : 'var(--red)',
+                letterSpacing: '-1px',
+              }}
+            >
+              {formatAmount(netLiquidity)}
             </div>
-
-            {/* Right: Allocation Breakdown */}
-            <div>
-              <div
-                style={{
-                  fontSize: '11px',
-                  color: 'var(--text3)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.08em',
-                  fontWeight: 600,
-                  marginBottom: '12px',
-                }}
-              >
-                Allocation Breakdown
-              </div>
-
-              {[
-                {
-                  label: 'Total Banking',
-                  value: allocation.banking,
-                  color: 'var(--accent)',
-                },
-                {
-                  label: 'Investments',
-                  value: allocation.investments,
-                  color: 'var(--purple)',
-                },
-                {
-                  label: 'Liquid Cash',
-                  value: allocation.cash,
-                  color: 'var(--green)',
-                },
-                {
-                  label: 'Other',
-                  value: allocation.other,
-                  color: 'var(--amber)',
-                },
-              ].map(({ label, value, color }) => {
-                const pct = ((value / allocation.total) * 100).toFixed(1);
-                return (
-                  <div className="alloc-row" key={label}>
-                    <span className="alloc-label">{label}</span>
-                    <div className="alloc-bar-wrap">
-                      <div
-                        className="alloc-bar"
-                        style={{
-                          width: `${pct}%`,
-                          background: color,
-                          transition: 'width 0.8s ease',
-                        }}
-                      />
-                    </div>
-                    <span className="alloc-pct">{pct}%</span>
-                  </div>
-                );
-              })}
+            <div
+              style={{
+                fontSize: '12px',
+                color: 'var(--green)',
+                marginTop: '6px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+              }}
+            >
+              ↑ Active Portfolio
             </div>
           </div>
-        )}
-      </div>
+
+          {/* Right: Allocation Breakdown */}
+          <div className="hidden sm:block">
+            <div
+              style={{
+                fontSize: '11px',
+                color: 'var(--text3)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.08em',
+                fontWeight: 600,
+                marginBottom: '12px',
+              }}
+            >
+              Allocation Breakdown
+            </div>
+
+            {[
+              {
+                label: 'Total Banking',
+                value: allocation.banking,
+                color: 'var(--accent)',
+              },
+              {
+                label: 'Investments',
+                value: allocation.investments,
+                color: 'var(--purple)',
+              },
+              {
+                label: 'Liquid Cash',
+                value: allocation.cash,
+                color: 'var(--green)',
+              },
+              {
+                label: 'Other',
+                value: allocation.other,
+                color: 'var(--amber)',
+              },
+            ].map(({ label, value, color }) => {
+              const pct = ((value / allocation.total) * 100).toFixed(1);
+              return (
+                <div className="alloc-row" key={label}>
+                  <span className="alloc-label">{label}</span>
+                  <div className="alloc-bar-wrap">
+                    <div
+                      className="alloc-bar"
+                      style={{
+                        width: `${pct}%`,
+                        background: color,
+                        transition: 'width 0.8s ease',
+                      }}
+                    />
+                  </div>
+                  <span className="alloc-pct">{pct}%</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Plan Banner */}
+      {plan === 'basic' && (
+        <div className="flex items-center gap-3 p-3 mb-6 text-xs border rounded-lg bg-amber-500/10 border-amber-500/20 text-amber-500">
+          <span className="text-sm">⭐</span>
+          <p className="flex-1">
+            <b>Basic Plan:</b> You can have 1 account of each type.
+            <a
+              href="#"
+              className="ml-2 font-bold underline text-accent"
+              onClick={(e) => {
+                e.preventDefault();
+                setIsSubscriptionOpen(true);
+              }}
+            >
+              Upgrade to Pro for unlimited →
+            </a>
+          </p>
+        </div>
+      )}
+
+      {/* Sectioned Accounts */}
+      {loading ? (
+        <div className="flex flex-wrap gap-4">
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+        </div>
+      ) : accounts && accounts.length > 0 ? (
+        <div className="space-y-10">
+          {Object.entries(ACCOUNT_TYPE_CONFIG).map(([type, config]) => {
+            const typeAccounts = accounts.filter(
+              (acc) => acc.type === type && !acc.isDeleted,
+            );
+
+            if (typeAccounts.length === 0 && type !== 'BANK' && type !== 'CASH')
+              return null;
+
+            const hasOpenMenu = typeAccounts.some(a => a._id === openMenuId);
+
+            return (
+              <div
+                key={type}
+                className={`account-section ${hasOpenMenu ? 'section-open' : ''}`}
+              >
+                <div className="flex items-center justify-between mb-4 border-b border-border pb-2">
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-text2 flex items-center gap-2">
+                    <span>{config.emoji}</span>
+                    {config.label}s
+                  </h3>
+                  <span className="text-[10px] bg-bg3 px-2 py-0.5 rounded-full font-mono text-text3">
+                    {typeAccounts.length} Account
+                    {typeAccounts.length !== 1 ? 's' : ''}
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap gap-4">
+                  {typeAccounts.map((account) => {
+                    const cfg = getTypeConfig(account.type);
+                    const balanceInt = Number(account.balance || 0);
+                    const isInactive = !account.isActive;
+
+                    return (
+                      <div
+                        key={account._id}
+                        className={`account-card flex-1 min-w-[280px] max-w-full sm:max-w-[calc(50%-8px)] lg:max-w-[calc(33.33%-11px)] xl:max-w-[calc(25%-12px)] ${openMenuId === account._id ? 'menu-open' : ''}`}
+                        style={{
+                          opacity: isInactive ? 0.5 : 1,
+                          filter: isInactive ? 'grayscale(0.6)' : 'none',
+                          borderColor: account.isDefault
+                            ? 'var(--accent)'
+                            : undefined,
+                        }}
+                      >
+                        {/* Inactive badge */}
+                        {isInactive && (
+                          <div
+                            style={{
+                              position: 'absolute',
+                              top: '10px',
+                              left: '50%',
+                              transform: 'translateX(-50%)',
+                              background: 'var(--bg4)',
+                              border: '1px solid var(--border2)',
+                              borderRadius: 'var(--r2)',
+                              padding: '2px 8px',
+                              fontSize: '10px',
+                              fontWeight: 700,
+                              color: 'var(--text3)',
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.1em',
+                              zIndex: 2,
+                            }}
+                          >
+                            INACTIVE
+                          </div>
+                        )}
+
+                        {/* Header row: badge + menu */}
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                          }}
+                        >
+                          <span className={cfg.badgeClass}>
+                            {cfg.emoji} {cfg.label}
+                          </span>
+                          <AccountMenu
+                            account={account}
+                            onSetDefault={() => handleSetDefault(account)}
+                            onToggleActive={() => handleToggleActive(account)}
+                            onEdit={() => setEditingAccount(account)}
+                            onDelete={
+                              account.type === 'CASH'
+                                ? null
+                                : () => setDeletingAccount(account)
+                            }
+                            onOpenChange={(isOpen) =>
+                              setOpenMenuId(isOpen ? account._id : null)
+                            }
+                          />
+                        </div>
+
+                        {/* Account name */}
+                        <div className="acc-name truncate pr-8">
+                          {account.name}
+                          {account.isDefault && (
+                            <span className="acc-default ml-2">★ Default</span>
+                          )}
+                        </div>
+
+                        {/* Account number / subtitle */}
+                        <div className="acc-num">
+                          {account.type === 'CASH'
+                            ? 'Always available'
+                            : account.accountNumber
+                              ? `•••• •••• •••• ${account.accountNumber}`
+                              : '—'}
+                        </div>
+
+                        {/* Balance */}
+                        <div
+                          className="acc-balance"
+                          style={{ color: cfg.balanceColor }}
+                        >
+                          {cfg.isNegative
+                            ? `${formatAmount(Math.abs(balanceInt))}${balanceInt < 0 ? ' Owed' : ''}`
+                            : formatAmount(balanceInt)}
+                        </div>
+
+                        {/* Credit limit if applicable */}
+                        {cfg.isNegative && account.creditLimit > 0 && (
+                          <div
+                            style={{
+                              fontSize: '11px',
+                              color: 'var(--text3)',
+                              marginTop: '6px',
+                              fontFamily: 'var(--mono)',
+                            }}
+                          >
+                            Limit: {formatAmount(account.creditLimit)}
+                          </div>
+                        )}
+
+                        {/* Recurring Days for Credit Card */}
+                        {account.type === 'CREDIT_CARD' &&
+                          (account.statementDay || account.dueDay) && (
+                            <div className="flex gap-3 mt-2 text-[10px] text-text3 font-medium">
+                              {account.statementDay && (
+                                <span className="flex items-center gap-1">
+                                  <span className="material-symbols-outlined text-[12px]">
+                                    description
+                                  </span>
+                                  Day {account.statementDay}
+                                </span>
+                              )}
+                              {account.dueDay && (
+                                <span className="flex items-center gap-1">
+                                  <span className="material-symbols-outlined text-[12px]">
+                                    event_repeat
+                                  </span>
+                                  Day {account.dueDay}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        /* Empty state */
+        <div className="flex flex-col items-center justify-center py-20 border-2 border-dashed border-border2 rounded-2xl gap-4">
+          <div className="text-5xl">🏦</div>
+          <div className="text-base font-bold text-text2">
+            No accounts in your ecosystem
+          </div>
+          <p className="text-sm text-text3 max-w-xs text-center">
+            Initialize your first account to begin tracking your liquidity and
+            cash flow.
+          </p>
+          <AddAccounts
+            customTrigger={
+              <button className="btn-new mt-2">
+                + Initialize First Account
+              </button>
+            }
+          />
+        </div>
+      )}
 
       {/* Edit Account Modal */}
       {editingAccount && (
@@ -790,7 +780,7 @@ export default function Accounts() {
                 gap: '8px',
               }}
             >
-              ⚠️ Critical Action
+              Delete Account
             </DialogTitle>
             <DialogDescription
               style={{
@@ -800,104 +790,87 @@ export default function Accounts() {
                 paddingTop: '8px',
               }}
             >
-              This will permanently remove{' '}
+              This will remove{' '}
               <span style={{ color: 'var(--text)', fontWeight: 700 }}>
                 "{deletingAccount?.name}"
               </span>{' '}
-              and{' '}
-              <span
-                style={{
-                  color: 'var(--red)',
-                  fontWeight: 700,
-                  textDecoration: 'underline',
-                }}
-              >
-                ALWAYS
-              </span>{' '}
-              hide its transactions and ledger history. This action cannot be
-              undone.
+              from your account lists and filters. Related transactions will
+              <span style={{ color: 'var(--accent)', fontWeight: 700 }}>
+                {' '}
+                NOT{' '}
+              </span>
+              be deleted. This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
 
           <div
             style={{
-              marginTop: '20px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '8px',
+              marginTop: '24px',
+              padding: '16px',
+              background: 'var(--red-bg)',
+              border: '1px solid var(--red-border)',
+              borderRadius: 'var(--r2)',
             }}
           >
-            <p
+            <div
               style={{
-                fontSize: '10px',
+                fontSize: '11px',
                 fontWeight: 700,
-                color: 'var(--text3)',
+                color: 'var(--red)',
                 textTransform: 'uppercase',
-                letterSpacing: '0.15em',
+                letterSpacing: '0.08em',
+                marginBottom: '8px',
               }}
             >
-              Type <span style={{ color: 'var(--text)' }}>"DELETE"</span> to
-              confirm:
-            </p>
+              Confirm Deletion
+            </div>
+            <div
+              style={{
+                fontSize: '12px',
+                color: 'var(--text2)',
+                marginBottom: '12px',
+              }}
+            >
+              Type <b>DELETE</b> to confirm this operation.
+            </div>
             <Input
               value={deleteInput}
               onChange={(e) => setDeleteInput(e.target.value)}
               placeholder="Type DELETE here..."
-              autoFocus
               style={{
-                background: 'var(--bg3)',
-                border: '1px solid var(--border2)',
-                borderRadius: 'var(--r2)',
+                background: 'var(--bg2)',
+                border: '1px solid var(--red-border)',
                 color: 'var(--text)',
                 fontSize: '13px',
-                padding: '10px 12px',
-                outline: 'none',
-                fontFamily: 'var(--font)',
               }}
             />
           </div>
 
-          <DialogFooter
-            style={{
-              marginTop: '20px',
-              display: 'flex',
-              gap: '10px',
-              justifyContent: 'flex-end',
-            }}
-          >
+          <DialogFooter style={{ marginTop: '24px', gap: '10px' }}>
             <Button
-              variant="ghost"
+              variant="outline"
               onClick={() => {
                 setDeletingAccount(null);
                 setDeleteInput('');
               }}
               style={{
-                padding: '9px 18px',
-                background: 'transparent',
-                border: '1px solid var(--border2)',
                 borderRadius: 'var(--r2)',
-                color: 'var(--text2)',
-                fontFamily: 'var(--font)',
                 fontSize: '13px',
-                cursor: 'pointer',
+                fontWeight: 600,
               }}
             >
               Cancel
             </Button>
             <Button
-              disabled={deleteInput !== 'DELETE'}
               onClick={() => handleDelete(deletingAccount)}
+              disabled={deleteInput.toUpperCase() !== 'DELETE'}
               style={{
-                padding: '9px 20px',
-                background: 'var(--red-bg)',
-                border: '1px solid var(--red-border)',
                 borderRadius: 'var(--r2)',
-                color: 'var(--red)',
-                fontFamily: 'var(--font)',
                 fontSize: '13px',
-                fontWeight: 700,
-                cursor: deleteInput === 'DELETE' ? 'pointer' : 'not-allowed',
-                opacity: deleteInput === 'DELETE' ? 1 : 0.5,
+                fontWeight: 600,
+                background: 'var(--red)',
+                color: '#fff',
+                border: 'none',
               }}
             >
               Confirm Deletion
@@ -905,6 +878,29 @@ export default function Accounts() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <SubscriptionPopup
+        isOpen={isSubscriptionOpen}
+        onOpenChange={setIsSubscriptionOpen}
+        currentPlan={plan}
+      />
+
+      {/* Mobile Floating Action Button */}
+      <div className="sm:hidden fixed bottom-8 right-6 z-50">
+        <AddAccounts
+          customTrigger={
+            <button
+              className="w-14 h-14 rounded-full bg-primary text-background shadow-2xl flex items-center justify-center active:scale-90 transition-all border-4 border-[var(--bg)]"
+              style={{
+                boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+                background: 'var(--accent)',
+              }}
+            >
+              <span className="text-2xl font-bold">+</span>
+            </button>
+          }
+        />
+      </div>
     </div>
   );
 }

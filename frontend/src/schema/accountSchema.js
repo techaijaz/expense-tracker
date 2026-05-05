@@ -23,8 +23,8 @@ export default {
         .preprocess((v) => (v === '' || v === undefined ? 0 : Number(v)), z.number())
         .optional()
         .default(0),
-      billGenerationDate: z.preprocess((v) => (v === '' ? null : v), z.any()).optional().nullable(),
-      dueDate: z.preprocess((v) => (v === '' ? null : v), z.any()).optional().nullable(),
+      statementDay: z.coerce.number().min(1).max(31).optional().nullable(),
+      dueDay: z.coerce.number().min(1).max(31).optional().nullable(),
     })
     .superRefine((data, ctx) => {
       // Account number required for BANK and CREDIT_CARD

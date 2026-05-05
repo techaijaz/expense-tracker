@@ -53,11 +53,9 @@ export function DateRangePicker({ className, value, onChange }) {
           </Button>
         </PopoverTrigger>
         <PopoverContent
-          className="w-auto p-0 z-[100]"
+          className="w-auto p-0 z-[100] bg-[var(--bg2)] border-[var(--border)]"
           align="start"
           style={{
-            backgroundColor: 'var(--bg3)',
-            border: '1px solid var(--border)',
             zIndex: 9999,
           }}
         >
