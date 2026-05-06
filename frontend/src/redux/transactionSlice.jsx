@@ -1,24 +1,24 @@
 import { createSlice } from '@reduxjs/toolkit';
 
-const transectionsSlice = createSlice({
+const transactionsSlice = createSlice({
   name: 'transactions',
   initialState: {
-    transections: [],
+    transactions: [],
   },
   reducers: {
-    setTransections: (state, action) => {
-      state.transections = Array.isArray(action.payload) 
+    setTransactions: (state, action) => {
+      state.transactions = Array.isArray(action.payload) 
         ? action.payload.filter(Boolean) 
         : [];
     },
-    addTransection: (state, action) => {
+    addTransaction: (state, action) => {
       if (!action.payload) return;
       const newTransactions = Array.isArray(action.payload)
         ? action.payload
         : [action.payload];
-      state.transections = [...newTransactions.filter(Boolean), ...state.transections].filter(Boolean);
+      state.transactions = [...newTransactions.filter(Boolean), ...state.transactions].filter(Boolean);
     },
-    updateTransection: (state, action) => {
+    updateTransaction: (state, action) => {
       const updatedData = Array.isArray(action.payload)
         ? action.payload
         : [action.payload];
@@ -26,22 +26,22 @@ const transectionsSlice = createSlice({
       const updatedIds = updatedData.map(t => t._id);
 
       // Remove existing entries for these IDs
-      state.transections = state.transections.filter(
+      state.transactions = state.transactions.filter(
         (t) => !updatedIds.includes(t._id)
       );
 
       // Add the updated ones
-      state.transections = [...updatedData, ...state.transections];
+      state.transactions = [...updatedData, ...state.transactions];
     },
-    deleteTransection: (state, action) => {
+    deleteTransaction: (state, action) => {
       // action.payload is the _id
-      state.transections = state.transections.filter(
+      state.transactions = state.transactions.filter(
         (t) => t._id !== action.payload
       );
     },
   },
 });
 
-export const { setTransections, addTransection, updateTransection, deleteTransection } = transectionsSlice.actions;
-export default transectionsSlice.reducer;
+export const { setTransactions, addTransaction, updateTransaction, deleteTransaction } = transactionsSlice.actions;
+export default transactionsSlice.reducer;
 

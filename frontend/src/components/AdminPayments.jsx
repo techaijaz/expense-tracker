@@ -7,13 +7,23 @@ import {
   FileSearch,
   ShieldCheck,
   Activity,
-  ArrowUpRight,
   Database,
   ExternalLink,
   Ban
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import { toast } from 'sonner';
+
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 
 const AdminPayments = () => {
   const [payments, setPayments] = useState([]);
@@ -98,7 +108,7 @@ const AdminPayments = () => {
           <p className="text-[10px] font-black uppercase tracking-widest text-text3">Synchronizing Data Stream...</p>
         </div>
       ) : (!payments || payments.length === 0) ? (
-        <div className="py-32 text-center glass-panel rounded-3xl border border-dashed border-border flex flex-col items-center">
+        <div className="py-32 text-center bg-bg2/40 backdrop-blur-md rounded-3xl border border-dashed border-border flex flex-col items-center">
           <div className="w-20 h-20 rounded-full bg-green/5 border border-green/10 flex items-center justify-center mb-6">
             <ShieldCheck size={40} className="text-green opacity-40" />
           </div>
@@ -108,7 +118,7 @@ const AdminPayments = () => {
       ) : (
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 pb-12">
           {payments && payments.map((payment) => (
-            <div key={payment._id} className="card glass-panel !p-0 overflow-hidden flex flex-col group hover:border-accent/40 transition-all shadow-2xl relative">
+            <div key={payment._id} className="bg-bg2/40 backdrop-blur-md rounded-2xl border border-border/50 overflow-hidden flex flex-col group hover:border-accent/40 transition-all shadow-xl relative">
               <div className="absolute top-0 right-0 p-1">
                 <div className="text-[8px] font-black uppercase tracking-widest text-text3 opacity-30 select-none">License Protocol v3.2</div>
               </div>
@@ -132,7 +142,7 @@ const AdminPayments = () => {
                     <span className="text-xs mr-1 opacity-50">₹</span>
                     {payment.amount}
                   </div>
-                  <div className={`acc-type-badge !inline-flex !mt-1 ${payment.period === 'yearly' ? 'investment' : 'purple'}`}>
+                  <div className={`inline-flex items-center justify-center px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-widest border mt-1 ${payment.period === 'yearly' ? 'bg-accent/10 text-accent border-accent/20' : 'bg-purple/10 text-purple border-purple/20'}`}>
                     {payment.period.toUpperCase()} NODE
                   </div>
                 </div>
@@ -166,7 +176,7 @@ const AdminPayments = () => {
                     <div className="absolute -inset-0.5 bg-gradient-to-r from-accent/20 to-purple/20 rounded-2xl blur opacity-30 group-hover/evidence:opacity-50 transition-opacity"></div>
                     <div className="relative p-4 bg-bg2/60 border border-border/20 rounded-2xl flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-accent-glow flex items-center justify-center text-accent">
+                        <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center text-accent">
                           <FileSearch size={22} />
                         </div>
                         <div>
@@ -178,7 +188,7 @@ const AdminPayments = () => {
                         href={payment.evidence} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="btn-outline !py-2 !px-4 hover:bg-accent hover:text-white hover:border-accent transition-all"
+                        className="inline-flex items-center justify-center h-9 px-4 rounded-xl border border-border bg-bg3 text-xs font-semibold text-text hover:bg-accent hover:text-white hover:border-accent transition-all"
                       >
                         <ExternalLink size={14} className="mr-1.5" />
                         Examine
@@ -189,22 +199,23 @@ const AdminPayments = () => {
               </div>
 
               <div className="p-4 bg-bg3/30 border-t border-border/10 flex gap-3">
-                <button 
+                <Button 
                   onClick={() => handleVerify(payment._id)}
-                  className="flex-[2] btn-primary hover:shadow-[0_0_20px_rgba(91,141,239,0.3)] !m-0 transition-shadow"
+                  className="flex-[2] bg-accent text-white hover:bg-accent/90 shadow-[0_0_20px_rgba(91,141,239,0.15)] hover:shadow-[0_0_20px_rgba(91,141,239,0.3)] transition-shadow h-11 rounded-xl"
                 >
-                  <CheckCircle2 size={18} />
+                  <CheckCircle2 size={18} className="mr-2" />
                   <span>Execute Approval</span>
-                </button>
-                <button 
+                </Button>
+                <Button 
+                  variant="outline"
                   onClick={() => {
                     setSelectedPayment(payment);
                     setShowRejectModal(true);
                   }}
-                  className="flex-1 btn-outline !py-2.5 !m-0 hover:bg-red/10 hover:text-red hover:border-red transition-all"
+                  className="flex-1 h-11 rounded-xl border-border bg-bg3 hover:bg-red/10 hover:text-red hover:border-red transition-all"
                 >
                   <Ban size={18} />
-                </button>
+                </Button>
               </div>
             </div>
           ))}
@@ -212,56 +223,56 @@ const AdminPayments = () => {
       )}
 
       {/* Security Override Modal (Rejection Modal) */}
-      {showRejectModal && (
-        <div className="modal-overlay animate-in fade-in duration-300">
-          <div className="modal glass-shimmer relative !max-w-md animate-in zoom-in-95 duration-200">
-            <button 
-              onClick={() => setShowRejectModal(false)}
-              className="modal-close group"
-            >
-              <XCircle size={18} className="group-hover:rotate-90 transition-transform" />
-            </button>
-            <div className="flex items-center gap-3 mb-1">
+      <Dialog open={showRejectModal} onOpenChange={setShowRejectModal}>
+        <DialogContent className="max-w-md bg-bg2 border-border rounded-3xl shadow-2xl p-6">
+          <DialogHeader className="mb-4">
+            <div className="flex items-center gap-3 mb-2">
               <Ban className="text-red" size={24} />
-               <div>
-                  <h3 className="modal-title !mb-0 font-black">Deny License Request</h3>
-               </div>
+              <DialogTitle className="text-xl font-black text-text">
+                Deny License Request
+              </DialogTitle>
             </div>
-            <p className="modal-sub">Specify the policy violation or reason for authorization failure.</p>
-            
-            <div className="space-y-4">
-               <div className="form-group">
-                  <label className="form-label">Failure logs / Reason</label>
-                  <textarea 
-                    className="form-input min-h-[140px] !bg-bg4 !border-dashed resize-none font-mono text-xs leading-relaxed"
-                    placeholder="E.g. [INVALID_HASH] Transaction ID not indexed in bank records..."
-                    value={rejectionReason}
-                    onChange={(e) => setRejectionReason(e.target.value)}
-                  />
-               </div>
-            </div>
+            <DialogDescription className="text-xs text-text3 font-medium">
+              Specify the policy violation or reason for authorization failure.
+            </DialogDescription>
+          </DialogHeader>
 
-            <div className="modal-actions !mt-8">
-              <button 
-                onClick={() => setShowRejectModal(false)}
-                className="btn-cancel font-bold uppercase tracking-widest text-[10px]"
-              >
-                Sync Cancel
-              </button>
-              <button 
-                onClick={handleReject}
-                disabled={!rejectionReason}
-                className="btn-danger flex items-center justify-center gap-2 !w-auto !px-6 font-bold uppercase tracking-widest text-[10px] disabled:opacity-30 disabled:grayscale transition-all"
-              >
-                <XCircle size={14} />
-                Terminate Request
-              </button>
+          <div className="space-y-4 my-2">
+            <div className="space-y-2">
+              <Label className="text-[10px] font-bold uppercase tracking-widest text-text3 ml-1">
+                Failure logs / Reason
+              </Label>
+              <Textarea 
+                className="min-h-[140px] bg-bg4 border-dashed border-border/50 resize-none font-mono text-xs leading-relaxed focus-visible:ring-red/20 focus-visible:border-red/40"
+                placeholder="E.g. [INVALID_HASH] Transaction ID not indexed in bank records..."
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+              />
             </div>
           </div>
-        </div>
-      )}
+
+          <div className="flex justify-end gap-3 mt-6">
+            <Button 
+              variant="outline"
+              onClick={() => setShowRejectModal(false)}
+              className="h-10 rounded-xl text-[10px] font-bold uppercase tracking-widest bg-bg3 border-border hover:bg-bg4 text-text3 hover:text-text"
+            >
+              Sync Cancel
+            </Button>
+            <Button 
+              onClick={handleReject}
+              disabled={!rejectionReason}
+              className="h-10 rounded-xl bg-red hover:bg-red/90 text-white font-bold uppercase tracking-widest text-[10px] flex items-center gap-2 px-6 disabled:opacity-50"
+            >
+              <XCircle size={14} />
+              Terminate Request
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
 
 export default AdminPayments;
+

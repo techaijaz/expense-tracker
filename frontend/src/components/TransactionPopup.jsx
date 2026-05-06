@@ -7,9 +7,9 @@ import { z } from 'zod';
 import { format } from 'date-fns';
 import useApi from '@/hooks/useApi';
 import {
-  addTransection,
-  updateTransection,
-} from '@/redux/transectionSlice';
+  addTransaction,
+  updateTransaction,
+} from '@/redux/transactionSlice';
 import useFormat from '@/hooks/useFormat';
 import AddCategoryPopup from './AddCategoryPopup';
 import { updateAccount } from '@/redux/accountSlice';
@@ -51,7 +51,7 @@ import { useMediaQuery } from '@/hooks/use-media-query';
 import { restrictDecimals } from '@/utils/format';
 import AddPartyPopup from './AddPartyPopup';
 
-const transectionSchema = z
+const transactionSchema = z
   .object({
     type: z.enum(['expense', 'income', 'transfer', 'debt']),
     account: z.string().min(1, 'Account is required'),
@@ -142,7 +142,7 @@ const TransactionPopup = ({
   open,
   setOpen,
   onSuccess,
-  editTransection = null,
+  editTransaction = null,
 }) => {
   const isDesktop = useMediaQuery('(min-width: 768px)');
   const dispatch = useDispatch();
@@ -167,7 +167,7 @@ const TransactionPopup = ({
     setValue,
     control,
   } = useForm({
-    resolver: zodResolver(transectionSchema),
+    resolver: zodResolver(transactionSchema),
     mode: 'onChange',
     defaultValues: {
       type: 'expense',
@@ -219,23 +219,23 @@ const TransactionPopup = ({
 
   useEffect(() => {
     if (open) {
-      if (editTransection) {
+      if (editTransaction) {
         reset({
-          type: editTransection.type?.toLowerCase() || 'expense',
-          date: editTransection.date
-            ? new Date(editTransection.date)
+          type: editTransaction.type?.toLowerCase() || 'expense',
+          date: editTransaction.date
+            ? new Date(editTransaction.date)
             : new Date(),
-          amount: editTransection.amount,
-          account: String(editTransection.accountId?._id || editTransection.accountId || ''),
-          description: editTransection.title || '',
-          notes: editTransection.notes || '',
-          tags: (editTransection.tags || []).join(', '),
-          pendingStatus: editTransection.pendingStatus || false,
-          category: String(editTransection.categoryId?._id || editTransection.categoryId || ''),
-          toaccount: String(editTransection.targetAccountId?._id || editTransection.targetAccountId || ''),
+          amount: editTransaction.amount,
+          account: String(editTransaction.accountId?._id || editTransaction.accountId || ''),
+          description: editTransaction.title || '',
+          notes: editTransaction.notes || '',
+          tags: (editTransaction.tags || []).join(', '),
+          pendingStatus: editTransaction.pendingStatus || false,
+          category: String(editTransaction.categoryId?._id || editTransaction.categoryId || ''),
+          toaccount: String(editTransaction.targetAccountId?._id || editTransaction.targetAccountId || ''),
           // Normalize: repayment transactions from DB have REPAYMENT_IN/OUT — map back to 'repay' for the form
-          debttype: editTransection.debtType || '',
-          partyId: String(editTransection.partyId?._id || editTransection.partyId || ''),
+          debttype: editTransaction.debtType || '',
+          partyId: String(editTransaction.partyId?._id || editTransaction.partyId || ''),
         });
       } else {
         const defaultAccount = activeAccounts.find((a) => a.isDefault);
@@ -258,7 +258,7 @@ const TransactionPopup = ({
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, editTransection]);
+  }, [open, editTransaction]);
 
   useEffect(() => {
     if (open) {
@@ -287,10 +287,10 @@ const TransactionPopup = ({
     }
 
     try {
-      const url = editTransection
-        ? `/transactions/${editTransection._id}`
+      const url = editTransaction
+        ? `/transactions/${editTransaction._id}`
         : '/transactions';
-      const method = editTransection ? 'put' : 'post';
+      const method = editTransaction ? 'put' : 'post';
 
       const payload = {
         date: data.date,
@@ -318,10 +318,10 @@ const TransactionPopup = ({
       const res = await makeRequest({ url, method, data: payload });
 
       const transactionData = res?.data?.transaction || res?.data?.data;
-      if (editTransection) {
-        dispatch(updateTransection(transactionData));
+      if (editTransaction) {
+        dispatch(updateTransaction(transactionData));
       } else {
-        dispatch(addTransection(transactionData));
+        dispatch(addTransaction(transactionData));
       }
 
       if (res?.data?.updatedAccounts) {
@@ -329,13 +329,13 @@ const TransactionPopup = ({
       }
 
       toast.success(
-        editTransection ? 'Updated successfully!' : 'Transaction saved!',
+        editTransaction ? 'Updated successfully!' : 'Transaction saved!',
       );
       window.dispatchEvent(new CustomEvent('refetch-system-metrics'));
       setOpen(false);
     } catch (error) {
       toast.error(
-        `Failed to ${editTransection ? 'update' : 'save'} transaction: ` +
+        `Failed to ${editTransaction ? 'update' : 'save'} transaction: ` +
           (error?.response?.data?.message || error?.message || 'Unknown error'),
       );
     }
@@ -797,7 +797,7 @@ const TransactionPopup = ({
             disabled={loading}
             className="flex-[2] h-12 rounded-2xl bg-gradient-to-r from-accent to-accent2 text-white font-black text-[10px] uppercase tracking-widest shadow-lg shadow-accent/20"
           >
-            {loading ? 'Processing…' : editTransection ? 'Update Record' : 'Save Entry'}
+            {loading ? 'Processing…' : editTransaction ? 'Update Record' : 'Save Entry'}
           </Button>
         </div>
       )}
@@ -821,7 +821,7 @@ const TransactionPopup = ({
       >
         {loading ? (
           <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-        ) : editTransection ? 'Update Transaction' : 'Confirm Transaction'}
+        ) : editTransaction ? 'Update Transaction' : 'Confirm Transaction'}
       </Button>
     </div>
   );
@@ -835,11 +835,11 @@ const TransactionPopup = ({
               <div className="flex items-center gap-3 mb-2">
                  <div className="p-2 rounded-xl bg-accent-glow">
                     <span className="material-symbols-outlined text-accent text-xl font-bold">
-                       {editTransection ? 'edit_note' : 'account_balance_wallet'}
+                       {editTransaction ? 'edit_note' : 'account_balance_wallet'}
                     </span>
                  </div>
                  <DialogTitle className="text-2xl font-black tracking-tighter text-text">
-                    {editTransection ? 'Edit Transaction' : 'Smart Transaction'}
+                    {editTransaction ? 'Edit Transaction' : 'Smart Transaction'}
                  </DialogTitle>
               </div>
               <DialogDescription className="text-xs text-text3 font-medium">
@@ -878,11 +878,11 @@ const TransactionPopup = ({
               <div className="flex items-center gap-3">
                  <div className="p-1.5 rounded-lg bg-accent-glow">
                     <span className="material-symbols-outlined text-accent text-lg font-bold">
-                       {editTransection ? 'edit_note' : 'add_card'}
+                       {editTransaction ? 'edit_note' : 'add_card'}
                     </span>
                  </div>
                  <DrawerTitle className="text-xl font-extrabold tracking-tight text-text">
-                    {editTransection ? 'Edit Record' : 'New Transaction'}
+                    {editTransaction ? 'Edit Record' : 'New Transaction'}
                  </DrawerTitle>
               </div>
               <DrawerDescription className="text-[11px] text-text3 font-medium mt-1">

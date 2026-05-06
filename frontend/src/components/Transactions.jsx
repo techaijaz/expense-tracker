@@ -3,14 +3,14 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useOutletContext } from 'react-router-dom';
 import useApi from '@/hooks/useApi';
 import {
-  setTransections,
-  deleteTransection,
-} from '@/redux/transectionSlice';
+  setTransactions,
+  deleteTransaction,
+} from '@/redux/transactionSlice';
 import { updateAccount } from '@/redux/accountSlice';
 import useFormat from '@/hooks/useFormat';
 import { DateRangePicker } from './DateRangePicker';
 import { DeleteConfirmModal } from './SharedComponents';
-import TransectionPopup from './TransectionPopup';
+import TransactionPopup from './TransactionPopup';
 import { toast } from 'sonner';
 import {
   Select,
@@ -19,9 +19,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import api from '@/utils/httpMethods';
 
-export default function Transections() {
+export default function Transactions() {
   const dispatch = useDispatch();
   const { openTransactionPopup } = useOutletContext();
   const { user } = useSelector((state) => state.auth);
@@ -29,7 +37,7 @@ export default function Transections() {
   const isPro = userObj?.role === 'admin' || userObj?.plan === 'pro';
   const plan = userObj?.plan || 'basic';
 
-  const { transections } = useSelector((state) => state.transections);
+  const { transactions } = useSelector((state) => state.transactions);
 
   const { categories: groupedCategories } = useSelector(
     (state) => state.category,
@@ -138,13 +146,13 @@ export default function Transections() {
 
   useEffect(() => {
     if (data) {
-      dispatch(setTransections(data?.data || data?.transactions || data));
+      dispatch(setTransactions(data?.data || data?.transactions || data));
     }
   }, [data, dispatch]);
 
   const list = useMemo(
-    () => (Array.isArray(transections) ? transections : []),
-    [transections],
+    () => (Array.isArray(transactions) ? transactions : []),
+    [transactions],
   );
 
   // Summary — use overview API totals (full date-range), fall back to paginated list if not loaded yet
@@ -175,7 +183,7 @@ export default function Transections() {
   const confirmDelete = async () => {
     try {
       const res = await api.delete(`/transactions/${deletingId}`);
-      dispatch(deleteTransection(deletingId));
+      dispatch(deleteTransaction(deletingId));
       if (res?.data?.updatedAccounts) {
         res.data.updatedAccounts.forEach((acc) => {
           dispatch(updateAccount(acc));
@@ -191,39 +199,41 @@ export default function Transections() {
 
   // Type badge helper
   const getTypeBadge = (t) => {
-    if (!t) return { cls: 'txn-type-badge expense', label: 'Unknown' };
+    const base = 'inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-semibold uppercase tracking-wider';
+    if (!t) return { cls: `${base} bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20`, label: 'Unknown' };
     const typeName = (t.type || 'expense').toLowerCase();
     if (typeName === 'income')
-      return { cls: 'txn-type-badge income', label: '↓ Income' };
+      return { cls: `${base} bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20`, label: '↓ Income' };
     if (typeName === 'transfer')
-      return { cls: 'txn-type-badge transfer', label: '⇄ Transfer' };
+      return { cls: `${base} bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20`, label: '⇄ Transfer' };
     if (typeName === 'debt') {
       const sub = (t.debtType || '').toLowerCase();
       if (sub === 'repayment')
-        return { cls: 'txn-type-badge repayment', label: '↑ Repayment' };
-      return { cls: 'txn-type-badge debt', label: '↓ Debt' };
+        return { cls: `${base} bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20`, label: '↑ Repayment' };
+      return { cls: `${base} bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20`, label: '↓ Debt' };
     }
-    return { cls: 'txn-type-badge expense', label: '↑ Expense' };
+    return { cls: `${base} bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20`, label: '↑ Expense' };
   };
 
   const getAmountDisplay = (t) => {
-    if (!t) return { cls: 'txn-amount', prefix: '' };
+    const base = 'font-mono font-semibold text-sm text-right whitespace-nowrap';
+    if (!t) return { cls: `${base} text-muted-foreground`, prefix: '' };
     const typeName = (t.type || 'expense').toLowerCase();
-    if (typeName === 'income') return { cls: 'txn-amount credit', prefix: '+' };
-    if (typeName === 'transfer') return { cls: 'txn-amount', prefix: '' };
+    if (typeName === 'income') return { cls: `${base} text-green-600 dark:text-green-400`, prefix: '+' };
+    if (typeName === 'transfer') return { cls: `${base} text-muted-foreground`, prefix: '' };
     if (typeName === 'debt') {
       // BORROWED = money received (+), LENT = money paid out (-)
       const sub = (t.debtType || '').toUpperCase();
-      if (sub === 'BORROWED') return { cls: 'txn-amount credit', prefix: '+' };
-      return { cls: 'txn-amount debit', prefix: '-' }; // LENT or unknown
+      if (sub === 'BORROWED') return { cls: `${base} text-green-600 dark:text-green-400`, prefix: '+' };
+      return { cls: `${base} text-red-600 dark:text-red-400`, prefix: '-' }; // LENT or unknown
     }
     if (typeName === 'repayment') {
       // REPAYMENT_IN = collecting back (money received, +), REPAYMENT_OUT = paying back (-)
       const sub = (t.debtType || '').toUpperCase();
-      if (sub === 'REPAYMENT_IN' || sub === 'REPAY_IN') return { cls: 'txn-amount credit', prefix: '+' };
-      return { cls: 'txn-amount debit', prefix: '-' };
+      if (sub === 'REPAYMENT_IN' || sub === 'REPAY_IN') return { cls: `${base} text-green-600 dark:text-green-400`, prefix: '+' };
+      return { cls: `${base} text-red-600 dark:text-red-400`, prefix: '-' };
     }
-    return { cls: 'txn-amount debit', prefix: '-' };
+    return { cls: `${base} text-red-600 dark:text-red-400`, prefix: '-' };
   };
 
   const totalRecords =
@@ -234,53 +244,65 @@ export default function Transections() {
   const endRecord = Math.min(page * limit, totalRecords);
 
   return (
-    <div className="txn-page-wrap">
+    <div className="p-4 md:p-6 flex flex-col gap-4 bg-background min-h-full">
       {/* ── SUMMARY KPI CARDS ── */}
-      <div className="flex flex-wrap gap-4 mb-4">
-        <div className="kpi-card green flex-1 min-w-full md:min-w-[calc(50%-0.5rem)] lg:min-w-0">
-          <div className="kpi-label">Total Inflow</div>
-          <div className="kpi-val" style={{ fontSize: 20 }}>
-            {formatAmount(inflow)}
-          </div>
-          {overview?.comparison?.incomeChange !== undefined && inflow > 0 && (
-            <div className={`kpi-change ${overview.comparison.incomeChange >= 0 ? 'up' : 'down'}`}>
-              {overview.comparison.incomeChange >= 0 ? '↑' : '↓'} {Math.abs(overview.comparison.incomeChange)}% vs last month
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+        <Card className="bg-green-500/10 border-green-500/20 shadow-none">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-green-700 dark:text-green-400">Total Inflow</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-700 dark:text-green-400">
+              {formatAmount(inflow)}
             </div>
-          )}
-        </div>
-        <div className="kpi-card red flex-1 min-w-full md:min-w-[calc(50%-0.5rem)] lg:min-w-0">
-          <div className="kpi-label">Total Outflow</div>
-          <div className="kpi-val" style={{ fontSize: 20 }}>
-            {formatAmount(outflow)}
-          </div>
-          {overview?.comparison?.expenseChange !== undefined && outflow > 0 && (
-            <div className={`kpi-change ${overview.comparison.expenseChange <= 0 ? 'up' : 'down'}`}>
-              {overview.comparison.expenseChange <= 0 ? '↓' : '↑'} {Math.abs(overview.comparison.expenseChange)}% vs last month
+            {overview?.comparison?.incomeChange !== undefined && inflow > 0 && (
+              <p className={`text-xs mt-1 ${overview.comparison.incomeChange >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                {overview.comparison.incomeChange >= 0 ? '↑' : '↓'} {Math.abs(overview.comparison.incomeChange)}% vs last month
+              </p>
+            )}
+          </CardContent>
+        </Card>
+        <Card className="bg-red-500/10 border-red-500/20 shadow-none">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-red-700 dark:text-red-400">Total Outflow</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-700 dark:text-red-400">
+              {formatAmount(outflow)}
             </div>
-          )}
-        </div>
-        <div className="kpi-card blue flex-1 min-w-full md:min-w-full lg:min-w-0">
-          <div className="kpi-label">Net Precision</div>
-          <div className="kpi-val" style={{ fontSize: 20 }}>
-            {formatAmount(netPrecision)}
-          </div>
-          {overview?.comparison?.savingsChange !== undefined && (inflow > 0 || outflow > 0) && (
-            <div className={`kpi-change ${overview.comparison.savingsChange >= 0 ? 'up' : 'down'}`}>
-              {overview.comparison.savingsChange >= 0 ? '↑' : '↓'} {Math.abs(overview.comparison.savingsChange)}% vs last month
+            {overview?.comparison?.expenseChange !== undefined && outflow > 0 && (
+              <p className={`text-xs mt-1 ${overview.comparison.expenseChange <= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                {overview.comparison.expenseChange <= 0 ? '↓' : '↑'} {Math.abs(overview.comparison.expenseChange)}% vs last month
+              </p>
+            )}
+          </CardContent>
+        </Card>
+        <Card className="bg-blue-500/10 border-blue-500/20 shadow-none">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-400">Net Precision</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-700 dark:text-blue-400">
+              {formatAmount(netPrecision)}
             </div>
-          )}
-        </div>
+            {overview?.comparison?.savingsChange !== undefined && (inflow > 0 || outflow > 0) && (
+              <p className={`text-xs mt-1 ${overview.comparison.savingsChange >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                {overview.comparison.savingsChange >= 0 ? '↑' : '↓'} {Math.abs(overview.comparison.savingsChange)}% vs last month
+              </p>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* ── FILTER BAR (row 1) ── */}
-      <div className="txn-filter-bar grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+      <div className="bg-card border border-border rounded-t-xl p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
         {/* Search */}
-        <div className="filter-group search-wrap">
-          <label>Search</label>
-          <div style={{ position: 'relative' }}>
-            <span className="search-icon">🔍</span>
-            <input
-              className="filter-input"
+        <div className="flex flex-col">
+          <label className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold mb-1.5">Search</label>
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm pointer-events-none">🔍</span>
+            <Input
+              className="pl-9 h-10 bg-background"
               placeholder="Find by description, category…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -289,14 +311,14 @@ export default function Transections() {
         </div>
 
         {/* Date Range */}
-        <div className="filter-group">
-          <label>Date Range</label>
+        <div className="flex flex-col">
+          <label className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold mb-1.5">Date Range</label>
           <DateRangePicker value={dateRange} onChange={setDateRange} />
         </div>
 
         {/* Flow Type */}
-        <div className="filter-group">
-          <label>Flow Type</label>
+        <div className="flex flex-col">
+          <label className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold mb-1.5">Flow Type</label>
           <Select
             value={type}
             onValueChange={(val) => {
@@ -304,7 +326,7 @@ export default function Transections() {
               setPage(1);
             }}
           >
-            <SelectTrigger className="filter-input">
+            <SelectTrigger className="h-10 bg-background">
               <SelectValue placeholder="All Flows" />
             </SelectTrigger>
             <SelectContent>
@@ -318,8 +340,8 @@ export default function Transections() {
         </div>
 
         {/* Account */}
-        <div className="filter-group">
-          <label>Account</label>
+        <div className="flex flex-col">
+          <label className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold mb-1.5">Account</label>
           <Select
             value={account}
             onValueChange={(val) => {
@@ -327,7 +349,7 @@ export default function Transections() {
               setPage(1);
             }}
           >
-            <SelectTrigger className="filter-input">
+            <SelectTrigger className="h-10 bg-background">
               <SelectValue placeholder="All Accounts" />
             </SelectTrigger>
             <SelectContent>
@@ -344,14 +366,10 @@ export default function Transections() {
 
       {/* ── FILTER BAR (row 2) ── */}
       <div
-        className="txn-filter-bar2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4 items-end"
-        style={{
-          opacity: isPro ? 1 : 0.6,
-          pointerEvents: isPro ? 'auto' : 'none',
-        }}
+        className={`bg-card border border-t-0 border-border rounded-b-xl p-3 px-4 mb-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4 items-end ${!isPro ? 'opacity-60 pointer-events-none' : ''}`}
       >
-        <div className="filter-group">
-          <label>Category {!isPro && '🔒'}</label>
+        <div className="flex flex-col">
+          <label className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold mb-1.5">Category {!isPro && '🔒'}</label>
           <Select
             value={category}
             onValueChange={(val) => {
@@ -360,7 +378,7 @@ export default function Transections() {
             }}
             disabled={!isPro}
           >
-            <SelectTrigger className="filter-input">
+            <SelectTrigger className="h-10 bg-background">
               <SelectValue placeholder="All Categories" />
             </SelectTrigger>
             <SelectContent>
@@ -373,8 +391,8 @@ export default function Transections() {
             </SelectContent>
           </Select>
         </div>
-        <div className="filter-group">
-          <label>Party (Debt) {!isPro && '🔒'}</label>
+        <div className="flex flex-col">
+          <label className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold mb-1.5">Party (Debt) {!isPro && '🔒'}</label>
           <Select
             value={party}
             onValueChange={(val) => {
@@ -383,7 +401,7 @@ export default function Transections() {
             }}
             disabled={!isPro}
           >
-            <SelectTrigger className="filter-input">
+            <SelectTrigger className="h-10 bg-background">
               <SelectValue placeholder="All Parties" />
             </SelectTrigger>
             <SelectContent>
@@ -397,9 +415,10 @@ export default function Transections() {
           </Select>
         </div>
 
-        <div className="filter-group">
-          <button
-            className="txn-clear-btn"
+        <div className="flex flex-col">
+          <Button
+            variant="outline"
+            className="w-full h-10 text-muted-foreground hover:text-destructive hover:border-destructive/50 transition-colors"
             onClick={() => {
               // Clear everything in one go - React 18 will batch these updates
               setSearch('');
@@ -420,41 +439,39 @@ export default function Transections() {
             }}
           >
             ✕ Clear Filters
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* ── TRANSACTION TABLE ── */}
-      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+      <Card className="p-0 overflow-hidden shadow-none">
         {/* Table Header - Hidden on Mobile */}
-        <div className="txn-head hidden md:grid">
+        <div className="hidden md:grid grid-cols-[110px_1fr_130px_90px_160px] gap-3 px-4 py-2 border-b border-border text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">
           <div>Type</div>
           <div>Description</div>
           <div>Category</div>
           <div>Date</div>
-          <div style={{ textAlign: 'right' }}>Amount</div>
+          <div className="text-right">Amount</div>
         </div>
 
         {/* Body */}
         {loading && list.length === 0 ? (
-          <div className="txn-empty-state">
-            <div className="txn-spinner" />
+          <div className="flex flex-col items-center justify-center gap-2 py-16 px-6 text-muted-foreground text-sm">
+            <div className="w-9 h-9 border-4 border-border border-t-primary rounded-full animate-spin" />
             <span>Synchronizing Ledger…</span>
           </div>
         ) : list.length === 0 ? (
-          <div className="txn-empty-state">
-            <div style={{ fontSize: 32, marginBottom: 12 }}>📭</div>
-            <div
-              style={{ fontSize: 14, fontWeight: 600, color: 'var(--text2)' }}
-            >
+          <div className="flex flex-col items-center justify-center gap-2 py-16 px-6 text-muted-foreground text-sm">
+            <div className="text-3xl mb-3">📭</div>
+            <div className="text-sm font-semibold text-foreground">
               No movements found
             </div>
-            <div style={{ fontSize: 12, marginTop: 4, color: 'var(--text3)' }}>
+            <div className="text-xs mt-1 text-muted-foreground">
               Try adjusting your filters or add a transaction.
             </div>
           </div>
         ) : (
-          <div className={loading ? 'txn-loading' : ''}>
+          <div className={loading ? 'opacity-60 pointer-events-none transition-opacity' : ''}>
             {list.filter(Boolean).map((t) => {
               const badge = getTypeBadge(t);
               const amtDisplay = getAmountDisplay(t);
@@ -463,7 +480,7 @@ export default function Transections() {
               const isTransfer = typeName === 'transfer';
 
               return (
-                <div key={t._id} className="txn-row flex flex-col md:grid">
+                <div key={t._id} className="p-3 md:px-4 md:py-3 border-b border-border last:border-b-0 hover:bg-muted/50 transition-colors cursor-pointer flex flex-col md:grid md:grid-cols-[110px_1fr_130px_90px_160px] md:gap-3 md:items-center group">
                   {/* Mobile Header Row */}
                 <div className="flex items-center justify-between md:hidden mb-2">
                   <span className={badge.cls}>{badge.label}</span>
@@ -473,26 +490,28 @@ export default function Transections() {
                       {formatAmount(t.amount)}
                     </span>
                     <div className="flex gap-1">
-                      <button
-                        className="icon-btn"
-                        style={{ width: 24, height: 24, fontSize: 10 }}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="w-6 h-6 text-[10px]"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleEdit(t);
                         }}
                       >
                         ✏️
-                      </button>
-                      <button
-                        className="icon-btn"
-                        style={{ width: 24, height: 24, fontSize: 10, color: 'var(--red)' }}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="w-6 h-6 text-[10px] text-destructive hover:text-destructive hover:bg-destructive/10"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleDeleteClick(t._id);
                         }}
                       >
                         🗑️
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -501,13 +520,7 @@ export default function Transections() {
                 <div className="hidden md:block">
                   <span className={badge.cls}>{badge.label}</span>
                   {isDebt && t.partyId && (
-                    <div
-                      style={{
-                        fontSize: 10,
-                        color: 'var(--amber)',
-                        marginTop: 4,
-                      }}
-                    >
+                    <div className="text-[10px] text-amber-600 dark:text-amber-400 mt-1">
                       👤 {t.partyId.name}
                     </div>
                   )}
@@ -515,13 +528,13 @@ export default function Transections() {
 
                 {/* Description + Account (Col 2) */}
                 <div>
-                  <div className="txn-desc">
+                  <div className="text-[13px] font-medium text-foreground">
                     {t.title || '— No description —'}
                   </div>
-                  <div className="txn-account">
+                  <div className="text-[11px] text-muted-foreground mt-0.5">
                     {t.accountId?.name || 'Unknown'}
                     {isTransfer && t.targetAccountId?.name && (
-                      <span style={{ color: 'var(--accent)' }}>
+                      <span className="text-primary">
                         {' '}
                         → {t.targetAccountId.name}
                       </span>
@@ -531,32 +544,28 @@ export default function Transections() {
 
                 {/* Category (Col 3) */}
                 <div className="mt-2 md:mt-0">
-                  <span className="txn-cat">
+                  <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 bg-muted rounded-md text-muted-foreground">
                     {t.categoryId?.icon && <span>{t.categoryId.icon}</span>}
                     {t.categoryId?.name || 'Unclassified'}
                   </span>
                 </div>
 
                 {/* Date (Col 4) */}
-                <div className="txn-date mt-1 md:mt-0">{formatDate(t.date)}</div>
+                <div className="text-xs text-muted-foreground font-mono mt-1 md:mt-0">{formatDate(t.date)}</div>
 
                 {/* Amount + Actions (Col 5) - Desktop Only layout here */}
                 <div
-                  className="hidden md:flex"
-                  style={{
-                    alignItems: 'center',
-                    justifyContent: 'flex-end',
-                    gap: 6,
-                  }}
+                  className="hidden md:flex items-center justify-end gap-1.5"
                 >
                   <span className={amtDisplay.cls}>
                     {amtDisplay.prefix}
                     {formatAmount(t.amount)}
                   </span>
-                  <div className="txn-row-actions">
-                    <button
-                      className="icon-btn"
-                      style={{ width: 28, height: 28 }}
+                  <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="w-7 h-7"
                       title="Edit"
                       onClick={(e) => {
                         e.stopPropagation();
@@ -564,10 +573,11 @@ export default function Transections() {
                       }}
                     >
                       ✏️
-                    </button>
-                    <button
-                      className="icon-btn"
-                      style={{ width: 28, height: 28, color: 'var(--red)' }}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="w-7 h-7 text-destructive hover:text-destructive hover:bg-destructive/10"
                       title="Delete"
                       onClick={(e) => {
                         e.stopPropagation();
@@ -575,19 +585,13 @@ export default function Transections() {
                       }}
                     >
                       🗑️
-                    </button>
+                    </Button>
                   </div>
                 </div>
                 
                 {/* Mobile Only: Party Info if Debt */}
                 {isDebt && t.partyId && (
-                  <div
-                    className="md:hidden mt-1"
-                    style={{
-                      fontSize: 10,
-                      color: 'var(--amber)',
-                    }}
-                  >
+                  <div className="md:hidden mt-1 text-[10px] text-amber-600 dark:text-amber-400">
                     👤 {t.partyId.name}
                   </div>
                 )}
@@ -598,284 +602,75 @@ export default function Transections() {
         )}
 
         {/* ── PAGINATION FOOTER ── */}
-        <div className="txn-pagination flex-col sm:flex-row gap-4">
+        <div className="flex flex-col sm:flex-row gap-4 justify-between items-center p-3 md:px-4 border-t border-border text-[11px] text-muted-foreground">
           <span className="text-center sm:text-left">
             Showing {startRecord}–{endRecord} of {totalRecords} records
           </span>
-          <div style={{ display: 'flex', gap: 4, justifyContent: 'center' }}>
-            <button
-              className="icon-btn txn-page-btn"
+          <div className="flex gap-1 justify-center">
+            <Button
+              variant="outline"
+              size="icon"
+              className="w-7 h-7 text-[11px]"
               onClick={() => setPage(1)}
               disabled={page === 1}
             >
               ⟨⟨
-            </button>
-            <button
-              className="icon-btn txn-page-btn"
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="w-7 h-7 text-[11px]"
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
             >
               ⟨
-            </button>
+            </Button>
 
             {Array.from({ length: Math.min(totalPages, 3) }, (_, i) => {
               const start = Math.max(1, Math.min(totalPages - 2, page - 1));
               const pageNum = start + i;
               if (pageNum < 1 || pageNum > totalPages) return null;
               return (
-                <button
+                <Button
                   key={pageNum}
+                  variant={pageNum === page ? 'default' : 'outline'}
+                  size="icon"
+                  className="w-7 h-7 text-[11px]"
                   onClick={() => setPage(pageNum)}
-                  className={
-                    pageNum === page
-                      ? 'txn-page-active'
-                      : 'icon-btn txn-page-btn'
-                  }
                 >
                   {pageNum}
-                </button>
+                </Button>
               );
             })}
 
-            <button
-              className="icon-btn txn-page-btn"
+            <Button
+              variant="outline"
+              size="icon"
+              className="w-7 h-7 text-[11px]"
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page >= totalPages}
             >
               ⟩
-            </button>
-            <button
-              className="icon-btn txn-page-btn"
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="w-7 h-7 text-[11px]"
               onClick={() => setPage(totalPages)}
               disabled={page >= totalPages}
             >
               ⟩⟩
-            </button>
+            </Button>
           </div>
         </div>
-      </div>
-
-      {/* ── SCOPED STYLES ── */}
-      <style>{`
-        @keyframes txn-spin { to { transform: rotate(360deg); } }
-
-        .txn-page-wrap {
-          padding: 24px;
-          display: flex;
-          flex-direction: column;
-          gap: 0;
-          background: var(--bg);
-          min-height: 100%;
-        }
-
-        /* KPI Row removed - using flexbox classes */
-        .txn-loading {
-          opacity: 0.6;
-          pointer-events: none;
-          transition: opacity 0.2s ease-in-out;
-        }
-
-        .txn-filter-bar {
-          background: var(--bg2);
-          border: 1px solid var(--border);
-          border-radius: var(--r) var(--r) 0 0;
-          padding: 16px;
-        }
-
-        /* Filter Bar Row 2 */
-        .txn-filter-bar2 {
-          background: var(--bg2);
-          border: 1px solid var(--border);
-          border-top: none;
-          border-radius: 0 0 var(--r) var(--r);
-          padding: 12px 16px;
-          margin-bottom: 16px;
-        }
-
-        @media (max-width: 768px) {
-          .txn-page-wrap { padding: 12px; }
-          .txn-filter-bar { border-radius: var(--r); margin-bottom: 8px; border-bottom: 1px solid var(--border); }
-          .txn-filter-bar2 { border-radius: var(--r); border-top: 1px solid var(--border); }
-        }
-
-        .filter-group label {
-          font-size: 10px;
-          color: var(--text3);
-          text-transform: uppercase;
-          letter-spacing: 0.08em;
-          font-weight: 600;
-          margin-bottom: 5px;
-          display: block;
-        }
-        .filter-input {
-          width: 100%;
-          height: 40px;
-          padding: 8px 12px;
-          background: var(--bg3);
-          border: 1px solid var(--border2);
-          border-radius: var(--r2);
-          color: var(--text);
-          font-family: var(--font);
-          font-size: 13px;
-          outline: none;
-          transition: border-color .15s;
-          appearance: none;
-          -webkit-appearance: none;
-          cursor: pointer;
-        }
-        .filter-input:focus { border-color: var(--accent); }
-        .filter-input::placeholder { color: var(--text3); }
-        .search-wrap { position: relative; }
-        .search-wrap .filter-input { padding-left: 32px; }
-        .search-icon {
-          position: absolute;
-          left: 12px;
-          top: 50%;
-          transform: translateY(-50%);
-          color: var(--text3);
-          font-size: 14px;
-          pointer-events: none;
-        }
-
-        .txn-clear-btn {
-          width: 100%;
-          height: 40px;
-          padding: 8px 16px;
-          background: transparent;
-          border: 1px solid var(--border2);
-          border-radius: var(--r2);
-          color: var(--text2);
-          font-family: var(--font);
-          font-size: 12px;
-          font-weight: 500;
-          cursor: pointer;
-          transition: all .15s;
-          white-space: nowrap;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-        .txn-clear-btn:hover { border-color: var(--red-border); color: var(--red); }
-
-        /* Table */
-        .txn-head {
-          gap: 12px;
-          padding: 8px 16px;
-          border-bottom: 1px solid var(--border);
-          font-size: 10px;
-          color: var(--text3);
-          text-transform: uppercase;
-          letter-spacing: 0.08em;
-          font-weight: 600;
-        }
-        .txn-row {
-          padding: 12px 16px;
-          border-bottom: 1px solid var(--border);
-          transition: background .1s;
-          cursor: pointer;
-        }
-
-        @media (min-width: 768px) {
-          .txn-head, .txn-row {
-            display: grid;
-            grid-template-columns: 110px 1fr 130px 90px 160px;
-            gap: 12px;
-            align-items: center;
-          }
-        }
-
-        .txn-row:last-child { border-bottom: none; }
-        .txn-row:hover { background: var(--bg3); }
-        .txn-row:hover .txn-row-actions { opacity: 1 !important; }
-
-        .txn-row-actions {
-          display: flex;
-          gap: 2px;
-          opacity: 0;
-          transition: opacity .15s;
-        }
-
-        /* Badges */
-        .txn-type-badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 5px;
-          padding: 4px 8px;
-          border-radius: var(--r2);
-          font-size: 11px;
-          font-weight: 600;
-          text-transform: uppercase;
-          letter-spacing: 0.04em;
-        }
-        .txn-type-badge.expense  { background: var(--red-bg);    color: var(--red);    border: 1px solid var(--red-border); }
-        .txn-type-badge.income   { background: var(--green-bg);  color: var(--green);  border: 1px solid var(--green-border); }
-        .txn-type-badge.transfer { background: var(--accent-glow); color: var(--accent); border: 1px solid rgba(91,141,239,0.2); }
-        .txn-type-badge.debt     { background: var(--amber-bg);  color: var(--amber);  border: 1px solid var(--amber-border); }
-        .txn-type-badge.repayment{ background: var(--purple-bg); color: var(--purple); border: 1px solid rgba(167,139,250,0.2); }
-
-        .txn-desc    { font-size: 13px; font-weight: 500; color: var(--text); }
-        .txn-account { font-size: 11px; color: var(--text2); margin-top: 2px; }
-        .txn-cat     { font-size: 11px; padding: 3px 8px; background: var(--bg4); border-radius: var(--r2); color: var(--text2); display: inline-flex; align-items: center; gap: 4px; }
-        .txn-date    { font-size: 12px; color: var(--text2); font-family: var(--mono); }
-        .txn-amount  { font-family: var(--mono); font-weight: 600; font-size: 14px; text-align: right; color: var(--text2); white-space: nowrap; }
-        .txn-amount.credit { color: var(--green); }
-        .txn-amount.debit  { color: var(--red); }
-
-        /* Empty / Loading */
-        .txn-empty-state {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          padding: 60px 24px;
-          color: var(--text3);
-          font-size: 13px;
-        }
-        .txn-spinner {
-          width: 36px;
-          height: 36px;
-          border: 3px solid var(--border2);
-          border-top-color: var(--accent);
-          border-radius: 50%;
-          animation: txn-spin 0.8s linear infinite;
-        }
-
-        /* Pagination */
-        .txn-pagination {
-          padding: 12px 16px;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          border-top: 1px solid var(--border);
-          font-size: 11px;
-          color: var(--text3);
-        }
-        .txn-page-btn {
-          width: 28px !important;
-          height: 28px !important;
-          font-size: 11px !important;
-        }
-        .txn-page-active {
-          width: 28px;
-          height: 28px;
-          border-radius: var(--r2);
-          border: none;
-          cursor: pointer;
-          font-size: 11px;
-          background: var(--accent);
-          color: #fff;
-          font-family: var(--font);
-          font-weight: 600;
-        }
-      `}</style>
+      </Card>
 
       {/* ── MODALS ── */}
       {isEditOpen && editingTransaction && (
-        <TransectionPopup
+        <TransactionPopup
           open={isEditOpen}
           setOpen={setIsEditOpen}
-          editTransection={editingTransaction}
+          editTransaction={editingTransaction}
           onSuccess={() => {
             setIsEditOpen(false);
             fetchTransactions();

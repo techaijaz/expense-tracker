@@ -5,7 +5,7 @@ import MainLayout from './layouts/MainLayout';
 import Dashboard from './components/Dashboard';
 import SignIn from './components/SignIn';
 import SignUp from './components/SignUp';
-import Transections from './components/Transections';
+import Transactions from './components/Transactions';
 import Accounts from './components/Accounts';
 import Settings from './components/Settings';
 import Loans from './components/Loans';
@@ -37,7 +37,7 @@ function App() {
                 <Route index element={<Dashboard />} />
               </Route>
               <Route path="/transactions" element={<MainLayout />}>
-                <Route index element={<Transections />} />
+                <Route index element={<Transactions />} />
               </Route>
               <Route path="/categories" element={<MainLayout />}>
                 <Route index element={<Categories />} />

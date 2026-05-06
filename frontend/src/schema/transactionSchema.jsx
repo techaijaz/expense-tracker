@@ -2,7 +2,7 @@ import * as z from 'zod';
 
 export default {
   // Zod Validation Schema
-  addTransectionSchema: z.object({
+  addTransactionSchema: z.object({
     date: z.string().min(1, 'Date is required'),
     account: z.string().min(1, 'Account is required'),
     amount: z
