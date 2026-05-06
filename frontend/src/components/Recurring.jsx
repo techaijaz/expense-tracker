@@ -8,7 +8,7 @@ import useFormat from '@/hooks/useFormat';
 import { cn, formatDate as utilsFormatDate } from '@/utils/utils';
 import AddRecurringPopup from './AddRecurringPopup';
 import RecurringHistoryPopup from './RecurringHistoryPopup';
-import { DeleteConfirmModal } from './SharedComponents';
+import { ConfirmModal } from './SharedComponents';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { useMediaQuery } from '@/hooks/use-media-query';
@@ -313,9 +313,10 @@ const Recurring = () => {
       />
 
       {isDeleteOpen && (
-        <DeleteConfirmModal
+        <ConfirmModal
           title="Terminate Rule?"
           description={`This will permanently delete the automation rule for "${selectedTask?.title}". Existing transactions will not be affected.`}
+          confirmLabel="Terminate"
           onConfirm={handleDelete}
           onCancel={() => setIsDeleteOpen(false)}
         />

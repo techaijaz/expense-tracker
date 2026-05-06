@@ -47,7 +47,7 @@ import api from '@/utils/httpMethods';
 import useFormat from '@/hooks/useFormat';
 import AddAssetPopup from './AddAssetPopup';
 import AddAccounts from './AddAccounts';
-import { DeleteConfirmModal } from './SharedComponents';
+import { ConfirmModal } from './SharedComponents';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -1009,13 +1009,14 @@ const NetWorth = () => {
       )}
 
       {isDeleteModalOpen && (
-        <DeleteConfirmModal
+        <ConfirmModal
           title={`Remove ${deleteType === 'asset' ? 'Physical Asset' : 'Investment Account'}`}
           description={
             deleteType === 'asset'
               ? `Are you sure you want to remove "${itemToDelete?.name}" from your vault? This cannot be undone.`
               : `Are you sure you want to delete "${itemToDelete?.name}"? You will lose this account's current balance in your net worth portfolio.`
           }
+          confirmLabel="Delete"
           onConfirm={confirmDelete}
           onCancel={() => setIsDeleteModalOpen(false)}
           busy={deleteBusy}

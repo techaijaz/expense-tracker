@@ -4,7 +4,6 @@ import {
   ArrowUpRight,
   TrendingUp,
   TrendingDown,
-  Activity,
 } from 'lucide-react';
 import PremiumKpiCard from '@/components/ui/PremiumKpiCard';
 import useFormat from '@/hooks/useFormat';
@@ -83,15 +82,6 @@ export default function TransactionSummary({
               }
             : null
         }
-        delay={300}
-        className="flex-1 min-w-[280px] border-slate-900 dark:border-slate-800 shadow-xl"
-      />
-      <PremiumKpiCard
-        title="Movements"
-        value={totalRecords}
-        subtitle="Total recorded activity"
-        icon={Activity}
-        color="purple"
         delay={300}
         className="flex-1 min-w-[280px] border-slate-900 dark:border-slate-800 shadow-xl"
       />

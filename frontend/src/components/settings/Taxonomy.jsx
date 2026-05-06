@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { Tag, Plus, Pencil, Trash2, Lock } from 'lucide-react';
 import api from '@/utils/httpMethods';
 import { removeCategory } from '@/redux/categorySlice';
-import { DeleteConfirmModal } from '../SharedComponents';
+import { ConfirmModal } from '../SharedComponents';
 import AddCategoryPopup from '../AddCategoryPopup';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
@@ -212,9 +212,10 @@ export default function Taxonomy() {
       />
 
       {deleteCatModal && (
-        <DeleteConfirmModal
+        <ConfirmModal
           title="Delete Category"
           description={`Permanently remove "${deleteCatModal.name}"? Active entries will be uncategorized.`}
+          confirmLabel="Delete"
           busy={deletingCat}
           onConfirm={handleDeleteCategory}
           onCancel={() => setDeleteCatModal(null)}

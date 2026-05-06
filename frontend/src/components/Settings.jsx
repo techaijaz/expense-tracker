@@ -1,3 +1,6 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import UserIdentity from './settings/UserIdentity';
 import Taxonomy from './settings/Taxonomy';
 import SubscriptionManagement from './settings/SubscriptionManagement';
@@ -14,22 +17,75 @@ import {
   CardHeader,
   CardTitle,
 } from './ui/card';
-import { ShieldAlert } from 'lucide-react';
+import { ShieldAlert, ShieldCheck, Lock } from 'lucide-react';
+import { PasswordConfirmModal, SetPasswordModal } from './SharedComponents';
+import api from '@/utils/httpMethods';
+import { useSelector, useDispatch } from 'react-redux';
+import { updateHasPassword } from '@/redux/authSlice';
 
 export default function Settings() {
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const currentUser = useSelector((s) => s.auth.user);
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [showSetPwdModal, setShowSetPwdModal] = useState(false);
+
   const handleHardReset = () => {
-    if (
-      window.confirm(
-        'Executing a hard reset will permanently purge all ledger entries, taxonomies, accounts, and counterparty metadata. This action is IRREVERSIBLE. Are you sure?',
-      )
-    ) {
-      // Implement reset logic or show a custom modal
-      console.log('System reset requested');
+    if (!currentUser?.hasPassword) {
+      setShowSetPwdModal(true);
+    } else {
+      setShowResetModal(true);
+    }
+  };
+
+  const handleSetPwdConfirm = async (newPassword) => {
+    try {
+      await api.put('/user/change-password', { newPassword });
+      dispatch(updateHasPassword(true));
+      setShowSetPwdModal(false);
+      // Wait a bit then show reset modal
+      setTimeout(() => setShowResetModal(true), 300);
+    } catch (err) {
+      throw err; // Handled by modal
+    }
+  };
+
+  const confirmHardReset = async (password) => {
+    try {
+      await api.delete('/user/hard-reset', { password });
+      toast.success('System reset successful. All data purged.');
+      // Refresh to trigger re-onboarding/empty state
+      window.location.reload();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Reset failed. Please check your password.');
+      throw err; // Allow modal to handle busy state
     }
   };
 
   return (
     <div className="container mx-auto p-4 sm:p-6 lg:p-8 space-y-8 animate-in fade-in duration-500">
+      {!currentUser?.hasPassword && currentUser?.googleId && (
+        <div className="flex flex-col md:flex-row items-center justify-between p-6 rounded-3xl bg-primary/10 border border-primary/20 gap-4 backdrop-blur-md">
+          <div className="flex items-center gap-4">
+            <div className="p-3 rounded-2xl bg-primary/20 text-primary shadow-inner">
+              <ShieldCheck className="w-6 h-6" />
+            </div>
+            <div>
+              <h4 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider">Security Action Required</h4>
+              <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">Your account needs a local password for advanced administrative protocols.</p>
+            </div>
+          </div>
+          <Button 
+            onClick={() => {
+              const el = document.getElementById('user-identity-card');
+              if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }}
+            className="w-full md:w-auto h-11 px-8 rounded-xl font-bold bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 transition-all"
+          >
+            Setup Now
+          </Button>
+        </div>
+      )}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* ── LEFT COLUMN ── */}
         <div className="space-y-6">
@@ -75,6 +131,24 @@ export default function Settings() {
           <Counterparties />
         </div>
       </div>
+
+      {showResetModal && (
+        <PasswordConfirmModal
+          title="Protocol Override"
+          description="Executing a hard reset will permanently purge all ledger entries, taxonomies, accounts, and counterparty metadata. This action is IRREVERSIBLE. Please enter your password to authorize the purge."
+          confirmLabel="Execute Purge"
+          danger
+          onConfirm={confirmHardReset}
+          onCancel={() => setShowResetModal(false)}
+        />
+      )}
+
+      {showSetPwdModal && (
+        <SetPasswordModal
+          onConfirm={handleSetPwdConfirm}
+          onCancel={() => setShowSetPwdModal(false)}
+        />
+      )}
     </div>
   );
 }

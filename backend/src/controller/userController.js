@@ -88,8 +88,8 @@ export default {
             const isPasswordMatch = await quiker.comparePassword(password, user.password)
             if (!isPasswordMatch) return httpError(next, new Error(responceseMessage.INVALID_CREDENTIALS), req, 401)
 
-            const accessToken = quiker.genrateToken({ userId: user._id, role: user.role }, config.ACCESS_TOKEN.SECRET, config.ACCESS_TOKEN.EXPIRY)
-            const refreshToken = quiker.genrateToken({ userId: user._id, role: user.role }, config.REFRESH_TOKEN.SECRET, config.REFRESH_TOKEN.EXPIRY)
+            const accessToken = quiker.genrateToken({ userId: user._id, role: user.role, loginMethod: 'password' }, config.ACCESS_TOKEN.SECRET, config.ACCESS_TOKEN.EXPIRY)
+            const refreshToken = quiker.genrateToken({ userId: user._id, role: user.role, loginMethod: 'password' }, config.REFRESH_TOKEN.SECRET, config.REFRESH_TOKEN.EXPIRY)
 
             user.lastLoginAt = dayjs().utc().toDate()
             user.refreshToken.token = refreshToken
@@ -146,6 +146,7 @@ export default {
                     role: user.role || 'user',
                     googleId: user.googleId || null,
                     hasPassword: !!user.password,
+                    loginMethod: 'password',
                 },
                 accounts,
                 categories,
@@ -167,7 +168,7 @@ export default {
             const payload = ticket.getPayload()
             const { email, given_name, family_name, picture, sub: googleId } = payload
 
-            let user = await databseService.findUserByEmail(email)
+            let user = await databseService.findUserByEmail(email, '+password')
 
             if (user) {
                 // Link Google ID if not already linked
@@ -194,8 +195,8 @@ export default {
             }
 
             // Standard login logic follow-up
-            const accessToken = quiker.genrateToken({ userId: user._id, role: user.role }, config.ACCESS_TOKEN.SECRET, config.ACCESS_TOKEN.EXPIRY)
-            const refreshToken = quiker.genrateToken({ userId: user._id, role: user.role }, config.REFRESH_TOKEN.SECRET, config.REFRESH_TOKEN.EXPIRY)
+            const accessToken = quiker.genrateToken({ userId: user._id, role: user.role, loginMethod: 'google' }, config.ACCESS_TOKEN.SECRET, config.ACCESS_TOKEN.EXPIRY)
+            const refreshToken = quiker.genrateToken({ userId: user._id, role: user.role, loginMethod: 'google' }, config.REFRESH_TOKEN.SECRET, config.REFRESH_TOKEN.EXPIRY)
 
             user.lastLoginAt = dayjs().utc().toDate()
             user.refreshToken.token = refreshToken
@@ -251,6 +252,7 @@ export default {
                     role: user.role || 'user',
                     googleId: user.googleId || null,
                     hasPassword: !!user.password,
+                    loginMethod: 'google',
                 },
                 accounts,
                 categories,
@@ -288,7 +290,7 @@ export default {
 
     selfIdentification: async (req, res, next) => {
         try {
-            const { authenticatedUser } = req
+            const { authenticatedUser, loginMethod } = req
             httpResponse(req, res, 200, responceseMessage.SUCCESS, {
                 _id: authenticatedUser._id,
                 firstName: authenticatedUser.firstName,
@@ -308,6 +310,7 @@ export default {
                 role: authenticatedUser.role || 'user',
                 googleId: authenticatedUser.googleId || null,
                 hasPassword: !!authenticatedUser.password,
+                loginMethod: loginMethod || 'password',
             })
         } catch (error) {
             httpError(next, error, req, 500)
@@ -353,12 +356,12 @@ export default {
             const user = await userModel.findById(req.authenticatedUser._id).select('+password')
             if (!user) return httpError(next, new Error('User not found'), req, 404)
 
-            // If user has a password, verify it
-            if (user.password) {
+            // If user has a password and NOT logged in via Google, verify it
+            if (user.password && req.loginMethod !== 'google') {
                 if (!currentPassword) return httpError(next, new Error('Current password is required'), req, 400)
                 const isMatch = await quiker.comparePassword(currentPassword, user.password)
                 if (!isMatch) return httpError(next, new Error('Current password is incorrect'), req, 401)
-            } else if (!user.googleId) {
+            } else if (!user.password && !user.googleId) {
                 // Should not happen, but for safety
                 return httpError(next, new Error('Password configuration error'), req, 400)
             }

@@ -5,7 +5,7 @@ import TransactionSummary from './Transactions/TransactionSummary';
 import TransactionFilters from './Transactions/TransactionFilters';
 import TransactionTable from './Transactions/TransactionTable';
 import TransactionPopup from './TransactionPopup';
-import { DeleteConfirmModal } from './SharedComponents';
+import { ConfirmModal } from './SharedComponents';
 import { Button } from '@/components/ui/button';
 
 export default function Transactions() {
@@ -78,13 +78,26 @@ export default function Transactions() {
 
         <Button 
           onClick={handleNew}
-          className="h-12 px-8 rounded-2xl bg-slate-900 hover:bg-slate-800 dark:bg-primary dark:hover:bg-primary/90 text-white font-black uppercase tracking-widest text-[11px] shadow-2xl shadow-primary/20 transition-all active:scale-95 flex items-center gap-3 group border-none"
+          className="hidden md:flex h-12 px-8 rounded-2xl bg-slate-900 hover:bg-slate-800 dark:bg-primary dark:hover:bg-primary/90 text-white font-black uppercase tracking-widest text-[11px] shadow-2xl shadow-primary/20 transition-all active:scale-95 items-center gap-3 group border-none"
         >
           <div className="w-6 h-6 rounded-lg bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
             <Plus className="w-4 h-4 transition-transform group-hover:rotate-90" />
           </div>
           Add New Movement
         </Button>
+      </div>
+
+      {/* ── MOBILE FLOATING ACTION BUTTON ── */}
+      <div className="md:hidden fixed bottom-6 right-6 z-[100] flex flex-col items-end gap-4 pointer-events-none">
+        <div className="pointer-events-auto relative group">
+          <div className="absolute inset-0 bg-primary/40 blur-2xl rounded-full animate-pulse group-hover:bg-primary/60 transition-all duration-500" />
+          <Button
+            onClick={handleNew}
+            className="relative w-16 h-16 rounded-2xl bg-slate-950 dark:bg-primary text-white shadow-2xl flex items-center justify-center border border-white/10 active:scale-90 transition-all duration-300"
+          >
+            <Plus className="w-8 h-8" />
+          </Button>
+        </div>
       </div>
 
       {/* ── SUMMARY KPI CARDS ── */}
@@ -146,10 +159,11 @@ export default function Transactions() {
       )}
 
       {isDeleteOpen && (
-        <DeleteConfirmModal
+        <ConfirmModal
           title="Delete Transaction"
           description="Are you sure you want to permanently remove this transaction? This action cannot be undone."
           onConfirm={confirmDelete}
+          confirmLabel="Delete"
           onCancel={() => setIsDeleteOpen(false)}
         />
       )}

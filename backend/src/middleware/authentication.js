@@ -21,10 +21,11 @@ export default async (req, _res, next) => {
 
         if (accessToken) {
             try {
-                const { userId } = quiker.verifyToken(accessToken, config.ACCESS_TOKEN.SECRET)
-                const user = await databseService.findUserById(userId)
+                const { userId, loginMethod } = quiker.verifyToken(accessToken, config.ACCESS_TOKEN.SECRET)
+                const user = await databseService.findUserById(userId, '+password')
                 if (user) {
                     req.authenticatedUser = user
+                    req.loginMethod = loginMethod
                     return next()
                 }
             } catch (verifyError) {

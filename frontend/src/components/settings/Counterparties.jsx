@@ -3,7 +3,7 @@ import { useSelector } from 'react-redux';
 import { toast } from 'sonner';
 import { Users, UserPlus, Pencil, Trash2, ShieldCheck, ShieldAlert, Lock } from 'lucide-react';
 import api from '@/utils/httpMethods';
-import { DeleteConfirmModal } from '../SharedComponents';
+import { ConfirmModal } from '../SharedComponents';
 import AddPartyPopup from '../AddPartyPopup';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
@@ -181,9 +181,10 @@ export default function Counterparties() {
       )}
 
       {deletePartyModal && (
-        <DeleteConfirmModal
+        <ConfirmModal
           title="Delete Counterparty"
           description={`Permanently remove "${deletePartyModal.name}"? This will affect related debt records.`}
+          confirmLabel="Delete"
           busy={deletingParty}
           onConfirm={handleDeleteParty}
           onCancel={() => setDeletePartyModal(null)}

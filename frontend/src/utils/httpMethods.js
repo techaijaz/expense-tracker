@@ -31,9 +31,9 @@ export default {
     const response = await instance.patch(url, data, getRequestHeader(file));
     return response.data;
   },
-  delete: async (url) => {
+  delete: async (url, data = {}) => {
     try {
-      const response = await instance.delete(url, getRequestHeader());
+      const response = await instance.delete(url, { ...getRequestHeader(), data });
       return response.data;
     } catch (error) {
       console.error('Error in DELETE request:', error);

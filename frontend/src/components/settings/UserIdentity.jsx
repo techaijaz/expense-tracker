@@ -37,17 +37,17 @@ export default function UserIdentity() {
 
   const validate = (field, value, currentState = pwdForm) => {
     let err = '';
-    const isFirstPassword = currentUser?.googleId && !currentUser?.hasPassword;
+    const isGoogleLogin = currentUser?.loginMethod === 'google';
 
     if (field === 'current') {
-      if (isFirstPassword) return ''; 
+      if (isGoogleLogin) return ''; 
       if (!value) err = 'Current password is required';
       else if (value.length < 8) err = 'Required min. 8 characters';
     }
     if (field === 'newPwd') {
       if (!value) err = 'New password is required';
       else if (value.length < 8) err = 'Min. 8 characters required';
-      else if (!isFirstPassword && value === currentState.current)
+      else if (!isGoogleLogin && value === currentState.current)
         err = 'Must be different from current';
     }
     if (field === 'confirm') {
@@ -99,11 +99,11 @@ export default function UserIdentity() {
   const handleChangePassword = async (e) => {
     e.preventDefault();
 
-    const isFirstPassword = currentUser?.googleId && !currentUser?.hasPassword;
+    const isGoogleLogin = currentUser?.loginMethod === 'google';
     const e1 = validate('current', pwdForm.current);
     const e2 = validate('newPwd', pwdForm.newPwd);
     const e3 = validate('confirm', pwdForm.confirm);
-    if ((!isFirstPassword && e1) || e2 || e3) return;
+    if ((!isGoogleLogin && e1) || e2 || e3) return;
 
     setChangingPwd(true);
     try {
@@ -134,10 +134,10 @@ export default function UserIdentity() {
   };
 
   return (
-    <Card className="border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm overflow-hidden">
+    <Card id="user-identity-card" className="border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm overflow-hidden">
       <CardHeader className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 py-4">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-500">
+          <div className="p-2 rounded-lg bg-primary/10 text-primary">
             <User className="w-5 h-5" />
           </div>
           <div>
@@ -151,16 +151,16 @@ export default function UserIdentity() {
         <div className="p-5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-800 shadow-sm">
           <div className="flex items-center gap-6">
             <div className="relative group">
-              <div className="h-20 w-20 rounded-full border-4 border-slate-50 dark:border-slate-700 shadow-lg bg-indigo-500/10 flex items-center justify-center overflow-hidden transition-transform group-hover:scale-105">
+              <div className="h-20 w-20 rounded-full border-4 border-slate-50 dark:border-slate-700 shadow-lg bg-primary/10 flex items-center justify-center overflow-hidden transition-transform group-hover:scale-105">
                 {avatarSrc ? (
                   <img src={avatarSrc} alt="avatar" className="h-full w-full object-cover" />
                 ) : (
-                  <span className="text-2xl font-black text-indigo-500">{getUserInitials()}</span>
+                  <span className="text-2xl font-black text-primary">{getUserInitials()}</span>
                 )}
               </div>
               <button
                 onClick={() => avatarInputRef.current?.click()}
-                className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full bg-indigo-500 text-white flex items-center justify-center shadow-md hover:bg-indigo-600 transition-all border-2 border-white dark:border-slate-800"
+                className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full bg-primary text-white flex items-center justify-center shadow-md hover:bg-primary/90 transition-all border-2 border-white dark:border-slate-800"
                 disabled={uploadingAvatar}
               >
                 {uploadingAvatar ? (
@@ -190,7 +190,18 @@ export default function UserIdentity() {
                   <ShieldCheck className="h-3 w-3" />
                   Secured
                 </span>
-                <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[9px] font-bold bg-indigo-500/10 text-indigo-500 border border-indigo-500/20 uppercase tracking-widest">
+                {currentUser?.googleId && (
+                  <span className={cn(
+                    "inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[9px] font-bold border uppercase tracking-widest",
+                    currentUser?.hasPassword 
+                      ? "bg-blue-500/10 text-blue-500 border-blue-500/20" 
+                      : "bg-amber-500/10 text-amber-500 border-amber-500/20"
+                  )}>
+                    <Lock className="h-3 w-3" />
+                    {currentUser?.hasPassword ? "Local Password Set" : "Google Only"}
+                  </span>
+                )}
+                <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[9px] font-bold bg-primary/10 text-primary border border-primary/20 uppercase tracking-widest">
                   <Activity className="h-3 w-3" />
                   Online
                 </span>
@@ -199,20 +210,39 @@ export default function UserIdentity() {
           </div>
         </div>
 
+        {!currentUser?.hasPassword && currentUser?.googleId && (
+          <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-start gap-3 animate-pulse">
+            <div className="p-2 rounded-lg bg-amber-500/20 text-amber-500 shrink-0">
+              <ShieldCheck className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">Security Recommendation</p>
+              <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
+                You're currently authenticated via Google. Setting a local password is required for sensitive operations like <strong>Data Resets</strong> and provides an additional layer of security.
+              </p>
+            </div>
+          </div>
+        )}
+
         {!showChangePwd ? (
           <Button
-            variant="outline"
+            variant={(!currentUser?.hasPassword && currentUser?.googleId) ? "default" : "outline"}
             onClick={() => setShowChangePwd(true)}
-            className="w-full h-11 font-bold gap-2 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 rounded-xl transition-all"
+            className={cn(
+              "w-full h-11 font-bold gap-2 rounded-xl transition-all shadow-sm",
+              (!currentUser?.hasPassword && currentUser?.googleId) 
+                ? "bg-primary hover:bg-primary/90 text-white shadow-primary/20" 
+                : "border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900"
+            )}
           >
             <Lock className="h-4 w-4" />
             {currentUser?.googleId && !currentUser?.hasPassword
-              ? 'Set Account Password'
+              ? 'Complete Security Setup'
               : 'Change Password'}
           </Button>
         ) : (
           <form onSubmit={handleChangePassword} className="space-y-5 animate-in slide-in-from-top-4 duration-300 p-5 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
-            {!(currentUser?.googleId && !currentUser?.hasPassword) && (
+            {currentUser?.loginMethod !== 'google' && (
               <div className="space-y-2">
                 <Label htmlFor="current-password" className="text-xs font-bold text-slate-400 uppercase tracking-wider">Current Password</Label>
                 <Input
@@ -220,7 +250,7 @@ export default function UserIdentity() {
                   type="password"
                   value={pwdForm.current}
                   onChange={(e) => handlePwdInputChange('current', e.target.value)}
-                  className={cn("h-11 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 rounded-xl", errors.current && 'border-red-500')}
+                  className={cn("h-11 border-slate-200 dark:border-slate-800 rounded-xl", errors.current && 'border-red-500')}
                   placeholder="••••••••"
                 />
                 {errors.current && (
@@ -238,7 +268,7 @@ export default function UserIdentity() {
                 type="password"
                 value={pwdForm.newPwd}
                 onChange={(e) => handlePwdInputChange('newPwd', e.target.value)}
-                className={cn("h-11 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 rounded-xl", errors.newPwd && 'border-red-500')}
+                className={cn("h-11 border-slate-200 dark:border-slate-800 rounded-xl", errors.newPwd && 'border-red-500')}
                 placeholder="Min. 8 characters"
               />
               {errors.newPwd && (
@@ -255,7 +285,7 @@ export default function UserIdentity() {
                 type="password"
                 value={pwdForm.confirm}
                 onChange={(e) => handlePwdInputChange('confirm', e.target.value)}
-                className={cn("h-11 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 rounded-xl", errors.confirm && 'border-red-500')}
+                className={cn("h-11 border-slate-200 dark:border-slate-800 rounded-xl", errors.confirm && 'border-red-500')}
                 placeholder="••••••••"
               />
               {errors.confirm && (
@@ -277,7 +307,7 @@ export default function UserIdentity() {
               <Button
                 type="submit"
                 disabled={changingPwd}
-                className="flex-[2] h-11 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl shadow-lg shadow-indigo-500/20 font-bold"
+                className="flex-[2] h-11 bg-primary hover:bg-primary/90 text-white rounded-xl shadow-lg shadow-primary/20 font-bold"
               >
                 {changingPwd ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
