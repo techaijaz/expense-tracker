@@ -6,6 +6,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 const StepAccount = ({ data, updateData, onNext, onBack, onSkip }) => {
   const { account } = data;
@@ -61,8 +63,7 @@ const StepAccount = ({ data, updateData, onNext, onBack, onSkip }) => {
         
         <div>
           <label className="text-[10px] md:text-[11px] font-semibold text-text3 uppercase tracking-[0.08em] mb-1.5 block">Account Name</label>
-          <input 
-            className="w-full bg-bg3 border border-border rounded-[6px] p-2.5 text-[13px] text-text outline-none focus:border-accent transition-all"
+          <Input 
             placeholder="e.g. HDFC Savings"
             value={account.name}
             onChange={(e) => updateData({ account: { ...account, name: e.target.value } })}
@@ -72,8 +73,7 @@ const StepAccount = ({ data, updateData, onNext, onBack, onSkip }) => {
         <div className="flex flex-wrap gap-3">
           <div className="w-full md:w-[calc(50%-6px)]">
             <label className="text-[10px] md:text-[11px] font-semibold text-text3 uppercase tracking-[0.08em] mb-1.5 block">Last 4 digits (optional)</label>
-            <input 
-              className="w-full bg-bg3 border border-border rounded-[6px] p-2.5 text-[13px] text-text outline-none focus:border-accent transition-all"
+            <Input 
               placeholder="1234"
               value={account.lastDigits}
               onChange={(e) => updateData({ account: { ...account, lastDigits: e.target.value } })}
@@ -81,8 +81,7 @@ const StepAccount = ({ data, updateData, onNext, onBack, onSkip }) => {
           </div>
           <div className="w-full md:w-[calc(50%-6px)]">
             <label className="text-[10px] md:text-[11px] font-semibold text-text3 uppercase tracking-[0.08em] mb-1.5 block">Opening Balance</label>
-            <input 
-              className="w-full bg-bg3 border border-border rounded-[6px] p-2.5 text-[13px] text-text outline-none focus:border-accent transition-all font-mono"
+            <Input 
               placeholder="₹ 0"
               value={account.balance}
               onChange={(e) => updateData({ account: { ...account, balance: e.target.value } })}
@@ -93,25 +92,27 @@ const StepAccount = ({ data, updateData, onNext, onBack, onSkip }) => {
       
       <div className="flex flex-col md:flex-row gap-3 items-center mb-4">
         <div className="flex w-full md:w-auto gap-2">
-          <button 
-            className="flex-1 md:w-20 py-2.5 md:py-[11px] bg-transparent border border-border hover:border-border2 text-text2 hover:text-text rounded-[10px] text-[13px] font-medium transition-all"
+          <Button 
+            variant="outline"
+            className="flex-1 md:w-20 rounded-[10px] text-[13px] font-medium h-auto py-2.5 md:py-[11px]"
             onClick={onBack}
           >
             Back
-          </button>
-          <button 
-            className="flex-1 md:w-20 py-2.5 md:py-[11px] bg-transparent border border-border hover:border-border2 text-text2 hover:text-text rounded-[10px] text-[13px] font-medium transition-all"
+          </Button>
+          <Button 
+            variant="outline"
+            className="flex-1 md:w-20 rounded-[10px] text-[13px] font-medium h-auto py-2.5 md:py-[11px]"
             onClick={onSkip}
           >
             Skip
-          </button>
+          </Button>
         </div>
-        <button 
-          className="w-full md:flex-1 py-2.5 md:py-[11px] bg-accent hover:bg-accent2 text-white rounded-[10px] font-semibold text-[13px] transition-all flex items-center justify-center gap-1.5"
+        <Button 
+          className="w-full md:flex-1 rounded-[10px] font-semibold text-[13px] flex items-center justify-center gap-1.5 h-auto py-2.5 md:py-[11px]"
           onClick={onNext}
         >
           Add & Continue →
-        </button>
+        </Button>
       </div>
     </div>
   );

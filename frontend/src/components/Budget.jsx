@@ -6,6 +6,7 @@ import api from '@/utils/httpMethods';
 import AddBudgetPopup from './AddBudgetPopup';
 import useFormat from '@/hooks/useFormat';
 import { cn } from '@/utils/utils';
+import { Button } from '@/components/ui/button';
 
 const Budget = () => {
   const [budgets, setBudgets] = useState([]);
@@ -114,12 +115,12 @@ const Budget = () => {
           </p>
         </div>
         {/* Hide default button on mobile, show floating one instead */}
-        <button
+        <Button
           onClick={handleAddNew}
           className="hidden md:flex h-10 items-center gap-2 rounded-lg bg-[var(--accent)] px-4 text-sm font-semibold text-white transition-all hover:opacity-90 hover:-translate-y-0.5 active:scale-95"
         >
           <span>{limitReached ? '🔒' : '+'}</span> Add Budget
-        </button>
+        </Button>
       </div>
 
       {loading && budgets.length === 0 ? (
@@ -164,12 +165,13 @@ const Budget = () => {
       )}
 
       {/* Floating Add Button for Mobile */}
-      <button
+      <Button
+        size="icon"
         onClick={handleAddNew}
         className="md:hidden fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--accent)] text-white shadow-lg shadow-[var(--accent)]/30 active:scale-90 transition-transform"
       >
         <span className="material-symbols-outlined !text-3xl">add</span>
-      </button>
+      </Button>
 
       <AddBudgetPopup
         open={isPopupOpen}
@@ -256,12 +258,14 @@ const BudgetCard = ({ budget, onEdit }) => {
             </p>
           </div>
         </div>
-        <button
+        <Button
+          size="icon"
+          variant="ghost"
           onClick={onEdit}
           className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--bg3)] text-[var(--text2)] transition-all hover:bg-[var(--accent)] hover:text-white md:opacity-0 group-hover:opacity-100"
         >
           <span className="material-symbols-outlined !text-lg">edit</span>
-        </button>
+        </Button>
       </div>
 
       <div className="mb-2 flex items-baseline justify-between">

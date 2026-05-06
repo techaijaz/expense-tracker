@@ -12,6 +12,8 @@ import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/utils/utils';
 import { restrictDecimals } from '@/utils/format';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { z } from 'zod';
 import {
   Select,
@@ -167,7 +169,7 @@ const AddAssetPopup = ({ isOpen, onClose, onSuccess, assetToEdit = null }) => {
           errors.currentValue ? "border-red/50" : "border-border"
         )}>
           <span className={cn("text-xl font-bold font-mono", errors.currentValue ? "text-red" : "text-accent")}>₹</span>
-          <input
+          <Input
             type="text"
             inputMode="decimal"
             placeholder="0.00"
@@ -179,7 +181,7 @@ const AddAssetPopup = ({ isOpen, onClose, onSuccess, assetToEdit = null }) => {
             }}
             required
             autoFocus
-            className="flex-1 bg-transparent border-none outline-none text-2xl font-bold font-mono text-text tracking-tighter"
+            className="flex-1 bg-transparent border-none shadow-none focus-visible:ring-0 text-2xl font-bold font-mono text-text tracking-tighter p-0 h-auto"
           />
         </div>
         {errors.currentValue && <p className="text-[10px] font-medium text-red mt-0.5 ml-1">{errors.currentValue}</p>}
@@ -248,14 +250,14 @@ const AddAssetPopup = ({ isOpen, onClose, onSuccess, assetToEdit = null }) => {
       {/* Asset Title */}
       <div className="space-y-1.5">
         <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-text3 ml-1">Asset Title</label>
-        <input
+        <Input
           type="text"
           placeholder="e.g. 100g 24K Gold Bar"
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           required
           className={cn(
-            "w-full h-11 px-4 bg-bg3 border rounded-xl text-sm font-semibold outline-none transition-all focus:ring-2 focus:ring-accent/20",
+            "w-full h-11 px-4 bg-bg3 border rounded-xl text-sm font-semibold outline-none transition-all focus-visible:ring-2 focus-visible:ring-accent/20 shadow-none",
             errors.name ? "border-red/50" : "border-border"
           )}
         />
@@ -267,7 +269,7 @@ const AddAssetPopup = ({ isOpen, onClose, onSuccess, assetToEdit = null }) => {
         <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-text3 ml-1">Initial Cost (Optional)</label>
         <div className="relative">
           <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-text3/50 text-sm">₹</span>
-          <input
+          <Input
             type="text"
             inputMode="decimal"
             placeholder="Original purchase price"
@@ -277,7 +279,7 @@ const AddAssetPopup = ({ isOpen, onClose, onSuccess, assetToEdit = null }) => {
               e.target.value = restrictDecimals(nextValue, 2);
               setFormData({ ...formData, initialValue: e.target.value });
             }}
-            className="w-full h-11 pl-10 pr-4 bg-bg3 border border-border rounded-xl text-sm font-semibold outline-none focus:ring-2 focus:ring-accent/20 transition-all"
+            className="w-full h-11 pl-10 pr-4 bg-bg3 border border-border rounded-xl text-sm font-semibold outline-none focus-visible:ring-2 focus-visible:ring-accent/20 transition-all shadow-none"
           />
         </div>
       </div>
@@ -285,12 +287,12 @@ const AddAssetPopup = ({ isOpen, onClose, onSuccess, assetToEdit = null }) => {
       {/* Notes */}
       <div className="space-y-1.5">
         <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-text3 ml-1">Notes (Optional)</label>
-        <textarea
+        <Textarea
           placeholder="Add details, location or certificate numbers..."
           rows={2}
           value={formData.description}
           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          className="w-full p-4 bg-bg3 border border-border rounded-xl text-sm font-semibold outline-none focus:ring-2 focus:ring-accent/20 transition-all resize-none"
+          className="w-full p-4 bg-bg3 border border-border rounded-xl text-sm font-semibold outline-none focus-visible:ring-2 focus-visible:ring-accent/20 transition-all resize-none shadow-none"
         />
       </div>
 

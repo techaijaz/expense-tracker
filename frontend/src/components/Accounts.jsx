@@ -20,6 +20,14 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Play, Pause, Star, Edit, Trash2, MoreVertical } from 'lucide-react';
 
 // ─── Account type config ──────────────────────────────────────────────────────
 const ACCOUNT_TYPE_CONFIG = {
@@ -72,239 +80,67 @@ function AccountMenu({
   onDelete,
   onOpenChange,
 }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
   const isCash = account.type === 'CASH';
 
-
-  useEffect(() => {
-    const handler = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) {
-        setOpen(false);
-        onOpenChange?.(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
-
   return (
-    <div style={{ position: 'relative' }} ref={ref}>
-      <div
-        className="acc-menu"
-        onClick={() => {
-          const next = !open;
-          setOpen(next);
-          onOpenChange?.(next);
-        }}
-        title="Account options"
-      >
-        ⋮
-      </div>
-
-      {open && (
-        <div
-          style={{
-            position: 'absolute',
-            right: 0,
-            top: '36px',
-            zIndex: 100,
-            width: '200px',
-            background: 'var(--bg4)',
-            border: '1px solid var(--border2)',
-            borderRadius: 'var(--r)',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-          }}
+    <DropdownMenu onOpenChange={onOpenChange}>
+      <DropdownMenuTrigger className="p-1 hover:bg-bg4 rounded-md outline-none transition-colors">
+        <MoreVertical className="w-4 h-4 text-text2" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-[200px] bg-bg4 border-border2 rounded-[var(--r)] shadow-lg">
+        <DropdownMenuItem
+          disabled={isCash}
+          onClick={onToggleActive}
+          className={`gap-2.5 px-3 py-2 text-[13px] font-medium cursor-pointer ${
+            account.isActive ? 'text-red-500 hover:text-red-600 focus:text-red-600 focus:bg-red-500/10' : 'text-green-500 hover:text-green-600 focus:text-green-600 focus:bg-green-500/10'
+          }`}
         >
-          {/* Toggle Active */}
-          <button
-            onClick={() => {
-              onToggleActive();
-              setOpen(false);
-              onOpenChange?.(false);
-            }}
-            disabled={isCash}
-            style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              padding: '10px 14px',
-              background: 'transparent',
-              border: 'none',
-              color: account.isActive ? 'var(--red)' : 'var(--green)',
-              fontFamily: 'var(--font)',
-              fontSize: '13px',
-              fontWeight: 500,
-              cursor: isCash ? 'not-allowed' : 'pointer',
-              opacity: isCash ? 0.4 : 1,
-              textAlign: 'left',
-            }}
-            onMouseEnter={(e) => {
-              if (!isCash) e.currentTarget.style.background = 'var(--bg5)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'transparent';
-            }}
-          >
-            {account.isActive ? '⏸ Set Inactive' : '▶ Set Active'}
-          </button>
-
-          {/* Set Default */}
-          <button
-            onClick={() => {
-              onSetDefault();
-              setOpen(false);
-              onOpenChange?.(false);
-            }}
-            disabled={account.isDefault}
-            style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              padding: '10px 14px',
-              background: 'transparent',
-              border: 'none',
-              color: account.isDefault ? 'var(--amber)' : 'var(--text2)',
-              fontFamily: 'var(--font)',
-              fontSize: '13px',
-              fontWeight: 500,
-              cursor: account.isDefault ? 'not-allowed' : 'pointer',
-              opacity: account.isDefault ? 0.6 : 1,
-              textAlign: 'left',
-            }}
-            onMouseEnter={(e) => {
-              if (!account.isDefault)
-                e.currentTarget.style.background = 'var(--bg5)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'transparent';
-            }}
-          >
-            ⭐ {account.isDefault ? 'Default Account' : 'Set as Default'}
-          </button>
-
-          {/* Edit */}
-          <button
-            onClick={() => {
-              onEdit();
-              setOpen(false);
-              onOpenChange?.(false);
-            }}
-            style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              padding: '10px 14px',
-              background: 'transparent',
-              border: 'none',
-              color: 'var(--accent)',
-              fontFamily: 'var(--font)',
-              fontSize: '13px',
-              fontWeight: 500,
-              cursor: 'pointer',
-              textAlign: 'left',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'var(--bg5)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'transparent';
-            }}
-          >
-            ✏ Edit Account
-          </button>
-
-          {/* Delete (not for CASH) */}
-          {!isCash && (
-            <button
-              onClick={() => {
-                onDelete();
-                setOpen(false);
-                onOpenChange?.(false);
-              }}
-              style={{
-                width: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px',
-                padding: '10px 14px',
-                background: 'transparent',
-                border: 'none',
-                borderTop: '1px solid var(--border)',
-                color: 'var(--red)',
-                fontFamily: 'var(--font)',
-                fontSize: '13px',
-                fontWeight: 500,
-                cursor: 'pointer',
-                textAlign: 'left',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'var(--red-bg)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'transparent';
-              }}
-            >
-              🗑 Delete Account
-            </button>
+          {account.isActive ? (
+            <><Pause className="w-3.5 h-3.5" /> Set Inactive</>
+          ) : (
+            <><Play className="w-3.5 h-3.5" /> Set Active</>
           )}
-        </div>
-      )}
-    </div>
+        </DropdownMenuItem>
+
+        <DropdownMenuItem
+          disabled={account.isDefault}
+          onClick={onSetDefault}
+          className="gap-2.5 px-3 py-2 text-[13px] font-medium text-text2 focus:bg-bg5 focus:text-text cursor-pointer data-[disabled]:opacity-60"
+        >
+          <Star className={`w-3.5 h-3.5 ${account.isDefault ? 'fill-amber-500 text-amber-500' : ''}`} />
+          {account.isDefault ? 'Default Account' : 'Set as Default'}
+        </DropdownMenuItem>
+
+        <DropdownMenuItem
+          onClick={onEdit}
+          className="gap-2.5 px-3 py-2 text-[13px] font-medium text-accent focus:bg-bg5 focus:text-accent cursor-pointer"
+        >
+          <Edit className="w-3.5 h-3.5" /> Edit Account
+        </DropdownMenuItem>
+
+        {!isCash && (
+          <>
+            <DropdownMenuSeparator className="bg-border" />
+            <DropdownMenuItem
+              onClick={onDelete}
+              className="gap-2.5 px-3 py-2 text-[13px] font-medium text-red-500 focus:bg-red-500/10 focus:text-red-600 cursor-pointer"
+            >
+              <Trash2 className="w-3.5 h-3.5" /> Delete Account
+            </DropdownMenuItem>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
-// ─── Skeleton loader card ─────────────────────────────────────────────────────
 function SkeletonCard() {
   return (
-    <div
-      style={{
-        background: 'var(--bg2)',
-        border: '1px solid var(--border)',
-        borderRadius: 'var(--r3)',
-        padding: '20px',
-        animation: 'pulse 1.5s infinite',
-      }}
-    >
-      <div
-        style={{
-          height: '22px',
-          width: '70px',
-          background: 'var(--bg4)',
-          borderRadius: 'var(--r2)',
-          marginBottom: '14px',
-        }}
-      />
-      <div
-        style={{
-          height: '20px',
-          width: '130px',
-          background: 'var(--bg4)',
-          borderRadius: 'var(--r2)',
-          marginBottom: '6px',
-        }}
-      />
-      <div
-        style={{
-          height: '12px',
-          width: '90px',
-          background: 'var(--bg4)',
-          borderRadius: 'var(--r2)',
-          marginBottom: '18px',
-        }}
-      />
-      <div
-        style={{
-          height: '32px',
-          width: '120px',
-          background: 'var(--bg4)',
-          borderRadius: 'var(--r2)',
-        }}
-      />
-      <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }`}</style>
+    <div className="bg-bg2 border border-border rounded-[var(--r3)] p-5 animate-pulse">
+      <div className="h-[22px] w-[70px] bg-bg4 rounded-[var(--r2)] mb-3.5" />
+      <div className="h-[20px] w-[130px] bg-bg4 rounded-[var(--r2)] mb-1.5" />
+      <div className="h-[12px] w-[90px] bg-bg4 rounded-[var(--r2)] mb-[18px]" />
+      <div className="h-[32px] w-[120px] bg-bg4 rounded-[var(--r2)]" />
     </div>
   );
 }
@@ -427,58 +263,23 @@ export default function Accounts() {
     <div className="page-body pt-0">
       {/* Net Liquidity + Allocation (Moved to Top) */}
       {accounts && accounts.length > 0 && (
-        <div className="net-liquidity mb-8">
+        <div className="flex flex-col sm:flex-row justify-between sm:items-end gap-6 mb-8 bg-bg2 p-6 rounded-[var(--r4)] border border-border">
           {/* Left: Net Liquidity */}
           <div>
-            <div
-              style={{
-                fontSize: '11px',
-                color: 'var(--text3)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.08em',
-                fontWeight: 600,
-                marginBottom: '8px',
-              }}
-            >
+            <div className="text-[11px] text-text3 uppercase tracking-[0.08em] font-semibold mb-2">
               Net Liquidity
             </div>
-            <div
-              style={{
-                fontSize: 'clamp(24px, 5vw, 36px)',
-                fontWeight: 700,
-                fontFamily: 'var(--mono)',
-                color: netLiquidity >= 0 ? 'var(--accent)' : 'var(--red)',
-                letterSpacing: '-1px',
-              }}
-            >
+            <div className={`text-[clamp(24px,5vw,36px)] font-bold font-mono tracking-tight ${netLiquidity >= 0 ? 'text-accent' : 'text-red-500'}`}>
               {formatAmount(netLiquidity)}
             </div>
-            <div
-              style={{
-                fontSize: '12px',
-                color: 'var(--green)',
-                marginTop: '6px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-              }}
-            >
+            <div className="text-xs text-green-500 mt-1.5 flex items-center gap-1">
               ↑ Active Portfolio
             </div>
           </div>
 
           {/* Right: Allocation Breakdown */}
-          <div className="hidden sm:block">
-            <div
-              style={{
-                fontSize: '11px',
-                color: 'var(--text3)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.08em',
-                fontWeight: 600,
-                marginBottom: '12px',
-              }}
-            >
+          <div className="hidden sm:block min-w-[300px]">
+            <div className="text-[11px] text-text3 uppercase tracking-[0.08em] font-semibold mb-3">
               Allocation Breakdown
             </div>
 
@@ -506,11 +307,11 @@ export default function Accounts() {
             ].map(({ label, value, color }) => {
               const pct = ((value / allocation.total) * 100).toFixed(1);
               return (
-                <div className="alloc-row" key={label}>
-                  <span className="alloc-label">{label}</span>
-                  <div className="alloc-bar-wrap">
+                <div className="flex items-center gap-3 mb-2 last:mb-0" key={label}>
+                  <span className="w-24 text-[11px] text-text2 font-medium truncate">{label}</span>
+                  <div className="flex-1 h-1.5 bg-bg4 rounded-full overflow-hidden">
                     <div
-                      className="alloc-bar"
+                      className="h-full rounded-full"
                       style={{
                         width: `${pct}%`,
                         background: color,
@@ -518,7 +319,7 @@ export default function Accounts() {
                       }}
                     />
                   </div>
-                  <span className="alloc-pct">{pct}%</span>
+                  <span className="w-10 text-right text-[11px] font-mono font-medium text-text">{pct}%</span>
                 </div>
               );
             })}
@@ -528,7 +329,7 @@ export default function Accounts() {
 
       {/* Plan Banner */}
       {plan === 'basic' && (
-        <div className="flex items-center gap-3 p-3 mb-6 text-xs border rounded-lg bg-amber-500/10 border-amber-500/20 text-amber-500">
+        <div className="flex items-center gap-3 p-3 mb-6 text-xs border rounded-[var(--r2)] bg-amber-500/10 border-amber-500/20 text-amber-500">
           <span className="text-sm">⭐</span>
           <p className="flex-1">
             <b>Basic Plan:</b> You can have 1 account of each type.
@@ -568,7 +369,7 @@ export default function Accounts() {
             return (
               <div
                 key={type}
-                className={`account-section ${hasOpenMenu ? 'section-open' : ''}`}
+                className={`mb-10 ${hasOpenMenu ? 'relative z-10' : ''}`}
               >
                 <div className="flex items-center justify-between mb-4 border-b border-border pb-2">
                   <h3 className="text-sm font-bold uppercase tracking-wider text-text2 flex items-center gap-2">
@@ -590,7 +391,7 @@ export default function Accounts() {
                     return (
                       <div
                         key={account._id}
-                        className={`account-card flex-1 min-w-[280px] max-w-full sm:max-w-[calc(50%-8px)] lg:max-w-[calc(33.33%-11px)] xl:max-w-[calc(25%-12px)] ${openMenuId === account._id ? 'menu-open' : ''}`}
+                        className={`flex-1 min-w-[280px] max-w-full sm:max-w-[calc(50%-8px)] lg:max-w-[calc(33.33%-11px)] xl:max-w-[calc(25%-12px)] bg-bg2 border border-border p-5 rounded-[var(--r3)] relative transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 ${openMenuId === account._id ? 'z-20 ring-2 ring-accent/20' : ''}`}
                         style={{
                           opacity: isInactive ? 0.5 : 1,
                           filter: isInactive ? 'grayscale(0.6)' : 'none',
@@ -601,36 +402,13 @@ export default function Accounts() {
                       >
                         {/* Inactive badge */}
                         {isInactive && (
-                          <div
-                            style={{
-                              position: 'absolute',
-                              top: '10px',
-                              left: '50%',
-                              transform: 'translateX(-50%)',
-                              background: 'var(--bg4)',
-                              border: '1px solid var(--border2)',
-                              borderRadius: 'var(--r2)',
-                              padding: '2px 8px',
-                              fontSize: '10px',
-                              fontWeight: 700,
-                              color: 'var(--text3)',
-                              textTransform: 'uppercase',
-                              letterSpacing: '0.1em',
-                              zIndex: 2,
-                            }}
-                          >
+                          <div className="absolute top-2.5 left-1/2 -translate-x-1/2 bg-bg4 border border-border2 rounded-[var(--r2)] px-2 py-0.5 text-[10px] font-bold text-text3 uppercase tracking-[0.1em] z-10">
                             INACTIVE
                           </div>
                         )}
 
                         {/* Header row: badge + menu */}
-                        <div
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                          }}
-                        >
+                        <div className="flex items-center justify-between">
                           <span className={cfg.badgeClass}>
                             {cfg.emoji} {cfg.label}
                           </span>
@@ -644,6 +422,7 @@ export default function Accounts() {
                                 ? null
                                 : () => setDeletingAccount(account)
                             }
+                            openMenuId={openMenuId}
                             onOpenChange={(isOpen) =>
                               setOpenMenuId(isOpen ? account._id : null)
                             }
@@ -651,15 +430,15 @@ export default function Accounts() {
                         </div>
 
                         {/* Account name */}
-                        <div className="acc-name truncate pr-8">
+                        <div className="font-bold text-[15px] text-text mt-3 mb-1 truncate pr-8">
                           {account.name}
                           {account.isDefault && (
-                            <span className="acc-default ml-2">★ Default</span>
+                            <span className="ml-2 text-[10px] text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded uppercase tracking-wider font-semibold">★ Default</span>
                           )}
                         </div>
 
                         {/* Account number / subtitle */}
-                        <div className="acc-num">
+                        <div className="text-xs text-text3 font-mono mb-4">
                           {account.type === 'CASH'
                             ? 'Always available'
                             : account.accountNumber
@@ -669,7 +448,7 @@ export default function Accounts() {
 
                         {/* Balance */}
                         <div
-                          className="acc-balance"
+                          className="text-[22px] font-bold font-mono tracking-tight"
                           style={{ color: cfg.balanceColor }}
                         >
                           {cfg.isNegative
@@ -679,14 +458,7 @@ export default function Accounts() {
 
                         {/* Credit limit if applicable */}
                         {cfg.isNegative && account.creditLimit > 0 && (
-                          <div
-                            style={{
-                              fontSize: '11px',
-                              color: 'var(--text3)',
-                              marginTop: '6px',
-                              fontFamily: 'var(--mono)',
-                            }}
-                          >
+                          <div className="text-[11px] text-text3 mt-1.5 font-mono">
                             Limit: {formatAmount(account.creditLimit)}
                           </div>
                         )}
@@ -723,7 +495,7 @@ export default function Accounts() {
         </div>
       ) : (
         /* Empty state */
-        <div className="flex flex-col items-center justify-center py-20 border-2 border-dashed border-border2 rounded-2xl gap-4">
+        <div className="flex flex-col items-center justify-center py-20 border-2 border-dashed border-border2 rounded-[var(--r4)] gap-4">
           <div className="text-5xl">🏦</div>
           <div className="text-base font-bold text-text2">
             No accounts in your ecosystem
@@ -734,9 +506,9 @@ export default function Accounts() {
           </p>
           <AddAccounts
             customTrigger={
-              <button className="btn-new mt-2">
+              <Button className="mt-2 font-bold text-sm h-12 bg-gradient-to-r from-accent to-accent2 hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-accent/20 transition-all rounded-xl text-white border-none">
                 + Initialize First Account
-              </button>
+              </Button>
             }
           />
         </div>
@@ -760,43 +532,18 @@ export default function Accounts() {
           }
         }}
       >
-        <DialogContent
-          style={{
-            background: 'var(--bg2)',
-            border: '1px solid var(--border2)',
-            borderRadius: 'var(--r4)',
-            maxWidth: '440px',
-            padding: '28px',
-          }}
-        >
+        <DialogContent className="bg-bg2 border-border2 rounded-[var(--r4)] max-w-[440px] p-7">
           <DialogHeader>
-            <DialogTitle
-              style={{
-                color: 'var(--text)',
-                fontSize: '18px',
-                fontWeight: 700,
-                letterSpacing: '-0.3px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-              }}
-            >
+            <DialogTitle className="text-text text-[18px] font-bold tracking-tight flex items-center gap-2">
               Delete Account
             </DialogTitle>
-            <DialogDescription
-              style={{
-                color: 'var(--text2)',
-                fontSize: '13px',
-                lineHeight: 1.6,
-                paddingTop: '8px',
-              }}
-            >
+            <DialogDescription className="text-text2 text-[13px] leading-relaxed pt-2">
               This will remove{' '}
-              <span style={{ color: 'var(--text)', fontWeight: 700 }}>
+              <span className="text-text font-bold">
                 "{deletingAccount?.name}"
               </span>{' '}
               from your account lists and filters. Related transactions will
-              <span style={{ color: 'var(--accent)', fontWeight: 700 }}>
+              <span className="text-accent font-bold">
                 {' '}
                 NOT{' '}
               </span>
@@ -804,75 +551,36 @@ export default function Accounts() {
             </DialogDescription>
           </DialogHeader>
 
-          <div
-            style={{
-              marginTop: '24px',
-              padding: '16px',
-              background: 'var(--red-bg)',
-              border: '1px solid var(--red-border)',
-              borderRadius: 'var(--r2)',
-            }}
-          >
-            <div
-              style={{
-                fontSize: '11px',
-                fontWeight: 700,
-                color: 'var(--red)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.08em',
-                marginBottom: '8px',
-              }}
-            >
+          <div className="mt-6 p-4 bg-red-500/10 border border-red-500/20 rounded-[var(--r2)]">
+            <div className="text-[11px] font-bold text-red-500 uppercase tracking-[0.08em] mb-2">
               Confirm Deletion
             </div>
-            <div
-              style={{
-                fontSize: '12px',
-                color: 'var(--text2)',
-                marginBottom: '12px',
-              }}
-            >
+            <div className="text-xs text-text2 mb-3">
               Type <b>DELETE</b> to confirm this operation.
             </div>
             <Input
               value={deleteInput}
               onChange={(e) => setDeleteInput(e.target.value)}
               placeholder="Type DELETE here..."
-              style={{
-                background: 'var(--bg2)',
-                border: '1px solid var(--red-border)',
-                color: 'var(--text)',
-                fontSize: '13px',
-              }}
+              className="bg-bg2 border-red-500/30 text-text text-[13px] focus-visible:ring-red-500"
             />
           </div>
 
-          <DialogFooter style={{ marginTop: '24px', gap: '10px' }}>
+          <DialogFooter className="mt-6 gap-2 sm:gap-0">
             <Button
               variant="outline"
               onClick={() => {
                 setDeletingAccount(null);
                 setDeleteInput('');
               }}
-              style={{
-                borderRadius: 'var(--r2)',
-                fontSize: '13px',
-                fontWeight: 600,
-              }}
+              className="rounded-[var(--r2)] text-[13px] font-semibold border-border2 text-text2 hover:text-text hover:bg-bg4"
             >
               Cancel
             </Button>
             <Button
               onClick={() => handleDelete(deletingAccount)}
               disabled={deleteInput.toUpperCase() !== 'DELETE'}
-              style={{
-                borderRadius: 'var(--r2)',
-                fontSize: '13px',
-                fontWeight: 600,
-                background: 'var(--red)',
-                color: '#fff',
-                border: 'none',
-              }}
+              className="rounded-[var(--r2)] text-[13px] font-semibold bg-red-500 hover:bg-red-600 text-white border-none disabled:opacity-50"
             >
               Confirm Deletion
             </Button>
@@ -891,11 +599,7 @@ export default function Accounts() {
         <AddAccounts
           customTrigger={
             <button
-              className="w-14 h-14 rounded-full bg-primary text-background shadow-2xl flex items-center justify-center active:scale-90 transition-all border-4 border-[var(--bg)]"
-              style={{
-                boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
-                background: 'var(--accent)',
-              }}
+              className="w-14 h-14 rounded-full bg-accent text-white shadow-2xl shadow-black/30 flex items-center justify-center active:scale-90 transition-all border-4 border-bg hover:bg-accent2"
             >
               <span className="text-2xl font-bold">+</span>
             </button>
@@ -905,3 +609,4 @@ export default function Accounts() {
     </div>
   );
 }
+

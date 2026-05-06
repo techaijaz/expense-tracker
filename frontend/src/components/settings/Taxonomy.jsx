@@ -5,6 +5,7 @@ import api from '@/utils/httpMethods';
 import { removeCategory } from '@/redux/categorySlice';
 import { DeleteConfirmModal } from '../SharedComponents';
 import AddCategoryPopup from '../AddCategoryPopup';
+import { Button } from '@/components/ui/button';
 
 export default function Taxonomy() {
   const dispatch = useDispatch();
@@ -139,23 +140,25 @@ export default function Taxonomy() {
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 6 }}>
-                  <button
-                    className="icon-btn"
-                    style={{ width: 26, height: 26, fontSize: 11 }}
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-[26px] w-[26px] text-[11px]"
                     onClick={() => {
                       setEditingCategory(cat);
                       setIsCategoryModalOpen(true);
                     }}
                   >
                     ✏️
-                  </button>
-                  <button
-                    className="icon-btn"
-                    style={{ width: 26, height: 26, fontSize: 11 }}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-[26px] w-[26px] text-[11px]"
                     onClick={() => setDeleteCatModal(cat)}
                   >
                     🗑
-                  </button>
+                  </Button>
                 </div>
               </div>
             );
@@ -177,7 +180,7 @@ export default function Taxonomy() {
 
       <button
         onClick={handleAddCategory}
-        className="btn-outline"
+        className="px-3.5 py-1.5 bg-transparent border border-[var(--border2)] rounded-[var(--r2)] text-[var(--text2)] font-medium flex items-center gap-1.5 transition-all hover:border-[var(--border3)] hover:text-[var(--text)]"
         style={{
           width: '100%',
           marginTop: 12,

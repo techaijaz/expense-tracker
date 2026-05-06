@@ -41,6 +41,7 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from '@/components/ui/drawer';
+import { Input } from '@/components/ui/input';
 import { useMediaQuery } from '@/hooks/use-media-query';
 
 // ── types that REQUIRE an account number ───────────────────────────────────────
@@ -181,10 +182,10 @@ function AccountModal({ onClose, onSaved, account = null, initialType = null }) 
         {/* Account Name */}
         <div className="space-y-1.5">
           <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-text3 ml-1">Account Name</label>
-          <input
+          <Input
             {...register('name')}
             placeholder="e.g. HDFC Savings"
-            className="w-full h-11 px-4 bg-bg3 border border-border rounded-xl text-sm font-semibold focus:ring-2 focus:ring-accent/20 outline-none transition-all"
+            className="w-full h-11 px-4 bg-bg3 border border-border rounded-xl text-sm font-semibold focus-visible:ring-2 focus-visible:ring-accent/20 outline-none transition-all shadow-none"
             type="text"
           />
           {errors.name && <p className="text-[10px] font-medium text-red mt-0.5 ml-1">{errors.name.message}</p>}
@@ -194,10 +195,10 @@ function AccountModal({ onClose, onSaved, account = null, initialType = null }) 
         {needsAccNum && (
           <div className="space-y-1.5">
             <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-text3 ml-1">Account Number (Last 4)</label>
-            <input
+            <Input
               {...register('accountNumber')}
               placeholder="1234"
-              className="w-full h-11 px-4 bg-bg3 border border-border rounded-xl text-sm font-semibold focus:ring-2 focus:ring-accent/20 outline-none transition-all"
+              className="w-full h-11 px-4 bg-bg3 border border-border rounded-xl text-sm font-semibold focus-visible:ring-2 focus-visible:ring-accent/20 outline-none transition-all shadow-none"
               type="text"
               maxLength={4}
             />
@@ -212,11 +213,11 @@ function AccountModal({ onClose, onSaved, account = null, initialType = null }) 
           </label>
           <div className="relative">
             <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-accent">{currencySymbol}</span>
-            <input
+            <Input
               {...register('balance')}
               onInput={(e) => { e.target.value = restrictDecimals(e.target.value, decimalPlaces); }}
               placeholder={`0.${'0'.repeat(decimalPlaces)}`}
-              className="w-full h-11 pl-10 pr-4 bg-bg3 border border-border rounded-xl text-sm font-semibold focus:ring-2 focus:ring-accent/20 outline-none transition-all"
+              className="w-full h-11 pl-10 pr-4 bg-bg3 border border-border rounded-xl text-sm font-semibold focus-visible:ring-2 focus-visible:ring-accent/20 outline-none transition-all shadow-none"
               type="number"
               step="any"
               disabled={initialBalanceLoading}
@@ -231,11 +232,11 @@ function AccountModal({ onClose, onSaved, account = null, initialType = null }) 
             <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-text3 ml-1">Credit Limit</label>
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-red">{currencySymbol}</span>
-              <input
+              <Input
                 {...register('creditLimit')}
                 onInput={(e) => { e.target.value = restrictDecimals(e.target.value, decimalPlaces); }}
                 placeholder={`0.${'0'.repeat(decimalPlaces)}`}
-                className="w-full h-11 pl-10 pr-4 bg-bg3 border border-border rounded-xl text-sm font-semibold focus:ring-2 focus:ring-accent/20 outline-none transition-all"
+                className="w-full h-11 pl-10 pr-4 bg-bg3 border border-border rounded-xl text-sm font-semibold focus-visible:ring-2 focus-visible:ring-accent/20 outline-none transition-all shadow-none"
                 type="number"
                 step="any"
               />
@@ -422,9 +423,9 @@ export default function AddAccounts({
         className="inline-block cursor-pointer"
       >
         {customTrigger ?? (
-          <button className="bg-primary text-background px-4 py-2 rounded-lg font-bold text-sm hover:opacity-90 transition-all flex items-center gap-2">
+          <Button className="h-auto font-bold text-sm">
             {!isPro && '🔒 '}{btnLabel}
-          </button>
+          </Button>
         )}
       </div>
       {isOpen && <AccountModal onClose={handleClose} onSaved={handleSaved} initialType={type} />}

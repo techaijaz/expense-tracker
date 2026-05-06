@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 import {
   ArrowLeft,
   X,
@@ -292,13 +293,14 @@ const FinancialAnalysis = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          <button
+          <Button
+            variant="outline"
             onClick={fetchData}
-            className="btn-outline h-[42px] px-5 gap-2.5 active:scale-95 transition-transform"
+            className="h-[42px] px-5 gap-2.5 active:scale-95 transition-transform"
           >
             <RefreshCw className="w-4 h-4" />
             <span className="hidden sm:inline">Refresh Logic</span>
-          </button>
+          </Button>
         </div>
       </div>
 

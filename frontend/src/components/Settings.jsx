@@ -6,6 +6,7 @@ import Counterparties from './settings/Counterparties';
 import Appearance from './settings/Appearance';
 import RegionalSpecs from './settings/RegionalSpecs';
 import SystemMetrics from './settings/SystemMetrics';
+import { Button } from './ui/button';
 
 export default function Settings() {
   const handleHardReset = () => {
@@ -36,9 +37,13 @@ export default function Settings() {
               taxonomies, accounts, and counterparty metadata. This action is{' '}
               <b>irreversible</b>. Password verification required.
             </div>
-            <button className="btn-danger" onClick={handleHardReset}>
+            <Button
+              variant="destructive"
+              onClick={handleHardReset}
+              className="mt-4 w-full sm:w-auto"
+            >
               Reset All Data Modules
-            </button>
+            </Button>
           </div>
         </div>
 

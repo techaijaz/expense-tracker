@@ -167,7 +167,7 @@ export default function Header({ onMenuToggle, onNewTransaction }) {
               </Avatar>
             </div>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56 glass-panel-heavy">
+          <DropdownMenuContent align="end" className="w-56 bg-[color-mix(in_srgb,var(--bg2)_80%,transparent)] backdrop-blur-xl border border-[var(--border2)] shadow-[0_8px_32px_rgba(0,0,0,0.2)]">
             <DropdownMenuLabel>
               <div className="flex flex-col space-y-1">
                 <p className="text-sm font-bold leading-none">{user?.firstName} {user?.lastName}</p>
@@ -183,7 +183,7 @@ export default function Header({ onMenuToggle, onNewTransaction }) {
                 <span>Theme</span>
               </DropdownMenuSubTrigger>
               <DropdownMenuPortal>
-                <DropdownMenuSubContent className="glass-panel-heavy">
+                <DropdownMenuSubContent className="bg-[color-mix(in_srgb,var(--bg2)_80%,transparent)] backdrop-blur-xl border border-[var(--border2)] shadow-[0_8px_32px_rgba(0,0,0,0.2)]">
                   <DropdownMenuItem onClick={() => setTheme('light')} className="gap-2">
                     <Sun className="h-4 w-4" />
                     <span>Light</span>
@@ -210,7 +210,7 @@ export default function Header({ onMenuToggle, onNewTransaction }) {
                 <span>Accent Color</span>
               </DropdownMenuSubTrigger>
               <DropdownMenuPortal>
-                <DropdownMenuSubContent className="glass-panel-heavy">
+                <DropdownMenuSubContent className="bg-[color-mix(in_srgb,var(--bg2)_80%,transparent)] backdrop-blur-xl border border-[var(--border2)] shadow-[0_8px_32px_rgba(0,0,0,0.2)]">
                   {ACCENTS.map((acc) => (
                     <DropdownMenuItem 
                       key={acc.value} 

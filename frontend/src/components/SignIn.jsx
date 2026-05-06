@@ -11,6 +11,8 @@ import { useEffect, useState } from 'react';
 import { setAccounts } from '@/redux/accountSlice';
 import { setCategories } from '@/redux/categorySlice';
 import { GoogleLogin } from '@react-oauth/google';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 function SignIn() {
   const dispatch = useDispatch();
@@ -150,14 +152,14 @@ function SignIn() {
                   Email Address
                 </label>
                 <div className="relative">
-                  <input
+                  <Input
                     id="email"
                     type="email"
                     {...register('email')}
                     placeholder="name@firm.com"
                     onFocus={() => setFocusedField('email')}
                     onBlur={() => setFocusedField(null)}
-                    className={`w-full bg-bg3 rounded-xl py-2.5 md:py-3 px-4 text-text focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent/40 transition-all placeholder:text-text3/40 text-sm ${errors.email ? 'border-red/50 focus:border-red' : 'border border-transparent'}`}
+                    className={errors.email ? 'border-red/50 focus-visible:ring-red' : ''}
                   />
                   {errors.email && (
                     <p className="mt-1.5 text-[11px] font-medium text-red ml-1">
@@ -184,14 +186,14 @@ function SignIn() {
                   </Link>
                 </div>
                 <div className="relative">
-                  <input
+                  <Input
                     id="password"
                     type="password"
                     {...register('password')}
                     placeholder="••••••••"
                     onFocus={() => setFocusedField('password')}
                     onBlur={() => setFocusedField(null)}
-                    className={`w-full bg-bg3 rounded-xl py-2.5 md:py-3 px-4 text-text focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent/40 transition-all placeholder:text-text3/40 text-sm ${errors.password ? 'border-red/50 focus:border-red' : 'border border-transparent'}`}
+                    className={errors.password ? 'border-red/50 focus-visible:ring-red' : ''}
                   />
                   {errors.password && (
                     <p className="mt-1.5 text-[11px] font-medium text-red ml-1">
@@ -202,10 +204,10 @@ function SignIn() {
               </div>
 
               {/* Sign In Button */}
-              <button
+              <Button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-gradient-to-r from-accent to-accent2 text-white font-bold py-2.5 md:py-3 rounded-xl text-[10px] md:text-[11px] uppercase tracking-[0.15em] shadow-lg shadow-accent/20 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2.5 disabled:opacity-70 disabled:cursor-not-allowed"
+                className="w-full font-bold py-2.5 md:py-3 text-[10px] md:text-[11px] uppercase tracking-[0.15em] shadow-lg shadow-accent/20 flex items-center justify-center gap-2.5 h-auto rounded-xl"
               >
                 {isLoading ? (
                   <div className="w-4 h-4 border-2 border-[rgba(255,255,255,0.3)] border-t-white rounded-full animate-spin" />
@@ -216,7 +218,7 @@ function SignIn() {
                     arrow_forward
                   </span>
                 )}
-              </button>
+              </Button>
             </form>
 
             {/* Divider */}

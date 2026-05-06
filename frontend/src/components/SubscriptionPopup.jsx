@@ -9,6 +9,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Check, Zap, Star, ShieldCheck, X, Loader2 } from "lucide-react";
+import { Button } from '@/components/ui/button';
 import { updatePlan } from '@/redux/authSlice';
 import api from '@/utils/httpMethods';
 import { toast } from 'sonner';
@@ -132,7 +133,8 @@ const SubscriptionPopup = ({ isOpen, onOpenChange }) => {
         'Basic Dashboard Insights'
       ],
       buttonText: isAdmin ? 'Admin Access' : (currentPlan === 'basic' ? 'Current Plan' : 'Select Basic'),
-      buttonClass: (isAdmin || currentPlan === 'basic') ? 'btn-outline border-white/20 text-[#8892B0]' : 'btn-primary',
+      buttonVariant: (isAdmin || currentPlan === 'basic') ? 'outline' : 'default',
+      buttonClass: (isAdmin || currentPlan === 'basic') ? 'border-white/20 text-[#8892B0]' : '',
       disabled: isAdmin || currentPlan === 'basic',
       popular: false,
     },
@@ -154,7 +156,8 @@ const SubscriptionPopup = ({ isOpen, onOpenChange }) => {
         'Credit Card Bill Cycles'
       ],
       buttonText: isAdmin ? 'Admin Access' : ((currentPlan === 'pro' && currentPeriod === 'monthly') ? 'Current Plan' : 'Upgrade Pro'),
-      buttonClass: (isAdmin || (currentPlan === 'pro' && currentPeriod === 'monthly')) ? 'btn-outline border-white/20 text-[#8892B0]' : 'btn-primary',
+      buttonVariant: (isAdmin || (currentPlan === 'pro' && currentPeriod === 'monthly')) ? 'outline' : 'default',
+      buttonClass: (isAdmin || (currentPlan === 'pro' && currentPeriod === 'monthly')) ? 'border-white/20 text-[#8892B0]' : '',
       disabled: isAdmin || (currentPlan === 'pro' && currentPeriod === 'monthly'),
       popular: true,
       badge: 'Popular',
@@ -180,7 +183,8 @@ const SubscriptionPopup = ({ isOpen, onOpenChange }) => {
           : (currentPlan === 'pro' && currentPeriod === 'monthly')
             ? 'Upgrade to Pro Yearly'
             : 'Get Pro Yearly',
-      buttonClass: (isAdmin || (currentPlan === 'pro' && currentPeriod === 'yearly')) ? 'btn-outline border-white/20 text-[#8892B0]' : 'btn-primary',
+      buttonVariant: (isAdmin || (currentPlan === 'pro' && currentPeriod === 'yearly')) ? 'outline' : 'default',
+      buttonClass: (isAdmin || (currentPlan === 'pro' && currentPeriod === 'yearly')) ? 'border-white/20 text-[#8892B0]' : '',
       disabled: isAdmin || (currentPlan === 'pro' && currentPeriod === 'yearly'),
       popular: false,
       badge: 'Best Value',
@@ -242,9 +246,10 @@ const SubscriptionPopup = ({ isOpen, onOpenChange }) => {
                     ))}
                   </div>
 
-                  <button
+                  <Button
+                    variant={plan.buttonVariant}
                     disabled={plan.disabled || loadingPlan}
-                    className={`${plan.buttonClass} w-full py-3 rounded-xl font-semibold transition-all active:scale-95 flex items-center justify-center gap-2 ${
+                    className={`${plan.buttonClass} w-full py-3 h-auto rounded-xl font-semibold transition-all active:scale-95 flex items-center justify-center gap-2 ${
                       plan.disabled ? 'opacity-50 cursor-not-allowed' : ''
                     }`}
                     onClick={() => {
@@ -261,7 +266,7 @@ const SubscriptionPopup = ({ isOpen, onOpenChange }) => {
                         {plan.buttonText}
                       </>
                     )}
-                  </button>
+                  </Button>
                 </div>
               ))
             ) : (

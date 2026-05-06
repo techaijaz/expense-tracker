@@ -5,7 +5,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '@/utils/httpMethods';
 import { toast } from 'sonner';
 import { useEffect, useState } from 'react';
-
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 function ResetPassword() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -91,12 +92,12 @@ function ResetPassword() {
                   New Password
                 </label>
                 <div className="relative">
-                  <input
+                  <Input
                     id="password"
                     type="password"
                     {...register('password')}
                     placeholder="••••••••"
-                    className={`w-full bg-surface-container-lowest rounded-xl py-3 px-4 text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all placeholder:text-on-surface-variant/40 text-sm ${errors.password ? 'border-error/50 focus:border-error' : ''}`}
+                    className={errors.password ? 'border-error/50 focus-visible:ring-error' : ''}
                   />
                   {errors.password && (
                     <p className="mt-1.5 text-[11px] font-medium text-error ml-1">
@@ -114,12 +115,12 @@ function ResetPassword() {
                   Confirm Password
                 </label>
                 <div className="relative">
-                  <input
+                  <Input
                     id="confirmPassword"
                     type="password"
                     {...register('confirmPassword')}
                     placeholder="••••••••"
-                    className={`w-full bg-surface-container-lowest rounded-xl py-3 px-4 text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all placeholder:text-on-surface-variant/40 text-sm ${errors.confirmPassword ? 'border-error/50 focus:border-error' : ''}`}
+                    className={errors.confirmPassword ? 'border-error/50 focus-visible:ring-error' : ''}
                   />
                   {errors.confirmPassword && (
                     <p className="mt-1.5 text-[11px] font-medium text-error ml-1">
@@ -129,10 +130,10 @@ function ResetPassword() {
                 </div>
               </div>
 
-              <button
+              <Button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-gradient-to-r from-primary-container to-primary text-white font-bold py-3.5 rounded-xl text-[12px] uppercase tracking-[0.15em] shadow-lg shadow-primary-container/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed"
+                className="w-full py-3.5 rounded-xl text-[12px] uppercase tracking-[0.15em] shadow-lg shadow-primary-container/20 flex items-center justify-center gap-3 h-auto"
               >
                 {isLoading ? (
                   <div className="w-4 h-4 border-2 border-[rgba(255,255,255,0.3)] border-t-white rounded-full animate-spin" />
@@ -143,7 +144,7 @@ function ResetPassword() {
                     lock_open
                   </span>
                 )}
-              </button>
+              </Button>
             </form>
           </div>
         </div>

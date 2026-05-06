@@ -109,7 +109,7 @@ export default function SubscriptionManagement() {
             <button
               onClick={handleUpgradeToYearly}
               disabled={loading}
-              className="btn-primary w-full py-2.5 text-xs flex items-center justify-center gap-2"
+              className="bg-[var(--accent)] border-none rounded-[var(--r)] text-white font-semibold transition-all hover:bg-[var(--accent2)] hover:-translate-y-[1px] w-full py-2.5 text-xs flex items-center justify-center gap-2"
             >
               {loading ? (
                 <Loader2 size={14} className="animate-spin" />
@@ -141,7 +141,7 @@ export default function SubscriptionManagement() {
               </div>
               <button
                 onClick={() => setShowPopup(true)}
-                className="btn-primary w-full py-2.5 text-xs flex items-center justify-center gap-2"
+                className="bg-[var(--accent)] border-none rounded-[var(--r)] text-white font-semibold transition-all hover:bg-[var(--accent2)] hover:-translate-y-[1px] w-full py-2.5 text-xs flex items-center justify-center gap-2"
               >
                 <Zap size={14} fill="currentColor" />
                 Upgrade Plan

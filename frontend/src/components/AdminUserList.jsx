@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import { Button } from '@/components/ui/button';
 
 dayjs.extend(relativeTime);
 
@@ -71,7 +72,7 @@ const AdminUserList = () => {
         </div>
       </div>
 
-      <div className="card glass-panel !p-0 overflow-hidden relative border border-border/30 shadow-2xl">
+      <div className="bg-[var(--glass-bg)] backdrop-blur-md border border-border/30 rounded-[var(--r3)] !p-0 overflow-hidden relative shadow-2xl">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[900px]">
             <thead>
@@ -155,9 +156,9 @@ const AdminUserList = () => {
                     </div>
                   </td>
                   <td className="px-6 py-5 text-center">
-                    <button className="icon-btn mx-auto group-hover:scale-110 transition-transform">
+                    <Button variant="outline" size="icon" className="mx-auto group-hover:scale-110 transition-transform">
                       <MoreVertical size={16} />
-                    </button>
+                    </Button>
                   </td>
                 </tr>
               ))}
@@ -182,7 +183,7 @@ const AdminUserList = () => {
             <button 
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="btn-outline !py-2 !px-4 hover:bg-bg4 disabled:opacity-20 transition-all active:scale-95"
+              className="px-3.5 py-1.5 bg-transparent border border-[var(--border2)] rounded-[var(--r2)] text-[var(--text2)] font-medium flex items-center gap-1.5 transition-all hover:border-[var(--border3)] hover:text-[var(--text)] !py-2 !px-4 hover:bg-bg4 disabled:opacity-20 active:scale-95"
             >
               <ChevronLeft size={16} />
               <span>Previous Sequence</span>
@@ -190,7 +191,7 @@ const AdminUserList = () => {
             <button 
               onClick={() => setPage(p => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
-              className="btn-outline !py-2 !px-4 hover:bg-bg4 disabled:opacity-20 transition-all active:scale-95"
+              className="px-3.5 py-1.5 bg-transparent border border-[var(--border2)] rounded-[var(--r2)] text-[var(--text2)] font-medium flex items-center gap-1.5 transition-all hover:border-[var(--border3)] hover:text-[var(--text)] !py-2 !px-4 hover:bg-bg4 disabled:opacity-20 active:scale-95"
             >
               <span>Next Sequence</span>
               <ChevronRight size={16} />

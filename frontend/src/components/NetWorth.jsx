@@ -52,6 +52,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
 import { Trash2, Edit2, AlertCircle } from 'lucide-react';
 
 const NetWorth = () => {
@@ -312,9 +313,9 @@ const NetWorth = () => {
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
         <div className="text-red text-4xl mb-2">⚠️</div>
         <p className="text-text font-bold">Failed to load net worth data</p>
-        <button className="btn-outline px-6" onClick={fetchData}>
+        <Button variant="outline" className="px-6" onClick={fetchData}>
           Try Again
-        </button>
+        </Button>
       </div>
     );
   }
@@ -339,20 +340,21 @@ const NetWorth = () => {
         </div>
 
         <div className="flex items-center gap-3 shrink-0">
-          <button
-            className="btn-outline h-[42px] px-5 gap-2.5 active:scale-95 transition-transform"
+          <Button
+            variant="outline"
+            className="h-[42px] px-5 gap-2.5 active:scale-95 transition-transform"
             onClick={() => fetchData()}
           >
             <RefreshCw className="w-4 h-4" />
             <span className="hidden sm:inline">Sync Portfolio</span>
-          </button>
-          <button
-            className="btn-primary-gradient h-[42px] px-6 rounded-xl flex items-center justify-center gap-2.5 text-white font-bold text-sm shadow-lg shadow-accent/20 active:scale-95 transition-transform"
+          </Button>
+          <Button
+            className="h-[42px] px-6 rounded-xl flex items-center justify-center gap-2.5 shadow-lg shadow-accent/20 active:scale-95 transition-transform"
             onClick={() => setShowAddPopup(true)}
           >
             <Plus className="w-4 h-4 stroke-[3px]" />
             Add New Asset
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -967,9 +969,9 @@ const NetWorth = () => {
             <p className="text-[10px] font-black text-text3 uppercase tracking-[0.2em] mb-8">
               No physical holdings detected in your architecture
             </p>
-            <button className="btn-outline px-8 h-[42px] rounded-xl border-accent/20 text-accent hover:bg-accent/10">
+            <Button variant="outline" className="px-8 h-[42px] rounded-xl border-accent/20 text-accent hover:bg-accent/10">
               Initialize Vault
-            </button>
+            </Button>
           </div>
         )}
       </div>

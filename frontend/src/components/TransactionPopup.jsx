@@ -414,7 +414,7 @@ const TransactionPopup = ({
           <span className="text-2xl md:text-3xl font-extrabold text-accent">
             {currencySymbol}
           </span>
-          <input
+          <Input
             {...register('amount')}
             placeholder={`0.${'0'.repeat(decimalPlaces)}`}
             type="text"
@@ -423,7 +423,7 @@ const TransactionPopup = ({
               const nextValue = e.target.value.replace(/[^0-9.]/g, '');
               e.target.value = restrictDecimals(nextValue, decimalPlaces);
             }}
-            className="flex-1 bg-transparent border-none outline-none text-2xl md:text-3xl font-black text-text placeholder:text-text3/20 w-full tracking-tight"
+            className="flex-1 bg-transparent border-none shadow-none focus-visible:ring-0 text-2xl md:text-3xl font-black text-text placeholder:text-text3/20 w-full tracking-tight p-0 h-auto"
           />
         </div>
         {errors.amount && (

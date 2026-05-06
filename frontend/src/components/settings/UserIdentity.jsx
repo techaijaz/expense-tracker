@@ -3,6 +3,8 @@ import { useSelector, useDispatch } from 'react-redux';
 import { toast } from 'sonner';
 import api from '@/utils/httpMethods';
 import { updateAvatar, updateHasPassword } from '@/redux/authSlice';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 const BACKEND_URL =
   import.meta.env.VITE_API_URL?.replace('/api/v1', '') ||
@@ -230,15 +232,15 @@ export default function UserIdentity() {
       </div>
 
       {!showChangePwd ? (
-        <button
+        <Button
+          variant="outline"
           onClick={() => setShowChangePwd(true)}
-          className="btn-outline"
-          style={{ width: '100%', justifyContent: 'center' }}
+          className="w-full justify-center h-11"
         >
           {currentUser?.googleId && !currentUser?.hasPassword
             ? '🔑 Set Local Password'
             : '🔒 Change Password'}
-        </button>
+        </Button>
       ) : (
         <form
           onSubmit={handleChangePassword}
@@ -254,11 +256,11 @@ export default function UserIdentity() {
           {!(currentUser?.googleId && !currentUser?.hasPassword) && (
             <div className="form-group">
               <label className="form-label">Current Password</label>
-              <input
+              <Input
                 type="password"
                 value={pwdForm.current}
                 onChange={(e) => handlePwdInputChange('current', e.target.value)}
-                className={`form-input ${errors.current ? 'error' : ''}`}
+                className={errors.current ? 'border-red-500' : ''}
                 placeholder="••••••••"
               />
               {errors.current && (
@@ -268,11 +270,11 @@ export default function UserIdentity() {
           )}
           <div className="form-group">
             <label className="form-label">New Password</label>
-            <input
+            <Input
               type="password"
               value={pwdForm.newPwd}
               onChange={(e) => handlePwdInputChange('newPwd', e.target.value)}
-              className={`form-input ${errors.newPwd ? 'error' : ''}`}
+              className={errors.newPwd ? 'border-red-500' : ''}
               placeholder="Min. 8 characters"
             />
             {errors.newPwd && (
@@ -281,11 +283,11 @@ export default function UserIdentity() {
           </div>
           <div className="form-group">
             <label className="form-label">Confirm New Password</label>
-            <input
+            <Input
               type="password"
               value={pwdForm.confirm}
               onChange={(e) => handlePwdInputChange('confirm', e.target.value)}
-              className={`form-input ${errors.confirm ? 'error' : ''}`}
+              className={errors.confirm ? 'border-red-500' : ''}
               placeholder="••••••••"
             />
             {errors.confirm && (
@@ -293,26 +295,25 @@ export default function UserIdentity() {
             )}
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button
+            <Button
               type="button"
+              variant="outline"
               onClick={() => setShowChangePwd(false)}
-              className="btn-cancel"
-              style={{ flex: 1 }}
+              className="flex-1"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
               disabled={changingPwd}
-              className="btn-save"
-              style={{ flex: 2 }}
+              className="flex-[2] bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               {changingPwd
                 ? 'Updating…'
                 : currentUser?.googleId && !currentUser?.hasPassword
                   ? 'Set Password'
                   : 'Update Password'}
-            </button>
+            </Button>
           </div>
         </form>
       )}

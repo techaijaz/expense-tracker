@@ -5,7 +5,8 @@ import { Link } from 'react-router-dom';
 import api from '@/utils/httpMethods';
 import { toast } from 'sonner';
 import { useEffect, useState } from 'react';
-
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 function ForgotPassword() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSent, setIsSent] = useState(false);
@@ -106,12 +107,12 @@ function ForgotPassword() {
                       Email Address
                     </label>
                     <div className="relative">
-                      <input
+                      <Input
                         id="email"
                         type="email"
                         {...register('email')}
                         placeholder="name@firm.com"
-                        className={`w-full bg-surface-container-lowest rounded-xl py-3 px-4 text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all placeholder:text-on-surface-variant/40 text-sm ${errors.email ? 'border-error/50 focus:border-error' : ''}`}
+                        className={errors.email ? 'border-error/50 focus-visible:ring-error' : ''}
                       />
                       {errors.email && (
                         <p className="mt-1.5 text-[11px] font-medium text-error ml-1">
@@ -121,10 +122,10 @@ function ForgotPassword() {
                     </div>
                   </div>
 
-                  <button
+                  <Button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full bg-gradient-to-r from-primary-container to-primary text-white font-bold py-3.5 rounded-xl text-[12px] uppercase tracking-[0.15em] shadow-lg shadow-primary-container/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed"
+                    className="w-full py-3.5 rounded-xl text-[12px] uppercase tracking-[0.15em] shadow-lg shadow-primary-container/20 flex items-center justify-center gap-3 h-auto"
                   >
                     {isLoading ? (
                       <div className="w-4 h-4 border-2 border-[rgba(255,255,255,0.3)] border-t-white rounded-full animate-spin" />
@@ -135,7 +136,7 @@ function ForgotPassword() {
                         send
                       </span>
                     )}
-                  </button>
+                  </Button>
                 </form>
 
                 <p className="mt-8 text-center text-[13px] text-on-surface-variant font-medium">

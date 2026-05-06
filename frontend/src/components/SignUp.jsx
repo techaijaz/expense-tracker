@@ -7,6 +7,8 @@ import api from '@/utils/httpMethods';
 import { toast } from 'sonner';
 import { useState, useEffect } from 'react';
 import { GoogleLogin } from '@react-oauth/google';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { useDispatch } from 'react-redux';
 import { setAuthUser } from '@/redux/authSlice';
 import { setAccounts } from '@/redux/accountSlice';
@@ -171,8 +173,6 @@ function SignUp() {
     }
   };
 
-  const inputClass =
-    'w-full bg-bg3 border border-transparent rounded-lg px-4 py-2.5 md:py-3 text-text placeholder:text-text3/40 focus:ring-1 focus:ring-accent/20 focus:border-accent/40 transition-all font-body text-sm outline-none';
   const labelClass =
     'font-label text-[10px] font-bold uppercase tracking-[0.2em] text-text3';
 
@@ -224,12 +224,12 @@ function SignUp() {
                 <label className={labelClass} htmlFor="firstName">
                   First Name
                 </label>
-                <input
+                <Input
                   {...register('firstName')}
-                  className={inputClass}
                   id="firstName"
                   placeholder="Alexander"
                   type="text"
+                  className={errors.firstName ? 'border-red/50 focus-visible:ring-red' : ''}
                 />
                 {errors.firstName && (
                   <p className="text-[10px] text-error mt-1">
@@ -241,12 +241,12 @@ function SignUp() {
                 <label className={labelClass} htmlFor="lastName">
                   Last Name
                 </label>
-                <input
+                <Input
                   {...register('lastName')}
-                  className={inputClass}
                   id="lastName"
                   placeholder="Hamilton"
                   type="text"
+                  className={errors.lastName ? 'border-red/50 focus-visible:ring-red' : ''}
                 />
                 {errors.lastName && (
                   <p className="text-[10px] text-error mt-1">
@@ -261,12 +261,12 @@ function SignUp() {
               <label className={labelClass} htmlFor="email">
                 Email Address
               </label>
-              <input
+              <Input
                 {...register('email')}
-                className={inputClass}
                 id="email"
                 placeholder="name@vault.com"
                 type="email"
+                className={errors.email ? 'border-red/50 focus-visible:ring-red' : ''}
               />
               {errors.email && (
                 <p className="text-[10px] text-error mt-1">
@@ -280,12 +280,12 @@ function SignUp() {
               <label className={labelClass} htmlFor="password">
                 Password
               </label>
-              <input
+              <Input
                 {...register('password')}
-                className={inputClass}
                 id="password"
                 placeholder="••••••••"
                 type="password"
+                className={errors.password ? 'border-red/50 focus-visible:ring-red' : ''}
               />
               {errors.password && (
                 <p className="text-[10px] text-error mt-1">
@@ -330,16 +330,16 @@ function SignUp() {
 
             {/* Action Buttons */}
             <div className="pt-1 md:pt-2 space-y-3">
-              <button
+              <Button
                 disabled={isLoading}
-                className="w-full bg-gradient-to-r from-accent to-accent2 py-3 rounded-xl text-white font-label text-[10px] md:text-[11px] font-bold uppercase tracking-widest shadow-lg shadow-accent/20 hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full py-3 rounded-xl font-label text-[10px] md:text-[11px] font-bold uppercase tracking-widest shadow-lg shadow-accent/20 flex items-center justify-center gap-2 h-auto"
                 type="submit"
               >
                 {isLoading ? (
                   <div className="w-4 h-4 border-2 border-[rgba(255,255,255,0.3)] border-t-white rounded-full animate-spin" />
                 ) : null}
                 {isLoading ? 'Creating Account...' : 'Create Account'}
-              </button>
+              </Button>
 
               <div className="relative my-3 md:my-4">
                 <div className="absolute inset-0 flex items-center">

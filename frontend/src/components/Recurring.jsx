@@ -11,6 +11,8 @@ import { DeleteConfirmModal } from './SharedComponents';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { useMediaQuery } from '@/hooks/use-media-query';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 dayjs.extend(relativeTime);
 
@@ -151,24 +153,24 @@ const Recurring = () => {
 
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           <div className="relative group flex-1 sm:w-64 md:w-80">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg opacity-40 group-focus-within:opacity-100 group-focus-within:text-accent transition-all">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg opacity-40 group-focus-within:opacity-100 group-focus-within:text-accent transition-all z-10">
               🔍
             </span>
-            <input
+            <Input
               type="text"
               placeholder="Search protocols..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full h-12 bg-bg2 border border-border/60 rounded-2xl pl-12 pr-4 text-sm text-text font-medium outline-none focus:border-accent/40 focus:ring-4 focus:ring-accent/5 transition-all placeholder:text-text3/30"
+              className="w-full h-12 bg-bg2 border border-border/60 rounded-2xl pl-12 pr-4 text-sm text-text font-medium outline-none focus-visible:ring-4 focus-visible:ring-accent/5 focus-visible:border-accent/40 transition-all placeholder:text-text3/30"
             />
           </div>
           {!isMobile && (
-            <button
+            <Button
               onClick={handleAddNew}
-              className="h-12 flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-accent to-accent2 px-6 text-[11px] font-black uppercase tracking-widest text-white shadow-xl shadow-accent/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              className="h-12 flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-accent to-accent2 px-6 text-[11px] font-black uppercase tracking-widest text-white shadow-xl shadow-accent/20 transition-all hover:scale-[1.02] active:scale-[0.98] border-none"
             >
               <span className="text-sm">{limitReached ? '🔒' : '+'}</span> Establish Rule
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -277,12 +279,13 @@ const Recurring = () => {
       {/* Mobile FAB */}
       {isMobile && !limitReached && !isPopupOpen && !isHistoryOpen && !isDeleteOpen && (
         <div className="fixed right-6 bottom-24 z-[99999] isolate">
-          <button
+          <Button
+            size="icon"
             onClick={handleAddNew}
-            className="h-16 w-16 flex items-center justify-center rounded-2xl bg-gradient-to-br from-accent to-accent2 text-white shadow-[0_20px_50px_rgba(0,0,0,0.3),0_0_20px_var(--accent-glow)] active:scale-95 transition-all animate-in fade-in zoom-in duration-300 backdrop-blur-md border border-white/20"
+            className="h-16 w-16 flex items-center justify-center rounded-2xl bg-gradient-to-br from-accent to-accent2 text-white shadow-[0_20px_50px_rgba(0,0,0,0.3),0_0_20px_var(--accent-glow)] active:scale-95 transition-all animate-in fade-in zoom-in duration-300 backdrop-blur-md border border-white/20 hover:opacity-90"
           >
             <span className="text-3xl font-light">+</span>
-          </button>
+          </Button>
         </div>
       )}
 
@@ -460,16 +463,19 @@ const RecurringCard = ({
           >
             {task.entryType === 'auto' ? 'Autonomous' : 'Assisted'}
           </div>
-          <button
+          <Button
+            variant="ghost"
             onClick={onHistory}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-bg3 text-[9px] font-black uppercase tracking-widest text-text3 hover:bg-bg4 hover:text-text transition-all"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-bg3 text-[9px] font-black uppercase tracking-widest text-text3 hover:bg-bg4 hover:text-text transition-all h-auto"
           >
             <span>📜</span> Logs
-          </button>
+          </Button>
         </div>
 
         <div className="flex gap-2.5">
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={onEdit}
             className="h-10 w-10 flex items-center justify-center rounded-2xl bg-bg3 text-text3 hover:text-accent hover:bg-accent/10 transition-all border border-border/40 hover:border-accent/40"
             title="Configure Rule"
@@ -477,8 +483,10 @@ const RecurringCard = ({
             <span className="material-symbols-outlined !text-[18px]">
               settings
             </span>
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={onDelete}
             className="h-10 w-10 flex items-center justify-center rounded-2xl bg-bg3 text-text3 hover:text-red hover:bg-red/10 transition-all border border-border/40 hover:border-red/40"
             title="Terminate Protocol"
@@ -486,7 +494,7 @@ const RecurringCard = ({
             <span className="material-symbols-outlined !text-[18px]">
               close
             </span>
-          </button>
+          </Button>
         </div>
       </div>
 

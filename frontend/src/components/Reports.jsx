@@ -147,7 +147,7 @@ const Reports = () => {
           {/* Combined Period Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="btn-outline gap-2 min-w-[140px]">
+              <button className="px-3.5 py-1.5 bg-transparent border border-[var(--border2)] rounded-[var(--r2)] text-[var(--text2)] font-medium flex items-center gap-2 min-w-[140px] transition-all hover:border-[var(--border3)] hover:text-[var(--text)]">
                 <Calendar className="w-4 h-4 text-accent" />
                 {getActivePeriodLabel()}
                 <ChevronDown className="w-3 h-3 opacity-50" />
@@ -177,7 +177,7 @@ const Reports = () => {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
-                className="btn-primary gap-2 min-w-[120px]"
+                className="w-full py-[11px] bg-[var(--accent)] border-none rounded-[var(--r)] text-white font-semibold flex items-center justify-center gap-2 min-w-[120px] mt-1 transition-all hover:bg-[var(--accent2)] hover:-translate-y-[1px]"
                 disabled={exporting}
               >
                 {exporting ? (

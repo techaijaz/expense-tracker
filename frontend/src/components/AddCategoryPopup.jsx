@@ -24,6 +24,7 @@ import {
   DrawerTitle,
 } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 const categorySchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters').max(72),
@@ -252,13 +253,13 @@ const AddCategoryPopup = ({
           <div className="w-10 h-10 flex items-center justify-center bg-bg2 rounded-xl border border-border shadow-sm text-xl">
             {selectedIcon}
           </div>
-          <input
+          <Input
             type="text"
             {...register('name')}
             disabled={limitReached}
             autoComplete="off"
             placeholder={limitReached ? 'Limit reached...' : 'e.g. Shopping, Bills, Salary…'}
-            className="flex-1 bg-transparent border-none outline-none text-sm font-semibold text-text placeholder:text-text3/30"
+            className="flex-1 bg-transparent border-none shadow-none focus-visible:ring-0 text-sm font-semibold text-text placeholder:text-text3/30 p-0 h-auto"
           />
         </div>
         {errors.name && (

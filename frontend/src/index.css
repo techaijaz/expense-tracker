@@ -194,9 +194,7 @@ body {
     rgba(76, 214, 251, 0) 100%
   );
 }
-.btn-primary-gradient {
-  background: var(--accent-gradient);
-}
+
 .hide-scrollbar {
   -ms-overflow-style: none; /* IE and Edge */
   scrollbar-width: none; /* Firefox */
@@ -309,83 +307,6 @@ body {
   }
 }
 
-/* ── PREMIUM UI UTILITIES ── */
-.btn-primary {
-  width: 100%;
-  padding: 11px;
-  background: var(--accent);
-  border: none;
-  border-radius: var(--r);
-  color: #fff;
-  font-family: var(--font);
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  margin-top: 4px;
-}
-.btn-primary:hover {
-  background: var(--accent2);
-  transform: translateY(-1px);
-}
-
-.btn-outline {
-  padding: 7px 14px;
-  background: transparent;
-  border: 1px solid var(--border2);
-  border-radius: var(--r2);
-  color: var(--text2);
-  font-family: var(--font);
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  transition: all 0.15s;
-}
-.btn-outline:hover {
-  border-color: var(--border3);
-  color: var(--text);
-}
-
-.icon-btn {
-  width: 36px;
-  height: 36px;
-  border: 1px solid var(--border2);
-  border-radius: var(--r2);
-  background: transparent;
-  color: var(--text2);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  transition: all 0.15s;
-}
-.icon-btn:hover {
-  background: var(--bg4);
-  color: var(--text);
-}
-
-.btn-new {
-  padding: 8px 16px;
-  background: var(--accent);
-  border: none;
-  border-radius: var(--r2);
-  color: #fff;
-  font-family: var(--font);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
 
 /* ── LAYOUT & SIDEBAR ── */
 .app-layout {

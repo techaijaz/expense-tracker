@@ -281,7 +281,7 @@ export default function AddLoanPopup({
             errors.amount ? "border-red-500/50" : "border-[var(--border)]"
           )}>
             <span className="text-2xl md:text-3xl font-extrabold text-[var(--accent)]">₹</span>
-            <input
+            <Input
               id="amount"
               {...register('amount')}
               onInput={(e) => {
@@ -289,7 +289,7 @@ export default function AddLoanPopup({
               }}
               type="number"
               step={1 / Math.pow(10, decimalPlaces)}
-              className="flex-1 bg-transparent border-none outline-none text-2xl md:text-3xl font-black text-[var(--text)] placeholder:text-[var(--text3)]/20 w-full tracking-tight"
+              className="flex-1 bg-transparent border-none shadow-none focus-visible:ring-0 text-2xl md:text-3xl font-black text-[var(--text)] placeholder:text-[var(--text3)]/20 w-full tracking-tight p-0 h-auto"
               placeholder={`0.${'0'.repeat(decimalPlaces)}`}
             />
           </div>

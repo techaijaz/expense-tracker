@@ -51,7 +51,7 @@ const AdminDashboard = () => {
   );
   
   if (!stats) return (
-    <div className="p-8 text-center glass-panel rounded-2xl mx-6 mt-6">
+    <div className="p-8 text-center bg-[var(--glass-bg)] backdrop-blur-md border border-[var(--border)] rounded-2xl mx-6 mt-6">
       <div className="text-red text-4xl mb-4">
         <Activity size={48} className="mx-auto opacity-50" />
       </div>
@@ -126,7 +126,7 @@ const AdminDashboard = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* User Acquisition Neural Map */}
-        <div className="card glass-panel relative overflow-hidden">
+        <div className="bg-[var(--glass-bg)] backdrop-blur-md border border-[var(--border)] rounded-[var(--r3)] p-5 relative overflow-hidden">
           <div className="card-header">
             <div>
               <h3 className="card-title uppercase tracking-widest text-[11px] text-accent">Registration Pulse</h3>
@@ -178,7 +178,7 @@ const AdminDashboard = () => {
         </div>
 
         {/* Global Node Distribution */}
-        <div className="card glass-panel">
+        <div className="bg-[var(--glass-bg)] backdrop-blur-md border border-[var(--border)] rounded-[var(--r3)] p-5">
           <div className="card-header">
             <div>
               <h3 className="card-title uppercase tracking-widest text-[11px] text-purple">Global Node Matrix</h3>
