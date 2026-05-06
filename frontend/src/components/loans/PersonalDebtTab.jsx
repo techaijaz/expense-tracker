@@ -1,4 +1,4 @@
-import { format } from 'date-fns';
+import useFormat from '@/hooks/useFormat';
 import { 
   ArrowUpRight, 
   ArrowDownLeft, 
@@ -45,6 +45,7 @@ export default function PersonalDebtTab({
   onAction,
   formatAmount
 }) {
+  const { formatDate } = useFormat();
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* KPI Section */}
@@ -124,7 +125,7 @@ export default function PersonalDebtTab({
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4 text-accent" />
-                  {dateFilter ? format(dateFilter, 'PP') : <span>Filter Date</span>}
+                  {dateFilter ? formatDate(dateFilter) : <span>Filter Date</span>}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0 bg-popover border-border rounded-xl shadow-2xl overflow-hidden" align="end">

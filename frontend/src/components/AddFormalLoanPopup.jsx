@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useDispatch, useSelector } from 'react-redux';
 import { z } from 'zod';
-import { format } from 'date-fns';
+
 import { toast } from 'sonner';
 import { 
   Landmark, 
@@ -18,6 +18,7 @@ import {
 import { restrictDecimals, formatAmount } from '@/utils/format';
 import { updateAccount } from '@/redux/accountSlice';
 import api from '@/utils/httpMethods';
+import useFormat from '@/hooks/useFormat';
 import { Calendar } from '@/components/ui/calendar';
 import {
   Popover,
@@ -77,10 +78,7 @@ export default function AddFormalLoanPopup({ open, setOpen, onSaved }) {
   const isDesktop = useMediaQuery('(min-width: 768px)');
   const dispatch = useDispatch();
   const { accounts = [] } = useSelector((state) => state.accounts);
-  const preferences = useSelector(
-    (state) => state.auth.user?.user?.preferences,
-  );
-  const { currency = 'INR', decimalPlaces = 2 } = preferences || {};
+  const { currency = 'INR', decimalPlaces = 2, formatDate } = useFormat();
 
   const [loading, setLoading] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -217,7 +215,7 @@ export default function AddFormalLoanPopup({ open, setOpen, onSaved }) {
                 )}
               >
                 <CalendarIcon className="mr-3 w-4 h-4 text-[var(--accent)] group-hover:scale-110 transition-transform" />
-                {startDate ? format(startDate, 'dd MMM yyyy') : <span>Select date...</span>}
+                {startDate ? formatDate(startDate) : <span>Select date...</span>}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0 border-[var(--border)] bg-[var(--bg-popup)] rounded-2xl shadow-2xl" align="start">

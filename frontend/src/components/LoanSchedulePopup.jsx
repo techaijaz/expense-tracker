@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { toast } from 'sonner';
 import { formatAmount } from '@/utils/format';
-import { format } from 'date-fns';
+import useFormat from '@/hooks/useFormat';
 import api from '@/utils/httpMethods';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { cn } from '@/utils/utils';
@@ -44,6 +44,7 @@ export default function LoanSchedulePopup({ open, setOpen, loanId, loanName }) {
     (state) => state.auth.user?.user?.preferences,
   );
   const { currency = 'INR', decimalPlaces = 2 } = preferences || {};
+  const { formatDate } = useFormat();
 
   const [loading, setLoading] = useState(false);
   const [schedule, setSchedule] = useState([]);
@@ -134,7 +135,7 @@ export default function LoanSchedulePopup({ open, setOpen, loanId, loanName }) {
                 >
                   <td className="py-4 px-6 text-xs font-black text-muted-foreground/40">{item.installmentNo}</td>
                   <td className="py-4 px-6 text-xs font-bold tracking-tight">
-                    {format(new Date(item.dueDate), 'dd MMM yyyy')}
+                    {formatDate(item.dueDate)}
                   </td>
                   <td className="py-4 px-6 text-sm font-black text-right text-primary tracking-tighter">
                     {formatAmount(item.emiAmount, currency, decimalPlaces)}
@@ -167,7 +168,7 @@ export default function LoanSchedulePopup({ open, setOpen, loanId, loanName }) {
                   </div>
                   <div>
                     <p className="text-sm font-black tracking-tight leading-none mb-1.5">
-                      {format(new Date(item.dueDate), 'dd MMM yyyy')}
+                      {formatDate(item.dueDate)}
                     </p>
                     <StatusBadge item={item} />
                   </div>

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'sonner';
 import { formatAmount } from '@/utils/format';
-import { format } from 'date-fns';
+import useFormat from '@/hooks/useFormat';
 import api from '@/utils/httpMethods';
 import { updateAccount } from '@/redux/accountSlice';
 import { useMediaQuery } from '@/hooks/use-media-query';
@@ -51,6 +51,7 @@ export default function PayEMIPopup({ open, setOpen, loanId, onPaid }) {
     (state) => state.auth.user?.user?.preferences,
   );
   const { currency = 'INR', decimalPlaces = 2 } = preferences || {};
+  const { formatDate } = useFormat();
 
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(false);
@@ -187,7 +188,7 @@ export default function PayEMIPopup({ open, setOpen, loanId, onPaid }) {
                 </Label>
                 <div className="flex items-center gap-2.5 text-xs font-black text-muted-foreground bg-muted/50 px-3 py-1.5 rounded-xl border border-border">
                   <CalendarIcon className="w-4 h-4 text-primary" />
-                  {format(new Date(nextInstallment.dueDate), 'dd MMM yyyy')}
+                  {formatDate(nextInstallment.dueDate)}
                 </div>
               </div>
               <div className="text-right">

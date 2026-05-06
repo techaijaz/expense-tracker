@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useDispatch, useSelector } from 'react-redux';
 import { z } from 'zod';
-import { format } from 'date-fns';
+
 import { toast } from 'sonner';
 import { 
   Plus, 
@@ -23,6 +23,7 @@ import {
   updateLoan as updateLoanAction,
 } from '@/redux/loanSlice';
 import api from '@/utils/httpMethods';
+import useFormat from '@/hooks/useFormat';
 import AddPartyPopup from './AddPartyPopup';
 import { Calendar } from '@/components/ui/calendar';
 import {
@@ -102,10 +103,7 @@ export default function AddLoanPopup({
   const userObj = user?.user || user;
   const isPro = userObj?.role === 'admin' || userObj?.plan === 'pro';
 
-  const preferences = useSelector(
-    (state) => state.auth.user?.user?.preferences,
-  );
-  const { decimalPlaces = 2 } = preferences || {};
+  const { formatDate, decimalPlaces } = useFormat();
 
   const [loading, setLoading] = useState(false);
   const [parties, setParties] = useState([]);
@@ -382,7 +380,7 @@ export default function AddLoanPopup({
                 )}
               >
                 <CalendarIcon className="mr-3 w-[18px] h-[18px] text-[var(--accent)] group-hover:scale-110 transition-transform" />
-                {date ? format(date, 'dd MMM yyyy') : <span>Select date...</span>}
+                {date ? formatDate(date) : <span>Select date...</span>}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0 border-[var(--border)] bg-[var(--bg-popup)] rounded-2xl shadow-2xl z-[5000]" align="start">

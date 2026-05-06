@@ -6,7 +6,9 @@ export function cn(...inputs) {
   return twMerge(clsx(inputs));
 }
 
-export function formatDate(isoString, format = 'DD-MM-YYYY') {
-  if (!isoString) return '—';
-  return dayjs(isoString).format(format);
+export function formatDate(date, format = 'DD-MM-YYYY') {
+  if (!date) return '—';
+  const d = dayjs(date);
+  if (!d.isValid()) return '—';
+  return d.format(format);
 }

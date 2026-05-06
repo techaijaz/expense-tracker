@@ -1,11 +1,15 @@
 import { useState, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { toast } from 'sonner';
+import { Tag, Plus, Pencil, Trash2, Lock } from 'lucide-react';
 import api from '@/utils/httpMethods';
 import { removeCategory } from '@/redux/categorySlice';
 import { DeleteConfirmModal } from '../SharedComponents';
 import AddCategoryPopup from '../AddCategoryPopup';
 import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/utils/utils';
 
 export default function Taxonomy() {
   const dispatch = useDispatch();
@@ -30,23 +34,23 @@ export default function Taxonomy() {
     ({
       INCOME: {
         icon: 'trending_up',
-        color: 'var(--green)',
-        bg: 'var(--green-bg)',
+        color: 'text-emerald-500',
+        bg: 'bg-emerald-500/10',
       },
       EXPENSE: {
         icon: 'shopping_cart',
-        color: 'var(--red)',
-        bg: 'var(--red-bg)',
+        color: 'text-rose-500',
+        bg: 'bg-rose-500/10',
       },
       TRANSFER: {
         icon: 'sync_alt',
-        color: 'var(--accent)',
-        bg: 'var(--accent-glow)',
+        color: 'text-indigo-500',
+        bg: 'bg-indigo-500/10',
       },
     })[type] || {
       icon: 'category',
-      color: 'var(--accent)',
-      bg: 'var(--accent-glow)',
+      color: 'text-slate-500',
+      bg: 'bg-slate-500/10',
     };
 
   const currentUser = useSelector((s) => s.auth.user);
@@ -84,117 +88,115 @@ export default function Taxonomy() {
   };
 
   return (
-    <div className="settings-card">
-      <div className="settings-section-title">
-        <div className="icon">🏷️</div>Categories
-      </div>
-
-      {categories.length === 0 ? (
-        <div
-          style={{
-            textAlign: 'center',
-            padding: '24px 0',
-            color: 'var(--text3)',
-            border: '1px dashed var(--border)',
-            borderRadius: 'var(--r2)',
-          }}
-        >
-          <div style={{ fontSize: 24, marginBottom: 8 }}>🏷️</div>
-          <div style={{ fontSize: 13 }}>No categories identified</div>
+    <Card className="border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm overflow-hidden">
+      <CardHeader className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 py-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-500">
+            <Tag className="w-5 h-5" />
+          </div>
+          <div>
+            <CardTitle className="text-lg font-bold">Categories</CardTitle>
+            <CardDescription className="text-xs">Manage your income and expense categories</CardDescription>
+          </div>
         </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {categories.slice(0, 10).map((cat) => {
-            // Slicing for brevity in settings
-            const styles = getCatTypeStyles(cat.type);
-            return (
-              <div key={cat._id} className="cat-row">
-                <div style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
-                  <div
-                    className="cat-icon-wrap"
-                    style={{ background: styles.bg, color: styles.color }}
-                  >
-                    {cat.icon || (
-                      <span
-                        className="material-symbols-outlined"
-                        style={{ fontSize: 16 }}
-                      >
-                        {styles.icon}
-                      </span>
-                    )}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 12, fontWeight: 600 }}>
-                      {cat.name}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: 10,
-                        color: 'var(--text3)',
-                        fontWeight: 600,
-                        textTransform: 'uppercase',
-                      }}
-                    >
-                      {cat.type}
-                    </div>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-[26px] w-[26px] text-[11px]"
-                    onClick={() => {
-                      setEditingCategory(cat);
-                      setIsCategoryModalOpen(true);
-                    }}
-                  >
-                    ✏️
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-[26px] w-[26px] text-[11px]"
-                    onClick={() => setDeleteCatModal(cat)}
-                  >
-                    🗑
-                  </Button>
-                </div>
+      </CardHeader>
+
+      <CardContent className="p-6">
+        {!isPro && (
+          <div className="flex justify-end mb-4">
+            <Badge variant="outline" className={cn(
+              "text-[10px] font-bold uppercase tracking-wider px-3 py-1",
+              limitReached ? "bg-rose-500/10 text-rose-500 border-rose-500/20" : "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+            )}>
+              {categories.length}/10 Used
+            </Badge>
+          </div>
+        )}
+        <div className="p-1 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+          {categories.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <div className="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-slate-900 flex items-center justify-center mb-4">
+                <Tag className="w-6 h-6 text-slate-300" />
               </div>
-            );
-          })}
-          {categories.length > 10 && (
-            <div
-              style={{
-                fontSize: 11,
-                color: 'var(--text3)',
-                textAlign: 'center',
-                marginTop: 8,
-              }}
-            >
-              + {categories.length - 10} more categories
+              <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">No categories identified</div>
+              <div className="text-[10px] text-slate-400/60 mt-1">Start by adding your first category below</div>
+            </div>
+          ) : (
+            <div className="divide-y divide-slate-100 dark:divide-slate-800/50">
+              {categories.slice(0, 10).map((cat) => {
+                const styles = getCatTypeStyles(cat.type);
+                return (
+                  <div key={cat._id} className="group flex items-center justify-between p-3 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-all duration-200">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <div className={cn(
+                        "w-9 h-9 rounded-xl flex items-center justify-center text-lg shadow-sm",
+                        styles.bg,
+                        styles.color
+                      )}>
+                        {cat.icon || (
+                          <span className="material-symbols-outlined !text-base">
+                            {styles.icon}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-bold text-slate-700 dark:text-slate-200 truncate">
+                          {cat.name}
+                        </div>
+                        <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest opacity-70">
+                          {cat.type}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 rounded-lg hover:bg-indigo-500/10 hover:text-indigo-500"
+                        onClick={() => {
+                          setEditingCategory(cat);
+                          setIsCategoryModalOpen(true);
+                        }}
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 rounded-lg hover:bg-rose-500/10 hover:text-rose-500"
+                        onClick={() => setDeleteCatModal(cat)}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+              {categories.length > 10 && (
+                <div className="p-3 text-center bg-slate-50/50 dark:bg-slate-900/30">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                    + {categories.length - 10} more categories
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
-      )}
 
-      <button
-        onClick={handleAddCategory}
-        className="px-3.5 py-1.5 bg-transparent border border-[var(--border2)] rounded-[var(--r2)] text-[var(--text2)] font-medium flex items-center gap-1.5 transition-all hover:border-[var(--border3)] hover:text-[var(--text)]"
-        style={{
-          width: '100%',
-          marginTop: 12,
-          border: limitReached ? '1px dashed var(--red)' : '',
-        }}
-      >
-        <span
-          className="material-symbols-outlined"
-          style={{ fontSize: 16, marginRight: 6 }}
+        <Button
+          onClick={handleAddCategory}
+          variant="outline"
+          className={cn(
+            "w-full mt-6 h-11 rounded-xl border-dashed border-2 hover:border-solid transition-all font-bold text-[11px] uppercase tracking-widest gap-2",
+            limitReached 
+              ? "border-rose-500/30 text-rose-500 hover:bg-rose-500/5 hover:border-rose-500" 
+              : "border-indigo-500/30 text-indigo-500 hover:bg-indigo-500/5 hover:border-indigo-500"
+          )}
         >
-          {limitReached ? 'lock' : 'add'}
-        </span>
-        {limitReached ? 'Limit Reached (Upgrade to PRO)' : 'Add New Category'}
-      </button>
+          {limitReached ? <Lock className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+          {limitReached ? 'Limit Reached (Upgrade to PRO)' : 'Add New Category'}
+        </Button>
+      </CardContent>
 
       <AddCategoryPopup
         open={isCategoryModalOpen}
@@ -218,6 +220,6 @@ export default function Taxonomy() {
           onCancel={() => setDeleteCatModal(null)}
         />
       )}
-    </div>
+    </Card>
   );
 }

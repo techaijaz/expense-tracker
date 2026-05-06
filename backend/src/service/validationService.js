@@ -101,16 +101,20 @@ export const validationPreferencesBody = Joi.object({
     accentColor: Joi.string().valid('lightblue', 'tomato', 'orange', 'mint', 'brown', 'purple', 'green', 'pink').optional(),
     language: Joi.string().valid('en', 'hi').optional(),
     fiscalYear: Joi.string().valid('April-March', 'January-December').optional(),
+    timezone: Joi.string().optional(),
+    country: Joi.string().optional(),
 })
 
 export const validationSettingsBody = Joi.object({
     language: Joi.string().valid('en', 'hi').optional(),
     currency: Joi.string().valid('INR', 'USD', 'EUR', 'GBP', 'JPY', 'AUD', 'CAD', 'SGD', 'AED', 'CNY').optional(),
-    dateFormat: Joi.string().valid('DD-MM-YYYY', 'MM-DD-YYYY', 'YYYY-MM-DD', 'DD/MM/YYYY', 'MMM DD, YYYY').optional(),
+    dateFormat: Joi.string().valid('DD/MM/YYYY', 'MM/DD/YYYY', 'YYYY-MM-DD', 'YYYY/MM/DD', 'DD-MM-YYYY').optional(),
     decimalPlaces: Joi.number().min(0).max(4).optional(),
     theme: Joi.string().valid('dark', 'light', 'system').optional(),
     accentColor: Joi.string().valid('lightblue', 'tomato', 'orange', 'mint', 'brown', 'purple', 'green', 'pink').optional(),
-    fiscalYear: Joi.string().valid('April-March', 'January-December', 'July-June').optional(),
+    fiscalYear: Joi.string().valid('April-March', 'January-December').optional(),
+    timezone: Joi.string().optional(),
+    country: Joi.string().optional(),
 })
 
 export const validationFormalLoanBody = Joi.object({

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Loader2, Calendar as CalendarIcon, Building2, Bike, Coins, Sparkles } from 'lucide-react';
-import { format } from 'date-fns';
+import useFormat from '@/hooks/useFormat';
 import { toast } from 'sonner';
 import api from '@/utils/httpMethods';
 import {
@@ -70,6 +70,7 @@ const AddAssetPopup = ({ isOpen, onClose, onSuccess, assetToEdit = null }) => {
   const [loading, setLoading] = useState(false);
   const [dateOpen, setDateOpen] = useState(false);
   const [errors, setErrors] = useState({});
+  const { formatDate } = useFormat();
   const [formData, setFormData] = useState({
     name: '',
     type: 'GOLD',
@@ -226,7 +227,7 @@ const AddAssetPopup = ({ isOpen, onClose, onSuccess, assetToEdit = null }) => {
                 )}
               >
                 <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
-                {formData.acquiredAt ? format(formData.acquiredAt, 'dd MMM yyyy') : 'Pick a date'}
+                {formData.acquiredAt ? formatDate(formData.acquiredAt) : 'Pick a date'}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0 z-[5000]" align="end">

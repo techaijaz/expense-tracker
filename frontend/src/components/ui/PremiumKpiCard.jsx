@@ -49,13 +49,13 @@ export default function PremiumKpiCard({
       bar: 'from-rose-500 to-transparent',
     },
     amber: {
-      text: 'text-amber-500 dark:text-amber-400',
-      bg: 'bg-amber-500/10',
-      border: 'border-amber-500/20 group-hover:border-amber-500/40',
-      gradient: 'from-amber-500/10 to-transparent',
-      glow: 'shadow-amber-500/10',
-      dot: 'bg-amber-500',
-      bar: 'from-amber-500 to-transparent',
+      text: 'text-amber dark:text-amber',
+      bg: 'bg-amber/10',
+      border: 'border-amber/20 group-hover:border-amber/40',
+      gradient: 'from-amber/10 to-transparent',
+      glow: 'shadow-amber/10',
+      dot: 'bg-amber',
+      bar: 'from-amber to-transparent',
     },
     purple: {
       text: 'text-violet-500 dark:text-violet-400',
@@ -200,7 +200,7 @@ export default function PremiumKpiCard({
       {/* Subtle Progress Decoration at Bottom */}
       <div
         className={cn(
-          'absolute bottom-0 left-0 h-[3px] w-0 transition-all duration-1000 group-hover:w-full bg-gradient-to-r shadow-[0_-2px_10px_rgba(0,0,0,0.1)]',
+          'absolute bottom-0 left-0 h-[3px] w-0 transition-all duration-1000 group-hover:w-full bg-gradient-to-r shadow-[0_-2px_10px_rgba(0,0,0,0.1)] z-20',
           config.bar,
         )}
       />

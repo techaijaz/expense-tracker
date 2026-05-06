@@ -1,4 +1,4 @@
-import { format } from 'date-fns';
+import useFormat from '@/hooks/useFormat';
 import { ChevronRight, Edit3, Trash2 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +14,7 @@ export default function DebtLedgerItem({
   onAction,
   formatAmount,
 }) {
+  const { formatDate } = useFormat();
   const partyName = group.party?.name || 'Unknown';
   const pInitial = partyName[0] || '?';
   const isOwed = group.netBalance > 0;
@@ -139,7 +140,7 @@ export default function DebtLedgerItem({
               >
                 <div className="flex flex-col gap-1">
                   <span className="font-black text-xs text-foreground tracking-tight">
-                    {format(new Date(loan.date), 'dd MMM yyyy')}
+                    {formatDate(loan.date)}
                   </span>
                   <span className="text-[10px] text-muted-foreground font-black uppercase tracking-widest opacity-60 flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-accent" />

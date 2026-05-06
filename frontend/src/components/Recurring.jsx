@@ -4,7 +4,8 @@ import { toast } from 'sonner';
 import useApi from '@/hooks/useApi';
 import api from '@/utils/httpMethods';
 import { getCurrencySymbol, formatAmount } from '@/utils/format';
-import { cn, formatDate } from '@/utils/utils';
+import useFormat from '@/hooks/useFormat';
+import { cn, formatDate as utilsFormatDate } from '@/utils/utils';
 import AddRecurringPopup from './AddRecurringPopup';
 import RecurringHistoryPopup from './RecurringHistoryPopup';
 import { DeleteConfirmModal } from './SharedComponents';
@@ -19,6 +20,7 @@ import { Wallet, RefreshCcw, Clock, Zap } from 'lucide-react';
 dayjs.extend(relativeTime);
 
 const Recurring = () => {
+  const { formatDate } = useFormat();
   const isDesktop = useMediaQuery('(min-width: 1024px)');
   const isMobile = useMediaQuery('(max-width: 640px)');
   
@@ -197,7 +199,7 @@ const Recurring = () => {
         />
         <PremiumKpiCard
           title="Next Execution"
-          value={stats.nextDue ? dayjs(stats.nextDue).format('D MMM') : 'N/A'}
+          value={stats.nextDue ? formatDate(stats.nextDue) : 'N/A'}
           color="amber"
           icon={Clock}
           subtitle={
@@ -260,6 +262,7 @@ const Recurring = () => {
                 setIsDeleteOpen(true);
               }}
               onToggle={() => handleToggleStatus(task)}
+              formatDate={formatDate}
             />
           ))}
 
@@ -329,6 +332,7 @@ const RecurringCard = ({
   onHistory,
   onDelete,
   onToggle,
+  formatDate,
 }) => {
   const isActive = task.status === 'ACTIVE';
 
@@ -410,7 +414,7 @@ const RecurringCard = ({
             Next Settlement
           </p>
           <p className="text-xs font-black text-text tracking-tight">
-            {dayjs(task.nextDueDate).format('DD MMM, YYYY')}
+            {formatDate(task.nextDueDate)}
           </p>
         </div>
       </div>

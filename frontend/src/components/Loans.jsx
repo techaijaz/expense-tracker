@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { format } from 'date-fns';
+import dayjs from 'dayjs';
 import { useSelector, useDispatch } from 'react-redux';
 import { toast } from 'sonner';
 import api from '@/utils/httpMethods';
@@ -159,8 +159,8 @@ export default function Loans() {
       const matchesParty = partyFilter === 'ALL' || partyId === partyFilter;
       const matchesDate =
         !dateFilter ||
-        format(new Date(loan.date || loan.createdAt), 'yyyy-MM-dd') ===
-          format(dateFilter, 'yyyy-MM-dd');
+        dayjs(loan.date || loan.createdAt).format('YYYY-MM-DD') ===
+          dayjs(dateFilter).format('YYYY-MM-DD');
 
       if (!matchesParty || !matchesDate) return acc;
 

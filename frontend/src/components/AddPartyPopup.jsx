@@ -36,31 +36,35 @@ const partySchema = z.object({
 const RELATION_CONFIG = {
   FRIEND: {
     label: 'Friend',
-    icon: <User className="w-4 h-4" />,
-    color: 'var(--blue)',
-    bg: 'var(--blue-bg)',
-    border: 'var(--blue-border)',
+    icon: 'person',
+    color: 'var(--accent)',
+    bg: 'var(--accent-glow)',
+    border: 'rgba(91, 141, 239, 0.15)',
+    glow: 'rgba(91, 141, 239, 0.1)',
   },
   FAMILY: {
     label: 'Family',
-    icon: <Users className="w-4 h-4" />,
+    icon: 'family_restroom',
     color: 'var(--green)',
     bg: 'var(--green-bg)',
     border: 'var(--green-border)',
+    glow: 'rgba(16, 185, 129, 0.15)',
   },
   VENDOR: {
     label: 'Vendor',
-    icon: <Briefcase className="w-4 h-4" />,
+    icon: 'storefront',
     color: 'var(--red)',
     bg: 'var(--red-bg)',
     border: 'var(--red-border)',
+    glow: 'rgba(239, 68, 68, 0.15)',
   },
   CLIENT: {
     label: 'Client',
-    icon: <UserCheck className="w-4 h-4" />,
+    icon: 'handshake',
     color: 'var(--amber)',
     bg: 'var(--amber-bg)',
     border: 'var(--amber-border)',
+    glow: 'rgba(245, 158, 11, 0.15)',
   },
 };
 
@@ -139,80 +143,110 @@ export default function AddPartyPopup({ open, party, onClose, onSave, partyCount
 
   const FormContent = (
     <form id="add-party-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      {/* Name Field */}
-      <div className="space-y-2">
-        <Label htmlFor="name" className="block text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text3)] ml-1">
-          Counterparty Name
-        </Label>
-        <div className={cn(
-          "relative flex items-center bg-[var(--bg3)] border rounded-2xl transition-all focus-within:ring-2 focus-within:ring-[var(--accent)]/20 focus-within:border-[var(--accent)]/40",
-          errors.name ? "border-red-500/50" : "border-[var(--border)]"
-        )}>
-          <Input
-            id="name"
-            {...register('name')}
-            placeholder="Full Name"
-            className="h-12 bg-transparent border-none focus-visible:ring-0 text-sm font-semibold px-4"
-          />
-        </div>
-        {errors.name && (
-          <p className="text-[11px] font-medium text-red-500 mt-1 ml-1">
-            {errors.name.message}
-          </p>
-        )}
-      </div>
-
-      {/* Relation Selection */}
-      <div className="space-y-2">
-        <Label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text3)] ml-1">
+      {/* ── Type Tabs (Sliding Pill Style) ── */}
+      <div className="space-y-2.5">
+        <Label className="block text-[10px] font-bold text-text3 uppercase tracking-[0.2em] ml-1">
           Relationship Type
         </Label>
-        <div className="grid grid-cols-2 gap-3">
+        <div 
+          className="relative flex bg-bg3 p-1 rounded-2xl gap-1 overflow-hidden border-[1.5px] transition-all duration-300"
+          style={{ borderColor: RELATION_CONFIG[relation]?.border }}
+        >
+          {/* Sliding Colored Pill */}
+          {(() => {
+            const activeIdx = RELATION_KEYS.indexOf(relation);
+            const safeIdx = activeIdx === -1 ? 0 : activeIdx;
+            const conf = RELATION_CONFIG[relation] || RELATION_CONFIG.FRIEND;
+            return (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 4,
+                  bottom: 4,
+                  left: `calc(${(safeIdx * 100) / RELATION_KEYS.length}% + 4px)`,
+                  width: `calc(${100 / RELATION_KEYS.length}% - 8px)`,
+                  background: conf.bg,
+                  border: `1.5px solid ${conf.border}`,
+                  boxShadow: `0 0 16px 2px ${conf.glow}`,
+                  borderRadius: 12,
+                  transition: 'left 0.35s cubic-bezier(0.34,1.56,0.64,1), background 0.3s ease, border-color 0.3s ease',
+                }}
+              />
+            );
+          })()}
+          
           {RELATION_KEYS.map((key) => {
             const isActive = relation === key;
-            const cfg = RELATION_CONFIG[key];
+            const conf = RELATION_CONFIG[key];
             return (
               <button
                 key={key}
                 type="button"
                 onClick={() => setValue('relation', key)}
                 className={cn(
-                  "flex flex-col items-center justify-center gap-2 p-3 rounded-2xl border transition-all duration-300",
-                  isActive 
-                    ? "shadow-lg scale-[1.02]" 
-                    : "bg-[var(--bg3)] border-[var(--border)] text-[var(--text3)] hover:border-[var(--text3)]/30"
+                  "relative z-10 flex-1 py-2.5 flex items-center justify-center gap-2 rounded-xl transition-all duration-300",
+                  isActive ? "scale-100" : "scale-95 opacity-60 hover:opacity-100"
                 )}
-                style={{
-                  backgroundColor: isActive ? cfg.bg : undefined,
-                  borderColor: isActive ? cfg.border : undefined,
-                  color: isActive ? cfg.color : undefined,
-                }}
               >
-                <div className={cn(
-                  "w-8 h-8 rounded-xl flex items-center justify-center transition-all",
-                  isActive ? "bg-white/10" : "bg-[var(--bg2)]"
-                )}>
-                  {cfg.icon}
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-widest">
-                  {cfg.label}
+                <span 
+                  className="material-symbols-outlined text-[18px]"
+                  style={{ color: isActive ? conf.color : 'var(--text3)' }}
+                >
+                  {conf.icon}
+                </span>
+                <span 
+                  className="text-[10px] font-black tracking-widest uppercase hidden sm:inline"
+                  style={{ color: isActive ? conf.color : 'var(--text3)' }}
+                >
+                  {conf.label}
                 </span>
               </button>
             );
           })}
         </div>
       </div>
+
+      {/* Name Field */}
+      <div className="space-y-2">
+        <Label htmlFor="name" className="block text-[10px] font-bold uppercase tracking-[0.2em] text-text3 ml-1">
+          Counterparty Name
+        </Label>
+        <div className={cn(
+          "flex items-center gap-3 p-3.5 bg-bg3 border rounded-2xl transition-all focus-within:ring-2 focus-within:ring-accent/20 focus-within:border-accent/40 group",
+          errors.name ? "border-red/40" : "border-border"
+        )}>
+          <div className="w-10 h-10 flex items-center justify-center bg-bg2 rounded-xl border border-border shadow-sm transition-transform group-focus-within:scale-105 duration-300">
+            <span className="material-symbols-outlined text-[20px] text-accent">
+              person
+            </span>
+          </div>
+          <Input
+            id="name"
+            {...register('name')}
+            disabled={isLimitReached}
+            placeholder={isLimitReached ? "Limit reached..." : "Enter full name..."}
+            autoComplete="off"
+            className="flex-1 bg-transparent border-none shadow-none focus-visible:ring-0 text-sm font-semibold text-text placeholder:text-text3/30 p-0 h-auto"
+          />
+        </div>
+        {errors.name && (
+          <p className="text-[11px] font-medium text-red mt-1 ml-1">
+            {errors.name.message}
+          </p>
+        )}
+      </div>
     </form>
   );
 
+
   const ActionButtons = (
-    <div className="flex flex-col md:flex-row gap-3 w-full">
+    <div className="flex flex-col md:flex-row gap-4 w-full">
       <Button 
         type="button"
-        variant="ghost" 
+        variant="outline" 
         onClick={onClose} 
         disabled={loading}
-        className="flex-1 h-12 text-[10px] uppercase font-bold tracking-widest bg-[var(--bg3)] border-[var(--border)] rounded-2xl order-2 md:order-1"
+        className="flex-1 h-12 text-[10px] uppercase font-bold tracking-widest bg-bg3 border-border rounded-xl order-2 md:order-1 text-text3 hover:text-text transition-all"
       >
         Cancel
       </Button>
@@ -221,8 +255,8 @@ export default function AddPartyPopup({ open, party, onClose, onSave, partyCount
         form="add-party-form"
         disabled={loading}
         className={cn(
-          "flex-[1.5] h-12 text-[10px] uppercase tracking-widest font-black text-white order-1 md:order-2 rounded-2xl transition-all duration-500 hover:scale-[1.02] active:scale-[0.98] shadow-lg bg-gradient-to-r from-[var(--accent)] to-[var(--accent2)] shadow-[var(--accent)]/20",
-          loading ? "opacity-70" : ""
+          "flex-[1.5] h-12 text-[10px] uppercase tracking-widest font-black text-white order-1 md:order-2 rounded-xl transition-all duration-500 hover:scale-[1.02] active:scale-[0.98] shadow-xl bg-gradient-to-r from-accent to-accent2 shadow-accent/20",
+          loading ? "opacity-70 shadow-none" : ""
         )}
       >
         {loading ? (
@@ -240,18 +274,26 @@ export default function AddPartyPopup({ open, party, onClose, onSave, partyCount
   if (isDesktop) {
     return (
       <Dialog open={open} onOpenChange={(val) => !val && onClose()}>
-        <DialogContent className="sm:max-w-[440px] p-0 overflow-hidden bg-[var(--bg-popup)] border-[var(--border)] rounded-[2.5rem] shadow-2xl">
-          <div className="px-8 pt-8 pb-6">
-            <DialogHeader className="mb-6">
+        <DialogContent className="sm:max-w-[480px] p-0 overflow-hidden bg-bg2 border-border rounded-[32px] shadow-2xl backdrop-blur-md z-[3001] outline-none">
+          <div className="px-8 pt-8 pb-8">
+            <DialogHeader className="mb-8">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-[var(--accent-glow)] flex items-center justify-center shadow-inner border border-[var(--accent)]/10">
-                  <UserPlus className="w-6 h-6 text-[var(--accent)]" />
+                <div 
+                  className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-inner border border-accent/10 transition-all duration-500"
+                  style={{ background: RELATION_CONFIG[relation]?.bg }}
+                >
+                  <span 
+                    className="material-symbols-outlined text-2xl font-bold transition-all duration-500"
+                    style={{ color: RELATION_CONFIG[relation]?.color }}
+                  >
+                    {party ? 'edit_note' : 'person_add'}
+                  </span>
                 </div>
                 <div>
-                  <DialogTitle className="text-2xl font-black tracking-tight">
+                  <DialogTitle className="text-2xl font-black tracking-tight text-text">
                     {party ? 'Edit' : 'Add'} Counterparty
                   </DialogTitle>
-                  <DialogDescription className="text-xs font-bold text-[var(--text3)] uppercase tracking-widest">
+                  <DialogDescription className="text-xs font-bold text-text3 uppercase tracking-widest">
                     Manage relationship details
                   </DialogDescription>
                 </div>
@@ -271,18 +313,26 @@ export default function AddPartyPopup({ open, party, onClose, onSave, partyCount
 
   return (
     <Drawer open={open} onOpenChange={(val) => !val && onClose()}>
-      <DrawerContent className="bg-[var(--bg-popup)] border-[var(--border)] rounded-t-[2.5rem]">
-        <div className="mx-auto w-12 h-1.5 bg-[var(--bg3)] rounded-full mt-3 mb-2" />
-        <DrawerHeader className="text-left px-6">
+      <DrawerContent className="bg-bg2 border-border rounded-t-[40px] z-[3001] outline-none">
+        <div className="mx-auto w-12 h-1.5 bg-bg4 rounded-full mt-3 mb-6" />
+        <DrawerHeader className="text-left px-6 mb-6">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-[var(--accent-glow)] flex items-center justify-center border border-[var(--accent)]/10">
-              <UserPlus className="w-6 h-6 text-[var(--accent)]" />
+            <div 
+              className="w-12 h-12 rounded-2xl flex items-center justify-center border border-accent/10"
+              style={{ background: RELATION_CONFIG[relation]?.bg }}
+            >
+              <span 
+                className="material-symbols-outlined text-2xl font-bold"
+                style={{ color: RELATION_CONFIG[relation]?.color }}
+              >
+                {party ? 'edit_square' : 'person_add'}
+              </span>
             </div>
             <div>
-              <DrawerTitle className="text-2xl font-black tracking-tight">
+              <DrawerTitle className="text-2xl font-black tracking-tight text-text">
                 {party ? 'Edit' : 'Add'} Counterparty
               </DrawerTitle>
-              <DrawerDescription className="text-xs font-bold text-[var(--text3)] uppercase tracking-widest">
+              <DrawerDescription className="text-xs font-bold text-text3 uppercase tracking-widest">
                 Manage relationship details
               </DrawerDescription>
             </div>
@@ -291,7 +341,7 @@ export default function AddPartyPopup({ open, party, onClose, onSave, partyCount
         <div className="px-6 py-4 overflow-y-auto max-h-[70vh]">
           {FormContent}
         </div>
-        <DrawerFooter className="px-6 pt-4 pb-10 border-t border-[var(--border)] mt-4">
+        <DrawerFooter className="px-6 pt-4 pb-10 border-t border-border mt-4">
           {ActionButtons}
         </DrawerFooter>
       </DrawerContent>

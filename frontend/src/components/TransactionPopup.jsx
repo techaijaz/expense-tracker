@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import { useDispatch, useSelector } from 'react-redux';
 import { z } from 'zod';
-import { format } from 'date-fns';
+
 import useApi from '@/hooks/useApi';
 import {
   addTransaction,
@@ -61,7 +61,7 @@ const transactionSchema = z
     amount: z.coerce
       .number({ invalid_type_error: 'Amount must be a number' })
       .positive('Amount must be positive'),
-    description: z.string().min(3, 'Min 3 chars required'),
+    description: z.string().optional(),
     notes: z.string().optional(),
     tags: z.string().optional(),
     pendingStatus: z.boolean().optional().default(false),
@@ -152,9 +152,10 @@ const TransactionPopup = ({
   const [isAddPartyOpen, setIsAddPartyOpen] = useState(false);
   const [parties, setParties] = useState([]);
   const [dateOpen, setDateOpen] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const { data: transData, loading, makeRequest } = useApi();
 
-  const { formatAmount, currencySymbol, decimalPlaces } = useFormat();
+  const { formatAmount, formatDate, currencySymbol, decimalPlaces } = useFormat();
 
   const activeAccounts = accounts.filter((a) => a.isActive !== false && !a.isDeleted);
 
@@ -292,12 +293,21 @@ const TransactionPopup = ({
         : '/transactions';
       const method = editTransaction ? 'put' : 'post';
 
+      const selectedCategory = filteredCategories.find(
+        (c) => String(c._id || c.id) === String(data.category)
+      );
+      const selectedPartyName = parties.find(
+        (p) => String(p._id) === String(data.partyId)
+      )?.name;
+
+      const defaultTitle = selectedCategory?.name || selectedPartyName || (data.type === 'transfer' ? 'Transfer' : 'Transaction');
+
       const payload = {
         date: data.date,
         accountId: data.account,
         type: data.type,
         amount: data.amount,
-        title: data.description,
+        title: data.description?.trim() || defaultTitle,
         categoryId: data.category || null,
         notes: data.notes || '',
         tags: data.tags
@@ -458,7 +468,7 @@ const TransactionPopup = ({
                       calendar_today
                     </span>
                     {field.value instanceof Date && !isNaN(field.value)
-                      ? format(field.value, 'dd MMM yyyy')
+                      ? formatDate(field.value)
                       : 'Select Date'}
                   </Button>
                 </PopoverTrigger>
@@ -643,8 +653,8 @@ const TransactionPopup = ({
           </Label>
           <div className="grid grid-cols-2 gap-3">
             {[
-              { value: 'LENT',     label: '💸 Maine Diya',   hint: 'Unhe paisa diya' },
-              { value: 'BORROWED', label: '🤝 Maine Liya',   hint: 'Un se paisa liya' },
+              { value: 'LENT',     label: '💸 Lent',   hint: 'You gave' },
+              { value: 'BORROWED', label: '🤝 Borrow',   hint: 'You took' },
             ].map((opt) => (
               <button
                 key={opt.value}
@@ -685,16 +695,16 @@ const TransactionPopup = ({
             <div className="text-[10px] font-bold uppercase tracking-wider mb-0.5"
               style={{ color: (selectedParty.netDebt || 0) >= 0 ? 'var(--green)' : 'var(--red)' }}
             >
-              {selectedParty.name} ke saath hisaab
+              Balance with {selectedParty.name}
             </div>
             <div className="text-sm font-black"
               style={{ color: (selectedParty.netDebt || 0) >= 0 ? 'var(--green)' : 'var(--red)' }}
             >
               {(selectedParty.netDebt || 0) === 0
-                ? 'Koi baaki nahi'
+                ? 'No balance'
                 : (selectedParty.netDebt || 0) > 0
-                  ? `+${formatAmount(selectedParty.netDebt)} — ${selectedParty.name} tumhara dena hai`
-                  : `${formatAmount(selectedParty.netDebt)} — Tum ${selectedParty.name} ka dena ho`
+                  ? `+${formatAmount(selectedParty.netDebt)} — ${selectedParty.name} owes you`
+                  : `${formatAmount(selectedParty.netDebt)} — You owe ${selectedParty.name}`
               }
             </div>
           </div>
@@ -704,11 +714,11 @@ const TransactionPopup = ({
       {/* ── Title / Description ── */}
       <div className="space-y-2">
         <Label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-text3 ml-1">
-          Title
+          Description / Note
         </Label>
         <Input
           {...register('description')}
-          placeholder="Transaction title…"
+          placeholder="What was this for? (Optional)"
           className={cn(
             'h-11 bg-bg3 border-border rounded-xl text-sm font-medium focus:ring-2 focus:ring-accent/20 focus:border-accent/40 transition-all placeholder:text-text3/20',
             errors.description && 'border-red/50',
@@ -721,68 +731,87 @@ const TransactionPopup = ({
         )}
       </div>
 
-      {/* ── Notes ── */}
-      <div className="space-y-2">
-        <Label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-text3 ml-1">
-          Notes
-        </Label>
-        <Textarea
-          {...register('notes')}
-          placeholder="Additional remarks or context…"
-          className="bg-bg3 border-border rounded-2xl resize-none h-16 text-sm font-medium focus:ring-2 focus:ring-accent/20 focus:border-accent/40 transition-all placeholder:text-text3/20"
-        />
+      {/* ── Advanced Options Toggle ── */}
+      <div className="pt-2">
+        <button
+          type="button"
+          onClick={() => setShowAdvanced(!showAdvanced)}
+          className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-text3 hover:text-accent transition-colors group"
+        >
+          <span className={cn(
+            "material-symbols-outlined !text-[16px] transition-transform duration-300",
+            showAdvanced && "rotate-180"
+          )}>
+            expand_more
+          </span>
+          {showAdvanced ? 'Hide Extra Details' : 'Add Notes, Tags or Status'}
+        </button>
       </div>
 
-      {/* ── Tags + Pending Status Row ── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-text3 ml-1">
-            Tags
-          </Label>
-          <Input
-            {...register('tags')}
-            placeholder="food, travel, rent…"
-            className="h-11 bg-bg3 border-border rounded-xl text-sm font-medium focus:ring-2 focus:ring-accent/20 focus:border-accent/40 transition-all placeholder:text-text3/20"
-          />
-          <p className="text-[10px] text-text3 ml-1">Comma-separated labels</p>
-        </div>
-        <div className="space-y-2">
-          <Label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-text3 ml-1">
-            Status
-          </Label>
-          <button
-            type="button"
-            onClick={() => setValue('pendingStatus', !pendingStatus)}
-            className={cn(
-              'relative flex items-center gap-3 w-full h-11 px-4 rounded-xl border text-sm font-semibold transition-all duration-300',
-              pendingStatus
-                ? 'bg-amber-bg border-amber-border text-amber'
-                : 'bg-bg3 border-border text-text3 hover:text-text hover:border-border/80',
-            )}
-            style={pendingStatus ? { color: 'var(--amber)', borderColor: 'var(--amber-border)', background: 'var(--amber-bg)' } : {}}
-          >
-            <span
-              className="material-symbols-outlined !text-[18px] transition-all"
-              style={{ color: pendingStatus ? 'var(--amber)' : 'var(--text3)' }}
-            >
-              {pendingStatus ? 'schedule' : 'check_circle'}
-            </span>
-            {pendingStatus ? 'Pending' : 'Completed'}
-            {/* toggle pill */}
-            <span
-              className="ml-auto w-9 h-5 rounded-full flex items-center px-0.5 transition-all duration-300"
-              style={{
-                background: pendingStatus ? 'var(--amber)' : 'var(--border)',
-              }}
-            >
-              <span
-                className="w-4 h-4 rounded-full bg-white shadow transition-transform duration-300"
-                style={{ transform: pendingStatus ? 'translateX(16px)' : 'translateX(0)' }}
+      {showAdvanced && (
+        <div className="space-y-5 animate-in fade-in slide-in-from-top-4 duration-500">
+          {/* ── Notes ── */}
+          <div className="space-y-2">
+            <Label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-text3 ml-1">
+              Additional Notes
+            </Label>
+            <Textarea
+              {...register('notes')}
+              placeholder="Any specific details you want to remember…"
+              className="bg-bg3 border-border rounded-2xl resize-none h-16 text-sm font-medium focus:ring-2 focus:ring-accent/20 focus:border-accent/40 transition-all placeholder:text-text3/20"
+            />
+          </div>
+
+          {/* ── Tags + Pending Status Row ── */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-text3 ml-1">
+                Tags
+              </Label>
+              <Input
+                {...register('tags')}
+                placeholder="food, travel, rent…"
+                className="h-11 bg-bg3 border-border rounded-xl text-sm font-medium focus:ring-2 focus:ring-accent/20 focus:border-accent/40 transition-all placeholder:text-text3/20"
               />
-            </span>
-          </button>
+            </div>
+            <div className="space-y-2">
+              <Label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-text3 ml-1">
+                Status
+              </Label>
+              <button
+                type="button"
+                onClick={() => setValue('pendingStatus', !pendingStatus)}
+                className={cn(
+                  'relative flex items-center gap-3 w-full h-11 px-4 rounded-xl border text-sm font-semibold transition-all duration-300',
+                  pendingStatus
+                    ? 'bg-amber-bg border-amber-border text-amber'
+                    : 'bg-bg3 border-border text-text3 hover:text-text hover:border-border/80',
+                )}
+                style={pendingStatus ? { color: 'var(--amber)', borderColor: 'var(--amber-border)', background: 'var(--amber-bg)' } : {}}
+              >
+                <span
+                  className="material-symbols-outlined !text-[18px] transition-all"
+                  style={{ color: pendingStatus ? 'var(--amber)' : 'var(--text3)' }}
+                >
+                  {pendingStatus ? 'schedule' : 'check_circle'}
+                </span>
+                {pendingStatus ? 'Pending' : 'Completed'}
+                <span
+                  className="ml-auto w-9 h-5 rounded-full flex items-center px-0.5 transition-all duration-300"
+                  style={{
+                    background: pendingStatus ? 'var(--amber)' : 'var(--border)',
+                  }}
+                >
+                  <span
+                    className="w-4 h-4 rounded-full bg-white shadow transition-transform duration-300"
+                    style={{ transform: pendingStatus ? 'translateX(16px)' : 'translateX(0)' }}
+                  />
+                </span>
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Action Buttons for Mobile */}
       {!isDesktop && (

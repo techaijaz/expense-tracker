@@ -12,6 +12,7 @@ import {
   Ban
 } from 'lucide-react';
 import dayjs from 'dayjs';
+import useFormat from '@/hooks/useFormat';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -26,6 +27,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 
 const AdminPayments = () => {
+  const { formatDate } = useFormat();
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedPayment, setSelectedPayment] = useState(null);
@@ -165,7 +167,7 @@ const AdminPayments = () => {
                       Timestamp
                     </div>
                     <div className="px-1 py-1 rounded-lg text-xs font-bold text-text leading-relaxed">
-                      {dayjs(payment.createdAt).format('YYYY.MM.DD • HH:mm:ss')}
+                      {formatDate(payment.createdAt)} • {dayjs(payment.createdAt).format('HH:mm:ss')}
                       <div className="text-[9px] text-text3 uppercase mt-0.5 opacity-50 tracking-tighter italic">Source: Manual Verification Handshake</div>
                     </div>
                   </div>

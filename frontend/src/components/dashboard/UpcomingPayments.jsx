@@ -1,8 +1,8 @@
 import React from 'react';
-import { differenceInDays, format } from 'date-fns';
+import { differenceInDays } from 'date-fns';
 import useFormat from '@/hooks/useFormat';
 
-const PaymentItem = ({ title, subtitle, amount, dueDate, formatAmount }) => {
+const PaymentItem = ({ title, subtitle, amount, dueDate, formatAmount, formatDate }) => {
   // Defensive check for date-fns v3 argument requirements
   if (!dueDate) return null;
 
@@ -29,7 +29,7 @@ const PaymentItem = ({ title, subtitle, amount, dueDate, formatAmount }) => {
           {title}
         </div>
         <div style={{ fontSize: 11, color: 'var(--text2)' }}>
-          {subtitle || `Due · ${formatAmount(amount)}`}
+          {subtitle || `Due ${formatDate(dueDate)} · ${formatAmount(amount)}`}
         </div>
       </div>
       <div className={`due-chip ${chipClass}`}>{chipLabel}</div>
@@ -38,7 +38,7 @@ const PaymentItem = ({ title, subtitle, amount, dueDate, formatAmount }) => {
 };
 
 export const UpcomingPayments = ({ payments }) => {
-  const { formatAmount } = useFormat();
+  const { formatAmount, formatDate } = useFormat();
   return (
     <div className="card">
       <div className="card-header">
@@ -56,6 +56,7 @@ export const UpcomingPayments = ({ payments }) => {
               amount={payment.amount}
               dueDate={payment.dueDate}
               formatAmount={formatAmount}
+              formatDate={formatDate}
             />
           ))
       ) : (

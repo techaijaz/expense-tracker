@@ -18,11 +18,13 @@ import {
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import useFormat from '@/hooks/useFormat';
 import { Button } from '@/components/ui/button';
 
 dayjs.extend(relativeTime);
 
 const AdminUserList = () => {
+  const { formatDate } = useFormat();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -143,7 +145,7 @@ const AdminUserList = () => {
                   </td>
                   <td className="px-6 py-5">
                     <div className="flex flex-col">
-                      <span className="text-xs font-bold text-text2 font-mono">{dayjs(user.createdAt).format('YYYY.MM.DD')}</span>
+                      <span className="text-xs font-bold text-text2 font-mono">{formatDate(user.createdAt)}</span>
                       <span className="text-[10px] text-text3 uppercase font-medium tracking-tighter opacity-50">Log Start</span>
                     </div>
                   </td>
@@ -207,7 +209,7 @@ const AdminUserList = () => {
             Classified Data Stream
          </div>
          <div className="text-[10px] font-mono text-text3 uppercase tracking-tighter">
-            System Synchronized: {new Date().toLocaleDateString()}
+            System Synchronized: {formatDate(new Date())}
          </div>
       </div>
     </div>

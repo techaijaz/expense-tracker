@@ -75,6 +75,10 @@
   --r3: 16px;
   --r4: 20px;
   --sidebar: 240px;
+
+  /* Brand Colors (referenced in tailwind.config.js) */
+  --brand-primary: var(--accent);
+  --brand-accent: #2563eb;
 }
 
 .dark {
@@ -93,6 +97,10 @@
   --accent: var(--accent-color);
   --accent2: var(--accent-color);
   --accent-glow: color-mix(in srgb, var(--accent-color) 15%, transparent);
+
+  /* Brand Colors (Dark) */
+  --brand-primary: var(--accent);
+  --brand-accent: var(--accent);
 
   /* Functional mappings for dark mode */
   --bg-primary: var(--bg);

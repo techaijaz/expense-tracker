@@ -5,6 +5,10 @@ import api from '@/utils/httpMethods';
 import { updateAvatar, updateHasPassword } from '@/redux/authSlice';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { User, Lock, Camera, Loader2, ShieldCheck, Activity } from 'lucide-react';
+import { cn } from '@/utils/utils';
 
 const BACKEND_URL =
   import.meta.env.VITE_API_URL?.replace('/api/v1', '') ||
@@ -36,7 +40,7 @@ export default function UserIdentity() {
     const isFirstPassword = currentUser?.googleId && !currentUser?.hasPassword;
 
     if (field === 'current') {
-      if (isFirstPassword) return ''; // Skip validation for current password if it's the first one
+      if (isFirstPassword) return ''; 
       if (!value) err = 'Current password is required';
       else if (value.length < 8) err = 'Required min. 8 characters';
     }
@@ -68,6 +72,7 @@ export default function UserIdentity() {
         ? currentUser.avatar
         : `${BACKEND_URL.replace(/\/$/, '')}/${currentUser.avatar.replace(/^\//, '')}`
       : null);
+      
   const getUserInitials = () =>
     `${currentUser?.firstName?.charAt(0) || ''}${currentUser?.lastName?.charAt(0) || ''}`.toUpperCase() ||
     'AI';
@@ -94,7 +99,6 @@ export default function UserIdentity() {
   const handleChangePassword = async (e) => {
     e.preventDefault();
 
-    // Final check
     const isFirstPassword = currentUser?.googleId && !currentUser?.hasPassword;
     const e1 = validate('current', pwdForm.current);
     const e2 = validate('newPwd', pwdForm.newPwd);
@@ -130,193 +134,160 @@ export default function UserIdentity() {
   };
 
   return (
-    <div className="settings-card">
-      <div className="settings-section-title">
-        <div className="icon">👤</div>User Identity
-      </div>
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 14,
-          marginBottom: 16,
-        }}
-      >
-        <div
-          style={{
-            width: 56,
-            height: 56,
-            borderRadius: '50%',
-            background: 'var(--accent)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 18,
-            fontWeight: 700,
-            color: '#fff',
-            position: 'relative',
-            overflow: avatarSrc ? 'hidden' : 'visible',
-          }}
-        >
-          {avatarSrc ? (
-            <img
-              src={avatarSrc}
-              alt="avatar"
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            />
-          ) : (
-            <span>{getUserInitials()}</span>
-          )}
-          <div
-            onClick={() => avatarInputRef.current?.click()}
-            style={{
-              position: 'absolute',
-              bottom: 0,
-              right: 0,
-              width: 18,
-              height: 18,
-              background: 'var(--bg3)',
-              borderRadius: '50%',
-              border: '2px solid var(--bg2)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 10,
-              cursor: 'pointer',
-            }}
-          >
-            {uploadingAvatar ? <div className="loader-mini" /> : '✏️'}
+    <Card className="border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm overflow-hidden">
+      <CardHeader className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 py-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-500">
+            <User className="w-5 h-5" />
           </div>
-          <input
-            ref={avatarInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleAvatarChange}
-          />
-        </div>
-        <div>
-          <div style={{ fontSize: 15, fontWeight: 600 }}>
-            {currentUser?.firstName} {currentUser?.lastName}
-          </div>
-          <div style={{ fontSize: 12, color: 'var(--text2)' }}>
-            {currentUser?.email}
-          </div>
-          <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
-            <span
-              style={{
-                fontSize: 10,
-                padding: '2px 8px',
-                background: 'var(--green-bg)',
-                color: 'var(--green)',
-                borderRadius: 4,
-                fontWeight: 600,
-              }}
-            >
-              Level 4 Encryption
-            </span>
-            <span
-              style={{
-                fontSize: 10,
-                padding: '2px 8px',
-                background: 'var(--accent-glow)',
-                color: 'var(--accent)',
-                borderRadius: 4,
-                fontWeight: 600,
-              }}
-            >
-              Active Session
-            </span>
+          <div>
+            <CardTitle className="text-lg font-bold">User Identity</CardTitle>
+            <CardDescription className="text-xs">Manage your profile and security credentials</CardDescription>
           </div>
         </div>
-      </div>
-
-      {!showChangePwd ? (
-        <Button
-          variant="outline"
-          onClick={() => setShowChangePwd(true)}
-          className="w-full justify-center h-11"
-        >
-          {currentUser?.googleId && !currentUser?.hasPassword
-            ? '🔑 Set Local Password'
-            : '🔒 Change Password'}
-        </Button>
-      ) : (
-        <form
-          onSubmit={handleChangePassword}
-          style={{
-            marginTop: 16,
-            paddingTop: 16,
-            borderTop: '1px solid var(--border)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 12,
-          }}
-        >
-          {!(currentUser?.googleId && !currentUser?.hasPassword) && (
-            <div className="form-group">
-              <label className="form-label">Current Password</label>
-              <Input
-                type="password"
-                value={pwdForm.current}
-                onChange={(e) => handlePwdInputChange('current', e.target.value)}
-                className={errors.current ? 'border-red-500' : ''}
-                placeholder="••••••••"
+      </CardHeader>
+      
+      <CardContent className="p-6 space-y-6">
+        <div className="p-5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-800 shadow-sm">
+          <div className="flex items-center gap-6">
+            <div className="relative group">
+              <div className="h-20 w-20 rounded-full border-4 border-slate-50 dark:border-slate-700 shadow-lg bg-indigo-500/10 flex items-center justify-center overflow-hidden transition-transform group-hover:scale-105">
+                {avatarSrc ? (
+                  <img src={avatarSrc} alt="avatar" className="h-full w-full object-cover" />
+                ) : (
+                  <span className="text-2xl font-black text-indigo-500">{getUserInitials()}</span>
+                )}
+              </div>
+              <button
+                onClick={() => avatarInputRef.current?.click()}
+                className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full bg-indigo-500 text-white flex items-center justify-center shadow-md hover:bg-indigo-600 transition-all border-2 border-white dark:border-slate-800"
+                disabled={uploadingAvatar}
+              >
+                {uploadingAvatar ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Camera className="h-4 w-4" />
+                )}
+              </button>
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleAvatarChange}
               />
-              {errors.current && (
-                <span className="error-msg">{errors.current}</span>
+            </div>
+            
+            <div className="flex-1 space-y-1">
+              <h3 className="text-lg font-black tracking-tight text-slate-800 dark:text-white">
+                {currentUser?.firstName} {currentUser?.lastName}
+              </h3>
+              <p className="text-sm font-medium text-slate-400">
+                {currentUser?.email}
+              </p>
+              <div className="flex flex-wrap gap-2 mt-3">
+                <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[9px] font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 uppercase tracking-widest">
+                  <ShieldCheck className="h-3 w-3" />
+                  Secured
+                </span>
+                <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[9px] font-bold bg-indigo-500/10 text-indigo-500 border border-indigo-500/20 uppercase tracking-widest">
+                  <Activity className="h-3 w-3" />
+                  Online
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {!showChangePwd ? (
+          <Button
+            variant="outline"
+            onClick={() => setShowChangePwd(true)}
+            className="w-full h-11 font-bold gap-2 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 rounded-xl transition-all"
+          >
+            <Lock className="h-4 w-4" />
+            {currentUser?.googleId && !currentUser?.hasPassword
+              ? 'Set Account Password'
+              : 'Change Password'}
+          </Button>
+        ) : (
+          <form onSubmit={handleChangePassword} className="space-y-5 animate-in slide-in-from-top-4 duration-300 p-5 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
+            {!(currentUser?.googleId && !currentUser?.hasPassword) && (
+              <div className="space-y-2">
+                <Label htmlFor="current-password" className="text-xs font-bold text-slate-400 uppercase tracking-wider">Current Password</Label>
+                <Input
+                  id="current-password"
+                  type="password"
+                  value={pwdForm.current}
+                  onChange={(e) => handlePwdInputChange('current', e.target.value)}
+                  className={cn("h-11 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 rounded-xl", errors.current && 'border-red-500')}
+                  placeholder="••••••••"
+                />
+                {errors.current && (
+                  <p className="text-[10px] font-bold text-red-500 uppercase tracking-tight">
+                    {errors.current}
+                  </p>
+                )}
+              </div>
+            )}
+            
+            <div className="space-y-2">
+              <Label htmlFor="new-password" className="text-xs font-bold text-slate-400 uppercase tracking-wider">New Password</Label>
+              <Input
+                id="new-password"
+                type="password"
+                value={pwdForm.newPwd}
+                onChange={(e) => handlePwdInputChange('newPwd', e.target.value)}
+                className={cn("h-11 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 rounded-xl", errors.newPwd && 'border-red-500')}
+                placeholder="Min. 8 characters"
+              />
+              {errors.newPwd && (
+                <p className="text-[10px] font-bold text-red-500 uppercase tracking-tight">
+                  {errors.newPwd}
+                </p>
               )}
             </div>
-          )}
-          <div className="form-group">
-            <label className="form-label">New Password</label>
-            <Input
-              type="password"
-              value={pwdForm.newPwd}
-              onChange={(e) => handlePwdInputChange('newPwd', e.target.value)}
-              className={errors.newPwd ? 'border-red-500' : ''}
-              placeholder="Min. 8 characters"
-            />
-            {errors.newPwd && (
-              <span className="error-msg">{errors.newPwd}</span>
-            )}
-          </div>
-          <div className="form-group">
-            <label className="form-label">Confirm New Password</label>
-            <Input
-              type="password"
-              value={pwdForm.confirm}
-              onChange={(e) => handlePwdInputChange('confirm', e.target.value)}
-              className={errors.confirm ? 'border-red-500' : ''}
-              placeholder="••••••••"
-            />
-            {errors.confirm && (
-              <span className="error-msg">{errors.confirm}</span>
-            )}
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setShowChangePwd(false)}
-              className="flex-1"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={changingPwd}
-              className="flex-[2] bg-primary hover:bg-primary/90 text-primary-foreground"
-            >
-              {changingPwd
-                ? 'Updating…'
-                : currentUser?.googleId && !currentUser?.hasPassword
-                  ? 'Set Password'
-                  : 'Update Password'}
-            </Button>
-          </div>
-        </form>
-      )}
-    </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="confirm-password" className="text-xs font-bold text-slate-400 uppercase tracking-wider">Confirm New Password</Label>
+              <Input
+                id="confirm-password"
+                type="password"
+                value={pwdForm.confirm}
+                onChange={(e) => handlePwdInputChange('confirm', e.target.value)}
+                className={cn("h-11 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 rounded-xl", errors.confirm && 'border-red-500')}
+                placeholder="••••••••"
+              />
+              {errors.confirm && (
+                <p className="text-[10px] font-bold text-red-500 uppercase tracking-tight">
+                  {errors.confirm}
+                </p>
+              )}
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setShowChangePwd(false)}
+                className="flex-1 h-11 rounded-xl font-bold"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={changingPwd}
+                className="flex-[2] h-11 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl shadow-lg shadow-indigo-500/20 font-bold"
+              >
+                {changingPwd ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : null}
+                Save Password
+              </Button>
+            </div>
+          </form>
+        )}
+      </CardContent>
+    </Card>
   );
 }

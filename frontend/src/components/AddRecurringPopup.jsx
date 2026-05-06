@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
 import { useSelector } from 'react-redux';
-import { format } from 'date-fns';
+import useFormat from '@/hooks/useFormat';
 import useApi from '@/hooks/useApi';
 import {
   getCurrencySymbol,
@@ -90,6 +90,7 @@ const AddRecurringPopup = ({ open, setOpen, onSuccess, editTask = null }) => {
       state.auth.user?.user?.preferences || state.auth.user?.preferences,
   );
   const { currency = 'INR', decimalPlaces = 2 } = preferences || {};
+  const { formatDate } = useFormat();
   const currencySymbol = getCurrencySymbol(currency);
 
   const {
@@ -314,7 +315,7 @@ const AddRecurringPopup = ({ open, setOpen, onSuccess, editTask = null }) => {
                   >
                     <span className="mr-3 opacity-50">📅</span>
                     {field.value instanceof Date && !isNaN(field.value)
-                      ? format(field.value, 'dd MMM yyyy')
+                      ? formatDate(field.value)
                       : 'Pick a date'}
                   </Button>
                 </PopoverTrigger>

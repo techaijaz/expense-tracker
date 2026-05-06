@@ -8,6 +8,11 @@ import { PersistGate } from 'redux-persist/integration/react';
 import persistStore from 'redux-persist/es/persistStore';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import './i18n';
+import { registerSW } from 'virtual:pwa-register';
+
+// Register PWA Service Worker
+registerSW({ immediate: true });
+
 
 let persistor = persistStore(store);
 
