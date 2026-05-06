@@ -87,7 +87,7 @@ export default function PremiumKpiCard({
         'bg-card/60 backdrop-blur-xl border border-border/40',
         'animate-in fade-in slide-in-from-bottom-4 duration-700 fill-mode-both',
         config.glow,
-        className
+        className,
       )}
       style={{ animationDelay: `${delay}ms` }}
     >
@@ -95,15 +95,15 @@ export default function PremiumKpiCard({
       <div
         className={cn(
           'absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity duration-700',
-          config.gradient
+          config.gradient,
         )}
       />
-      
+
       {/* Ambient Light Effect */}
       <div
         className={cn(
           'absolute -top-12 -right-12 w-32 h-32 rounded-full blur-3xl opacity-0 group-hover:opacity-20 transition-all duration-1000',
-          config.bg
+          config.bg,
         )}
       />
 
@@ -117,17 +117,20 @@ export default function PremiumKpiCard({
               variant={badge.variant || 'outline'}
               className={cn(
                 'text-[9px] font-black h-5 px-2 tracking-wider uppercase rounded-md border-none shadow-sm',
-                badge.variant === 'success' ? 'bg-emerald-500/10 text-emerald-500' :
-                badge.variant === 'error' ? 'bg-rose-500/10 text-rose-500' :
-                badge.variant === 'warning' ? 'bg-amber-500/10 text-amber-500' :
-                'bg-primary/10 text-primary'
+                badge.variant === 'success'
+                  ? 'bg-emerald-500/10 text-emerald-500'
+                  : badge.variant === 'error'
+                    ? 'bg-rose-500/10 text-rose-500'
+                    : badge.variant === 'warning'
+                      ? 'bg-amber-500/10 text-amber-500'
+                      : 'bg-primary/10 text-primary',
               )}
             >
               {badge.text}
             </Badge>
           )}
         </div>
-        
+
         {Icon && (
           <div
             className={cn(
@@ -135,7 +138,7 @@ export default function PremiumKpiCard({
               'group-hover:scale-110 group-hover:rotate-6',
               config.bg,
               config.border,
-              config.text
+              config.text,
             )}
           >
             <Icon className="h-5 w-5 md:h-6 md:w-6" />
@@ -151,15 +154,25 @@ export default function PremiumKpiCard({
 
           {trend && (
             <div className="flex items-center gap-1.5 mt-1">
-              <div className={cn(
-                'flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] md:text-[11px] font-bold border',
-                trend.direction === 'up' ? 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20' :
-                trend.direction === 'down' ? 'text-rose-500 bg-rose-500/10 border-rose-500/20' :
-                'text-muted-foreground bg-muted/10 border-muted/20'
-              )}>
-                {trend.direction === 'up' && <TrendingUp className="h-3 w-3 stroke-[3px]" />}
-                {trend.direction === 'down' && <TrendingDown className="h-3 w-3 stroke-[3px]" />}
-                {trend.direction === 'neutral' && <Minus className="h-3 w-3 stroke-[3px]" />}
+              <div
+                className={cn(
+                  'flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] md:text-[11px] font-bold border',
+                  trend.direction === 'up'
+                    ? 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20'
+                    : trend.direction === 'down'
+                      ? 'text-rose-500 bg-rose-500/10 border-rose-500/20'
+                      : 'text-muted-foreground bg-muted/10 border-muted/20',
+                )}
+              >
+                {trend.direction === 'up' && (
+                  <TrendingUp className="h-3 w-3 stroke-[3px]" />
+                )}
+                {trend.direction === 'down' && (
+                  <TrendingDown className="h-3 w-3 stroke-[3px]" />
+                )}
+                {trend.direction === 'neutral' && (
+                  <Minus className="h-3 w-3 stroke-[3px]" />
+                )}
                 <span>{trend.value}</span>
               </div>
               {trend.label && (
@@ -175,7 +188,7 @@ export default function PremiumKpiCard({
               <span
                 className={cn(
                   'w-1.5 h-1.5 rounded-full animate-pulse shadow-[0_0_8px_currentColor]',
-                  config.dot
+                  config.dot,
                 )}
               />
               {subtitle}
@@ -188,7 +201,7 @@ export default function PremiumKpiCard({
       <div
         className={cn(
           'absolute bottom-0 left-0 h-[3px] w-0 transition-all duration-1000 group-hover:w-full bg-gradient-to-r shadow-[0_-2px_10px_rgba(0,0,0,0.1)]',
-          config.bar
+          config.bar,
         )}
       />
     </Card>
