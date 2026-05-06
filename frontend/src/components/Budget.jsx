@@ -1,12 +1,25 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { toast } from 'sonner';
+import { 
+  TrendingDown, 
+  Wallet, 
+  AlertCircle, 
+  CheckCircle2, 
+  Plus, 
+  Edit2, 
+  Package,
+  ArrowUpRight,
+  ChevronRight,
+  Lock
+} from 'lucide-react';
 import useApi from '@/hooks/useApi';
 import api from '@/utils/httpMethods';
 import AddBudgetPopup from './AddBudgetPopup';
 import useFormat from '@/hooks/useFormat';
 import { cn } from '@/utils/utils';
 import { Button } from '@/components/ui/button';
+import PremiumKpiCard from '@/components/ui/PremiumKpiCard';
 
 const Budget = () => {
   const [budgets, setBudgets] = useState([]);
@@ -68,80 +81,86 @@ const Budget = () => {
 
   return (
     <div className="page-body p-4 md:p-6 min-h-screen bg-[var(--bg)] pb-24 md:pb-6">
-      {/* KPI Header Grid - Using Flexbox for wrapping responsiveness */}
-      <div className="mb-6 flex flex-wrap gap-3 md:gap-4">
-        <KpiCard
-          label="Total Budgeted"
+      {/* KPI Header Grid */}
+      <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <PremiumKpiCard
+          title="Total Budgeted"
           value={formatAmount(stats.totalBudgeted)}
+          icon={Wallet}
           color="blue"
-          icon="💰"
-          className="flex-1 min-w-[160px] md:min-w-[220px]"
+          delay={0}
         />
-        <KpiCard
-          label="Total Spent"
+        <PremiumKpiCard
+          title="Total Spent"
           value={formatAmount(stats.totalSpent)}
+          icon={TrendingDown}
           color="red"
-          icon="🛍️"
-          className="flex-1 min-w-[160px] md:min-w-[220px]"
+          delay={100}
         />
-        <KpiCard
-          label="Remaining"
+        <PremiumKpiCard
+          title="Remaining"
           value={formatAmount(stats.remaining)}
+          icon={CheckCircle2}
           color="green"
-          icon="🔋"
-          className="flex-1 min-w-[160px] md:min-w-[220px]"
+          delay={200}
         />
-        <KpiCard
-          label="Over Budget"
-          value={`${stats.overBudgetCount} ${stats.overBudgetCount === 1 ? 'item' : 'items'}`}
-          color="amber"
-          icon="⚠️"
-          subtext={
+        <PremiumKpiCard
+          title="Status"
+          value={stats.overBudgetCount > 0 ? "At Risk" : "Healthy"}
+          subtitle={
             stats.overBudgetCount > 0
-              ? 'Review high-spend areas'
+              ? `${stats.overBudgetCount} ${stats.overBudgetCount === 1 ? 'category' : 'categories'} over budget`
               : 'All within limits'
           }
-          className="flex-1 min-w-[160px] md:min-w-[220px]"
+          icon={AlertCircle}
+          color={stats.overBudgetCount > 0 ? "amber" : "green"}
+          delay={300}
         />
       </div>
 
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold tracking-tight text-[var(--text)]">
-            Monthly Budgets
+          <h2 className="text-xl font-bold tracking-tight text-[var(--text)] md:text-2xl">
+            Budget Management
           </h2>
-          <p className="text-xs text-[var(--text2)]">
-            Track spending across your active categories.
+          <p className="text-sm text-[var(--text2)]">
+            Set and track spending limits for your expense categories.
           </p>
         </div>
-        {/* Hide default button on mobile, show floating one instead */}
         <Button
           onClick={handleAddNew}
-          className="hidden md:flex h-10 items-center gap-2 rounded-lg bg-[var(--accent)] px-4 text-sm font-semibold text-white transition-all hover:opacity-90 hover:-translate-y-0.5 active:scale-95"
+          className="hidden md:flex h-11 items-center gap-2 rounded-xl bg-[var(--accent)] px-5 text-sm font-semibold text-white shadow-lg shadow-[var(--accent)]/20 transition-all hover:scale-[1.02] hover:opacity-95 active:scale-95"
         >
-          <span>{limitReached ? '🔒' : '+'}</span> Add Budget
+          {limitReached ? <Lock className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+          <span>Add Budget</span>
         </Button>
       </div>
 
       {loading && budgets.length === 0 ? (
         <div className="flex h-64 items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--accent)] border-t-transparent" />
+          <div className="flex flex-col items-center gap-3">
+            <div className="h-10 w-10 animate-spin rounded-full border-3 border-[var(--accent)] border-t-transparent" />
+            <p className="text-sm font-medium text-[var(--text2)]">Loading your budgets...</p>
+          </div>
         </div>
       ) : budgets.length === 0 ? (
         <div
           onClick={handleAddNew}
-          className="flex h-64 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[var(--border)] bg-[var(--bg2)]/50 transition-all hover:bg-[var(--bg3)]/50 hover:border-[var(--accent)]/30 group"
+          className="flex h-72 cursor-pointer flex-col items-center justify-center rounded-[2rem] border-2 border-dashed border-[var(--border)] bg-[var(--bg2)]/40 backdrop-blur-sm transition-all hover:bg-[var(--bg2)]/60 hover:border-[var(--accent)]/40 group"
         >
-          <div className="mb-4 text-4xl group-hover:scale-110 transition-transform">💰</div>
-          <p className="text-sm font-semibold text-[var(--text)]">
-            No budgets defined yet
+          <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--bg3)] text-[var(--accent)] transition-transform group-hover:scale-110 group-hover:rotate-3 shadow-sm">
+            <Package className="h-8 w-8" />
+          </div>
+          <p className="text-lg font-bold text-[var(--text)]">No budgets defined yet</p>
+          <p className="mt-2 text-sm text-[var(--text3)] text-center max-w-[280px]">
+            Set spending limits to keep your finances in check and reach your savings goals faster.
           </p>
-          <p className="mt-1 text-xs text-[var(--text2)]">
-            Click to set your first spending limit
-          </p>
+          <Button variant="outline" className="mt-6 rounded-xl border-[var(--accent)]/30 text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white">
+            Create Your First Budget
+          </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {budgets.map((budget, idx) => (
             <BudgetCard
               key={budget.category?._id || idx}
@@ -153,25 +172,28 @@ const Budget = () => {
           {/* Inline Add Card - Desktop only */}
           <div
             onClick={handleAddNew}
-            className="hidden md:flex min-h-[160px] cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[var(--border)] bg-[var(--bg2)]/50 transition-all hover:bg-[var(--bg3)]/50 hover:border-[var(--accent)]/30 group"
+            className="hidden md:flex min-h-[220px] cursor-pointer flex-col items-center justify-center rounded-[2rem] border-2 border-dashed border-[var(--border)] bg-[var(--bg2)]/40 backdrop-blur-sm transition-all hover:bg-[var(--bg2)]/60 hover:border-[var(--accent)]/40 group"
           >
-            <div className="text-2xl text-[var(--text3)] group-hover:scale-125 transition-transform">+</div>
-            <div className="text-sm font-bold text-[var(--text)]">Add Budget</div>
-            <div className="mt-1 text-[10px] text-[var(--text3)] text-center px-4">
-              Set a new category limit
+            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--bg3)] text-[var(--text3)] transition-all group-hover:scale-110 group-hover:bg-[var(--accent)]/10 group-hover:text-[var(--accent)]">
+              <Plus className="h-6 w-6" />
             </div>
+            <div className="text-base font-bold text-[var(--text)]">Add Budget</div>
+            <p className="mt-2 text-xs text-[var(--text3)] text-center px-6">
+              Set a monthly limit for another category
+            </p>
           </div>
         </div>
       )}
 
       {/* Floating Add Button for Mobile */}
-      <Button
-        size="icon"
-        onClick={handleAddNew}
-        className="md:hidden fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--accent)] text-white shadow-lg shadow-[var(--accent)]/30 active:scale-90 transition-transform"
-      >
-        <span className="material-symbols-outlined !text-3xl">add</span>
-      </Button>
+      <div className="md:hidden fixed bottom-6 right-6 z-50">
+        <Button
+          onClick={handleAddNew}
+          className="h-14 w-14 rounded-2xl bg-[var(--accent)] text-white shadow-xl shadow-[var(--accent)]/40 transition-transform active:scale-90 flex items-center justify-center p-0"
+        >
+          <Plus className="h-7 w-7" strokeWidth={2.5} />
+        </Button>
+      </div>
 
       <AddBudgetPopup
         open={isPopupOpen}
@@ -183,78 +205,48 @@ const Budget = () => {
   );
 };
 
-const KpiCard = ({ label, value, color, icon, subtext, className }) => {
-  const colorMap = {
-    blue: 'border-b-[var(--accent)]',
-    red: 'border-b-[var(--red)]',
-    green: 'border-b-[var(--green)]',
-    amber: 'border-b-[var(--amber)]',
-  };
-
-  return (
-    <div
-      className={cn(
-        'relative overflow-hidden rounded-2xl border-b-2 bg-[var(--bg2)] p-4 md:p-5 border border-[var(--border)] shadow-md transition-all hover:shadow-lg',
-        colorMap[color],
-        className,
-      )}
-    >
-      <div className="mb-3 flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-lg bg-[var(--bg3)] text-lg">
-        {icon}
-      </div>
-      <div className="text-[10px] font-bold uppercase tracking-widest text-[var(--text3)]">
-        {label}
-      </div>
-      <div className="mt-1 font-mono text-xl md:text-2xl font-bold tracking-tight text-[var(--text)]">
-        {value}
-      </div>
-      {subtext && (
-        <div className="mt-2 text-[10px] text-[var(--text2)]">{subtext}</div>
-      )}
-    </div>
-  );
-};
-
 const BudgetCard = ({ budget, onEdit }) => {
   const { formatAmount } = useFormat();
   const percent = budget.percent || 0;
   const isOver = percent >= 100;
   const isWarning = percent >= 80 && percent < 100;
 
-  const barColor = isOver
-    ? 'bg-[var(--red)]'
-    : isWarning
-      ? 'bg-[var(--amber)]'
-      : 'bg-[var(--green)]';
-  const textColor = isOver
+  const statusColor = isOver
     ? 'text-[var(--red)]'
     : isWarning
       ? 'text-[var(--amber)]'
       : 'text-[var(--green)]';
 
+  const progressColor = isOver
+    ? 'bg-[var(--red)]'
+    : isWarning
+      ? 'bg-[var(--amber)]'
+      : 'bg-[var(--accent)]';
+
   return (
     <div
       className={cn(
-        'group relative rounded-2xl border bg-[var(--bg2)] p-4 md:p-5 transition-all hover:shadow-xl',
-        isOver ? 'border-[var(--red)]/30 shadow-[var(--red)]/5' : 'border-[var(--border)]',
+        'group relative overflow-hidden rounded-[2rem] border bg-[var(--bg2)]/60 backdrop-blur-md p-6 transition-all duration-300 hover:shadow-2xl hover:shadow-[var(--accent)]/5 hover:-translate-y-1',
+        isOver ? 'border-[var(--red)]/30' : 'border-[var(--border)]',
       )}
     >
-      <div className="mb-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--bg3)] text-xl">
+      {/* Background Decor */}
+      <div className={cn(
+        "absolute -right-8 -top-8 h-24 w-24 rounded-full blur-3xl transition-opacity opacity-20 group-hover:opacity-40",
+        isOver ? "bg-[var(--red)]" : "bg-[var(--accent)]"
+      )} />
+
+      <div className="relative mb-6 flex items-start justify-between">
+        <div className="flex items-center gap-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--bg3)] text-2xl shadow-inner transition-transform group-hover:scale-110">
             {budget.category?.icon || '📦'}
           </div>
           <div>
-            <h3 className="text-sm font-bold text-[var(--text)]">
+            <h3 className="text-base font-bold tracking-tight text-[var(--text)]">
               {budget.category?.name}
             </h3>
-            <p
-              className={cn(
-                'text-[10px] uppercase font-bold tracking-wider',
-                isOver ? 'text-[var(--red)]' : 'text-[var(--text2)]',
-              )}
-            >
-              {isOver ? '⚡ Budget Exceeded!' : 'Monthly Limit'}
+            <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text3)]">
+              Monthly Limit
             </p>
           </div>
         </div>
@@ -262,38 +254,49 @@ const BudgetCard = ({ budget, onEdit }) => {
           size="icon"
           variant="ghost"
           onClick={onEdit}
-          className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--bg3)] text-[var(--text2)] transition-all hover:bg-[var(--accent)] hover:text-white md:opacity-0 group-hover:opacity-100"
+          className="h-10 w-10 rounded-xl bg-[var(--bg3)] text-[var(--text3)] transition-all hover:bg-[var(--accent)] hover:text-white md:opacity-0 group-hover:opacity-100"
         >
-          <span className="material-symbols-outlined !text-lg">edit</span>
+          <Edit2 className="h-4 w-4" />
         </Button>
       </div>
 
-      <div className="mb-2 flex items-baseline justify-between">
-        <span className="font-mono text-xl font-bold text-[var(--text)]">
-          {formatAmount(budget.spentAmount)}
-        </span>
-        <span className="text-xs text-[var(--text2)]">
-          of {formatAmount(budget.budgetAmount)}
-        </span>
+      <div className="mb-4 space-y-1">
+        <div className="flex items-baseline justify-between">
+          <span className="text-2xl font-black tracking-tight text-[var(--text)]">
+            {formatAmount(budget.spentAmount)}
+          </span>
+          <span className="text-xs font-medium text-[var(--text3)]">
+            of {formatAmount(budget.budgetAmount)}
+          </span>
+        </div>
+        
+        <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-[var(--bg3)]/50">
+          <div
+            className={cn(
+              'h-full rounded-full transition-all duration-1000 ease-out',
+              progressColor,
+              percent >= 100 && 'animate-pulse'
+            )}
+            style={{ width: `${Math.min(100, percent)}%` }}
+          />
+        </div>
       </div>
 
-      <div className="mb-3 h-2 w-full overflow-hidden rounded-full bg-[var(--bg3)]">
-        <div
-          className={cn(
-            'h-full rounded-full transition-all duration-700 ease-out',
-            barColor,
-          )}
-          style={{ width: `${Math.min(100, percent)}%` }}
-        />
-      </div>
-
-      <div className="flex items-center justify-between text-[11px] font-semibold">
-        <span className={cn(textColor)}>{percent}% used</span>
-        <span className={cn(textColor)}>
+      <div className="flex items-center justify-between">
+        <div className={cn("flex items-center gap-1.5 text-xs font-bold", statusColor)}>
+          {isOver ? <AlertCircle className="h-3.5 w-3.5" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
+          {percent}% {isOver ? 'Exceeded' : 'Used'}
+        </div>
+        <div className={cn("text-xs font-bold", statusColor)}>
           {isOver
-            ? `🚨 Over by ${formatAmount(budget.spentAmount - budget.budgetAmount)}`
-            : `${percent >= 80 ? '⚠' : '✓'} ${formatAmount(budget.remaining)} left`}
-        </span>
+            ? `+ ${formatAmount(budget.spentAmount - budget.budgetAmount)} Over`
+            : `${formatAmount(budget.remaining)} left`}
+        </div>
+      </div>
+      
+      {/* Decorative Arrow */}
+      <div className="absolute bottom-4 right-4 translate-x-4 opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-20">
+        <ArrowUpRight className="h-8 w-8 text-[var(--text)]" />
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import PremiumKpiCard from '@/components/ui/PremiumKpiCard';
 import {
   BarChart,
   Bar,
@@ -231,80 +232,52 @@ const Reports = () => {
       </div>
 
       {/* Dynamic Summary Cards */}
-      <div className="flex flex-wrap gap-4 md:gap-6 mb-8">
-        <div className="insight-card group flex-1 min-w-[260px] p-6 bg-bg2 border border-border rounded-2xl hover:border-green/50 transition-all duration-300 shadow-sm hover:shadow-md">
-          <div className="flex justify-between items-start mb-4">
-            <div className="insight-label text-xs font-bold uppercase tracking-wider text-text3">
-              Total Income
-            </div>
-            <div className="p-2.5 bg-green-bg rounded-xl text-green group-hover:scale-110 transition-transform duration-300">
-              <ArrowUpRight className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="insight-val text-2xl md:text-3xl font-bold font-mono text-green mb-1">
-            {formatCurrency(currentMonth?.income || 0)}
-          </div>
-          <div
-            className={`flex items-center gap-1.5 text-xs font-semibold ${comparison?.incomeChange >= 0 ? 'text-green' : 'text-red'}`}
-          >
-            <TrendingUp
-              className={`w-3.5 h-3.5 ${comparison?.incomeChange >= 0 ? '' : 'rotate-180'}`}
-            />
-            {comparison?.incomeChange >= 0 ? '+' : ''}
-            {comparison?.incomeChange}% vs last {period}
-          </div>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <PremiumKpiCard
+          title="Total Income"
+          value={formatCurrency(currentMonth?.income || 0)}
+          subtitle={`vs last ${period}`}
+          icon={TrendingUp}
+          trend={{
+            value: `${comparison?.incomeChange || 0}%`,
+            direction: comparison?.incomeChange >= 0 ? 'up' : 'down',
+            label: 'from last period',
+          }}
+          color="green"
+          delay={100}
+        />
 
-        <div className="insight-card group flex-1 min-w-[260px] p-6 bg-bg2 border border-border rounded-2xl hover:border-red/50 transition-all duration-300 shadow-sm hover:shadow-md">
-          <div className="flex justify-between items-start mb-4">
-            <div className="insight-label text-xs font-bold uppercase tracking-wider text-text3">
-              Total Expenses
-            </div>
-            <div className="p-2.5 bg-red-bg rounded-xl text-red group-hover:scale-110 transition-transform duration-300">
-              <ArrowDownRight className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="insight-val text-2xl md:text-3xl font-bold font-mono text-red mb-1">
-            {formatCurrency(currentMonth?.expense || 0)}
-          </div>
-          <div
-            className={`flex items-center gap-1.5 text-xs font-semibold ${comparison?.expenseChange <= 0 ? 'text-green' : 'text-red'}`}
-          >
-            <TrendingDown
-              className={`w-3.5 h-3.5 ${comparison?.expenseChange <= 0 ? 'rotate-180' : ''}`}
-            />
-            {comparison?.expenseChange > 0 ? '+' : ''}
-            {comparison?.expenseChange}% vs last {period}
-          </div>
-        </div>
+        <PremiumKpiCard
+          title="Total Expenses"
+          value={formatCurrency(currentMonth?.expense || 0)}
+          subtitle={`vs last ${period}`}
+          icon={TrendingDown}
+          trend={{
+            value: `${Math.abs(comparison?.expenseChange || 0)}%`,
+            direction: comparison?.expenseChange <= 0 ? 'up' : 'down', // In expenses, down is good (up trend)
+            label: 'from last period',
+          }}
+          color="red"
+          delay={200}
+        />
 
         {(activeTab === 'Overview' ||
           activeTab === 'Savings' ||
           activeTab === 'Cash Flow') && (
-          <div className="insight-card group flex-1 min-w-[260px] p-6 bg-bg2 border border-border rounded-2xl hover:border-accent/50 transition-all duration-300 shadow-sm hover:shadow-md">
-            <div className="flex justify-between items-start mb-4">
-              <div className="insight-label text-xs font-bold uppercase tracking-wider text-text3">
-                {activeTab === 'Cash Flow' ? 'Net Cash Flow' : 'Net Savings'}
-              </div>
-              <div className="p-2.5 bg-accent-glow rounded-xl text-accent group-hover:scale-110 transition-transform duration-300">
-                <Wallet className="w-5 h-5" />
-              </div>
-            </div>
-            <div className="insight-val text-2xl md:text-3xl font-bold font-mono text-accent mb-1">
-              {formatCurrency(currentMonth?.savings || 0)}
-            </div>
-            <div className="text-xs text-text2 font-medium flex items-center gap-1.5">
-              <span className="px-1.5 py-0.5 bg-accent-glow text-accent rounded text-[10px] font-bold">
-                {currentMonth?.income > 0
-                  ? Math.round(
-                      (currentMonth.savings / currentMonth.income) * 100,
-                    )
-                  : 0}
-                %
-              </span>{' '}
-              savings rate for this {period}
-            </div>
-          </div>
+          <PremiumKpiCard
+            title={activeTab === 'Cash Flow' ? 'Net Cash Flow' : 'Net Savings'}
+            value={formatCurrency(currentMonth?.savings || 0)}
+            subtitle={`${period} performance`}
+            icon={Wallet}
+            badge={{
+              text: currentMonth?.income > 0
+                ? `${Math.round((currentMonth.savings / currentMonth.income) * 100)}% Rate`
+                : '0% Rate',
+              variant: 'default'
+            }}
+            color="purple"
+            delay={300}
+          />
         )}
       </div>
 

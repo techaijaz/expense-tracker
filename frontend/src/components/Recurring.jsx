@@ -13,6 +13,8 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import PremiumKpiCard from '@/components/ui/PremiumKpiCard';
+import { Wallet, RefreshCcw, Clock, Zap } from 'lucide-react';
 
 dayjs.extend(relativeTime);
 
@@ -176,36 +178,40 @@ const Recurring = () => {
       </div>
 
       {/* KPI Overview */}
-      <div className="mb-10 flex flex-wrap gap-4">
-        <KpiCard
-          label="Est. Monthly Outflow"
+      <div className="mb-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <PremiumKpiCard
+          title="Est. Monthly Outflow"
           value={formatAmount(stats.monthlyOutflow, currency)}
-          type="expense"
-          icon="💸"
-          subtext="Projected recurring expenses"
+          color="red"
+          icon={Wallet}
+          subtitle="Projected recurring expenses"
+          delay={100}
         />
-        <KpiCard
-          label="Active Protocols"
+        <PremiumKpiCard
+          title="Active Protocols"
           value={stats.count}
-          type="accent"
-          icon="⚙️"
-          subtext={`${stats.autoCount} automation rules active`}
+          color="primary"
+          icon={RefreshCcw}
+          subtitle={`${stats.autoCount} automation rules active`}
+          delay={200}
         />
-        <KpiCard
-          label="Next Execution"
+        <PremiumKpiCard
+          title="Next Execution"
           value={stats.nextDue ? dayjs(stats.nextDue).format('D MMM') : 'N/A'}
-          type="warning"
-          icon="🕒"
-          subtext={
+          color="amber"
+          icon={Clock}
+          subtitle={
             stats.nextDue ? dayjs(stats.nextDue).fromNow() : 'No upcoming tasks'
           }
+          delay={300}
         />
-        <KpiCard
-          label="System Health"
+        <PremiumKpiCard
+          title="System Health"
           value="100%"
-          type="income"
-          icon="✅"
-          subtext="All standing orders processed"
+          color="green"
+          icon={Zap}
+          subtitle="All standing orders processed"
+          delay={400}
         />
       </div>
 
@@ -315,47 +321,6 @@ const Recurring = () => {
   );
 };
 
-const KpiCard = ({ label, value, type, icon, subtext }) => {
-  const typeStyles = {
-    accent: 'border-b-accent shadow-accent/5',
-    income: 'border-b-green shadow-green/5',
-    expense: 'border-b-red shadow-red/5',
-    warning: 'border-b-amber shadow-amber/5',
-  };
-
-  return (
-    <div
-      className={cn(
-        'group relative overflow-hidden rounded-[32px] border-b-[6px] bg-bg2 p-7 border border-border/40 shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98]',
-        'w-full sm:w-[calc(50%-8px)] lg:w-[calc(25%-12px)]',
-        typeStyles[type] || typeStyles.accent,
-      )}
-    >
-      <div className="flex items-start justify-between mb-4">
-        <div className="h-12 w-12 flex items-center justify-center rounded-2xl bg-bg3/50 text-2xl group-hover:scale-110 transition-transform">
-          {icon}
-        </div>
-        <div className="h-1 w-12 rounded-full bg-border/40" />
-      </div>
-      <div className="space-y-1">
-        <div className="text-[10px] font-black uppercase tracking-[0.2em] text-text3">
-          {label}
-        </div>
-        <div className="font-mono text-3xl font-black tracking-tighter text-text">
-          {value}
-        </div>
-        {subtext && (
-          <div className="text-[10px] font-medium text-text3 opacity-70">
-            {subtext}
-          </div>
-        )}
-      </div>
-      
-      {/* Decorative Glow */}
-      <div className="absolute -right-4 -top-4 w-24 h-24 bg-accent/5 blur-3xl rounded-full" />
-    </div>
-  );
-};
 
 const RecurringCard = ({
   task,

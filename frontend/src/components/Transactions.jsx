@@ -13,6 +13,25 @@ import { DeleteConfirmModal } from './SharedComponents';
 import TransactionPopup from './TransactionPopup';
 import { toast } from 'sonner';
 import {
+  ArrowDownLeft,
+  ArrowUpRight,
+  Activity,
+  ArrowRightLeft,
+  Search,
+  TrendingUp,
+  TrendingDown,
+  Pencil,
+  Trash2,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  Calendar,
+  Filter,
+} from 'lucide-react';
+import PremiumKpiCard from '@/components/ui/PremiumKpiCard';
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -27,7 +46,17 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import api from '@/utils/httpMethods';
+import { cn } from '@/utils/utils';
 
 export default function Transactions() {
   const dispatch = useDispatch();
@@ -246,181 +275,205 @@ export default function Transactions() {
   return (
     <div className="p-4 md:p-6 flex flex-col gap-4 bg-background min-h-full">
       {/* ── SUMMARY KPI CARDS ── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-        <Card className="bg-green-500/10 border-green-500/20 shadow-none">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-green-700 dark:text-green-400">Total Inflow</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-700 dark:text-green-400">
-              {formatAmount(inflow)}
-            </div>
-            {overview?.comparison?.incomeChange !== undefined && inflow > 0 && (
-              <p className={`text-xs mt-1 ${overview.comparison.incomeChange >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                {overview.comparison.incomeChange >= 0 ? '↑' : '↓'} {Math.abs(overview.comparison.incomeChange)}% vs last month
-              </p>
-            )}
-          </CardContent>
-        </Card>
-        <Card className="bg-red-500/10 border-red-500/20 shadow-none">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-red-700 dark:text-red-400">Total Outflow</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-700 dark:text-red-400">
-              {formatAmount(outflow)}
-            </div>
-            {overview?.comparison?.expenseChange !== undefined && outflow > 0 && (
-              <p className={`text-xs mt-1 ${overview.comparison.expenseChange <= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                {overview.comparison.expenseChange <= 0 ? '↓' : '↑'} {Math.abs(overview.comparison.expenseChange)}% vs last month
-              </p>
-            )}
-          </CardContent>
-        </Card>
-        <Card className="bg-blue-500/10 border-blue-500/20 shadow-none">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-400">Net Precision</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-700 dark:text-blue-400">
-              {formatAmount(netPrecision)}
-            </div>
-            {overview?.comparison?.savingsChange !== undefined && (inflow > 0 || outflow > 0) && (
-              <p className={`text-xs mt-1 ${overview.comparison.savingsChange >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                {overview.comparison.savingsChange >= 0 ? '↑' : '↓'} {Math.abs(overview.comparison.savingsChange)}% vs last month
-              </p>
-            )}
-          </CardContent>
-        </Card>
+      <div className="flex flex-wrap gap-4 mb-2">
+        <PremiumKpiCard
+          title="Total Inflow"
+          value={formatAmount(inflow)}
+          subtitle="Money arriving"
+          icon={ArrowDownLeft}
+          color="green"
+          trend={overview?.comparison?.incomeChange !== undefined && inflow > 0 ? {
+            value: `${Math.abs(overview.comparison.incomeChange)}%`,
+            direction: overview.comparison.incomeChange >= 0 ? 'up' : 'down',
+            label: 'vs last month'
+          } : null}
+          delay={100}
+          className="flex-1 min-w-[280px]"
+        />
+        <PremiumKpiCard
+          title="Total Outflow"
+          value={formatAmount(outflow)}
+          subtitle="Money leaving"
+          icon={ArrowUpRight}
+          color="red"
+          trend={overview?.comparison?.expenseChange !== undefined && outflow > 0 ? {
+            value: `${Math.abs(overview.comparison.expenseChange)}%`,
+            direction: overview.comparison.expenseChange <= 0 ? 'up' : 'down',
+            label: 'vs last month'
+          } : null}
+          delay={200}
+          className="flex-1 min-w-[280px]"
+        />
+        <PremiumKpiCard
+          title="Net Precision"
+          value={`${netPrecision >= 0 ? '+' : ''}${formatAmount(netPrecision)}`}
+          subtitle="Net flow summary"
+          icon={netPrecision >= 0 ? TrendingUp : TrendingDown}
+          color={netPrecision >= 0 ? 'green' : 'red'}
+          badge={netPrecision !== 0 ? {
+            text: netPrecision >= 0 ? 'Surplus' : 'Deficit',
+            variant: netPrecision >= 0 ? 'success' : 'error'
+          } : null}
+          trend={overview?.comparison?.savingsChange !== undefined && (inflow > 0 || outflow > 0) ? {
+            value: `${Math.abs(overview.comparison.savingsChange)}%`,
+            direction: overview.comparison.savingsChange >= 0 ? 'up' : 'down',
+            label: 'vs last month'
+          } : null}
+          delay={300}
+          className="flex-1 min-w-[280px]"
+        />
+        <PremiumKpiCard
+          title="Movements"
+          value={totalRecords}
+          subtitle="Total recorded activity"
+          icon={Activity}
+          color="primary"
+          delay={400}
+          className="flex-1 min-w-[280px]"
+        />
       </div>
 
-      {/* ── FILTER BAR (row 1) ── */}
-      <div className="bg-card border border-border rounded-t-xl p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
-        {/* Search */}
-        <div className="flex flex-col">
-          <label className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold mb-1.5">Search</label>
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm pointer-events-none">🔍</span>
-            <Input
-              className="pl-9 h-10 bg-background"
-              placeholder="Find by description, category…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+      {/* ── CONTROL CENTER (Filters) ── */}
+      <Card className="border-border/40 bg-card/60 backdrop-blur-sm shadow-sm overflow-hidden">
+        <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Search */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold ml-1">Search</label>
+            <div className="relative group">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+              <Input
+                className="pl-9 h-10 bg-background/50 border-border/50 focus:border-primary/50 transition-all"
+                placeholder="Description, category…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Date Range */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold ml-1">Date Range</label>
+            <DateRangePicker value={dateRange} onChange={setDateRange} />
+          </div>
+
+          {/* Flow Type */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold ml-1">Flow Type</label>
+            <Select
+              value={type}
+              onValueChange={(val) => {
+                setType(val);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className="h-10 bg-background/50 border-border/50 focus:border-primary/50">
+                <div className="flex items-center gap-2">
+                  <Filter className="w-3.5 h-3.5 text-muted-foreground" />
+                  <SelectValue placeholder="All Flows" />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Flows</SelectItem>
+                <SelectItem value="expense">Expense</SelectItem>
+                <SelectItem value="income">Income</SelectItem>
+                <SelectItem value="transfer">Transfer</SelectItem>
+                <SelectItem value="debt">Debt</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Account */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold ml-1">Account</label>
+            <Select
+              value={account}
+              onValueChange={(val) => {
+                setAccount(val);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className="h-10 bg-background/50 border-border/50 focus:border-primary/50">
+                <div className="flex items-center gap-2">
+                  <Activity className="w-3.5 h-3.5 text-muted-foreground" />
+                  <SelectValue placeholder="All Accounts" />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Accounts</SelectItem>
+                {accounts.filter(a => !a.isDeleted).map((a) => (
+                  <SelectItem key={a._id} value={a._id}>
+                    {a.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
-        {/* Date Range */}
-        <div className="flex flex-col">
-          <label className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold mb-1.5">Date Range</label>
-          <DateRangePicker value={dateRange} onChange={setDateRange} />
-        </div>
+        {/* Secondary Filters Row */}
+        <div className={cn(
+          "px-4 pb-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-end border-t border-border/30 pt-4",
+          !isPro && "opacity-60 grayscale-[0.5]"
+        )}>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold ml-1 flex items-center gap-1.5">
+              Category {!isPro && <span className="text-[8px] bg-amber-500/10 text-amber-600 px-1.5 py-0.5 rounded-full">PRO 🔒</span>}
+            </label>
+            <Select
+              value={category}
+              onValueChange={(val) => {
+                setCategory(val);
+                setPage(1);
+              }}
+              disabled={!isPro}
+            >
+              <SelectTrigger className="h-10 bg-background/50 border-border/50">
+                <SelectValue placeholder="All Categories" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {categories.map((c) => (
+                  <SelectItem key={c._id} value={c._id}>
+                    <span className="flex items-center gap-2">
+                      <span className="text-base">{c.icon}</span>
+                      <span>{c.name}</span>
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-        {/* Flow Type */}
-        <div className="flex flex-col">
-          <label className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold mb-1.5">Flow Type</label>
-          <Select
-            value={type}
-            onValueChange={(val) => {
-              setType(val);
-              setPage(1);
-            }}
-          >
-            <SelectTrigger className="h-10 bg-background">
-              <SelectValue placeholder="All Flows" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Flows</SelectItem>
-              <SelectItem value="expense">Expense</SelectItem>
-              <SelectItem value="income">Income</SelectItem>
-              <SelectItem value="transfer">Transfer</SelectItem>
-              <SelectItem value="debt">Debt</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold ml-1 flex items-center gap-1.5">
+              Party {!isPro && <span className="text-[8px] bg-amber-500/10 text-amber-600 px-1.5 py-0.5 rounded-full">PRO 🔒</span>}
+            </label>
+            <Select
+              value={party}
+              onValueChange={(val) => {
+                setParty(val);
+                setPage(1);
+              }}
+              disabled={!isPro}
+            >
+              <SelectTrigger className="h-10 bg-background/50 border-border/50">
+                <SelectValue placeholder="All Parties" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Parties</SelectItem>
+                {parties.map((p) => (
+                  <SelectItem key={p._id} value={p._id}>
+                    {p.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-        {/* Account */}
-        <div className="flex flex-col">
-          <label className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold mb-1.5">Account</label>
-          <Select
-            value={account}
-            onValueChange={(val) => {
-              setAccount(val);
-              setPage(1);
-            }}
-          >
-            <SelectTrigger className="h-10 bg-background">
-              <SelectValue placeholder="All Accounts" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Accounts</SelectItem>
-              {accounts.filter(a => !a.isDeleted).map((a) => (
-                <SelectItem key={a._id} value={a._id}>
-                  {a.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {/* ── FILTER BAR (row 2) ── */}
-      <div
-        className={`bg-card border border-t-0 border-border rounded-b-xl p-3 px-4 mb-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4 items-end ${!isPro ? 'opacity-60 pointer-events-none' : ''}`}
-      >
-        <div className="flex flex-col">
-          <label className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold mb-1.5">Category {!isPro && '🔒'}</label>
-          <Select
-            value={category}
-            onValueChange={(val) => {
-              setCategory(val);
-              setPage(1);
-            }}
-            disabled={!isPro}
-          >
-            <SelectTrigger className="h-10 bg-background">
-              <SelectValue placeholder="All Categories" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              {categories.map((c) => (
-                <SelectItem key={c._id} value={c._id}>
-                  {c.icon} {c.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="flex flex-col">
-          <label className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold mb-1.5">Party (Debt) {!isPro && '🔒'}</label>
-          <Select
-            value={party}
-            onValueChange={(val) => {
-              setParty(val);
-              setPage(1);
-            }}
-            disabled={!isPro}
-          >
-            <SelectTrigger className="h-10 bg-background">
-              <SelectValue placeholder="All Parties" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Parties</SelectItem>
-              {parties.map((p) => (
-                <SelectItem key={p._id} value={p._id}>
-                  {p.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="flex flex-col">
           <Button
             variant="outline"
-            className="w-full h-10 text-muted-foreground hover:text-destructive hover:border-destructive/50 transition-colors"
+            className="h-10 border-dashed border-border hover:bg-destructive/5 hover:text-destructive hover:border-destructive/30 transition-all flex items-center gap-2 group"
             onClick={() => {
-              // Clear everything in one go - React 18 will batch these updates
               setSearch('');
               setDebouncedSearch('');
               setCategory('all');
@@ -428,238 +481,215 @@ export default function Transactions() {
               setType('all');
               setParty('all');
               setDateRange({
-                from: new Date(
-                  new Date().getFullYear(),
-                  new Date().getMonth(),
-                  1,
-                ),
+                from: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
                 to: new Date(),
               });
               setPage(1);
             }}
           >
-            ✕ Clear Filters
+            <X className="w-3.5 h-3.5 text-muted-foreground group-hover:text-destructive transition-colors" />
+            Reset All Filters
           </Button>
         </div>
-      </div>
+      </Card>
 
-      {/* ── TRANSACTION TABLE ── */}
-      <Card className="p-0 overflow-hidden shadow-none">
-        {/* Table Header - Hidden on Mobile */}
-        <div className="hidden md:grid grid-cols-[110px_1fr_130px_90px_160px] gap-3 px-4 py-2 border-b border-border text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">
-          <div>Type</div>
-          <div>Description</div>
-          <div>Category</div>
-          <div>Date</div>
-          <div className="text-right">Amount</div>
+      {/* ── TRANSACTION LIST ── */}
+      <Card className="border-border/40 shadow-sm overflow-hidden bg-card/40 mt-6">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader className="bg-muted/50">
+              <TableRow className="hover:bg-transparent border-b-border/40">
+                <TableHead className="w-[120px] text-[10px] font-bold uppercase tracking-widest h-10">Flow</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest h-10">Description & Source</TableHead>
+                <TableHead className="w-[140px] text-[10px] font-bold uppercase tracking-widest h-10">Category</TableHead>
+                <TableHead className="w-[110px] text-[10px] font-bold uppercase tracking-widest h-10 text-center">Date</TableHead>
+                <TableHead className="w-[180px] text-[10px] font-bold uppercase tracking-widest h-10 text-right">Amount & Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading && list.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="h-64 text-center">
+                    <div className="flex flex-col items-center justify-center gap-3">
+                      <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                      <p className="text-sm text-muted-foreground animate-pulse">Syncing Ledger...</p>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : list.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="h-64 text-center">
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center text-2xl mb-2 opacity-50">📭</div>
+                      <p className="text-sm font-semibold">No movements found</p>
+                      <p className="text-xs text-muted-foreground">Try adjusting your filters or date range.</p>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                list.filter(Boolean).map((t) => {
+                  const badge = getTypeBadge(t);
+                  const amtDisplay = getAmountDisplay(t);
+                  const typeName = (t.type || 'expense').toLowerCase();
+                  const isDebt = typeName === 'debt';
+                  const isTransfer = typeName === 'transfer';
+
+                  return (
+                    <TableRow key={t._id} className="group hover:bg-muted/30 border-b-border/30 transition-colors">
+                      {/* Flow Type */}
+                      <TableCell className="py-4">
+                        <div className="flex flex-col gap-1">
+                          <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-tighter border", badge.cls)}>
+                            {badge.label}
+                          </span>
+                          {isDebt && t.partyId && (
+                            <span className="text-[9px] font-medium text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                              <span className="w-1 h-1 rounded-full bg-current" />
+                              {t.partyId.name}
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
+
+                      {/* Description */}
+                      <TableCell className="py-4">
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-sm font-semibold tracking-tight leading-none group-hover:text-primary transition-colors">
+                            {t.title || 'Untitled Transaction'}
+                          </span>
+                          <span className="text-[11px] text-muted-foreground flex items-center gap-1.5 font-medium">
+                            <Activity className="w-3 h-3" />
+                            {t.accountId?.name || 'Unknown'}
+                            {isTransfer && t.targetAccountId?.name && (
+                              <span className="flex items-center gap-1 text-primary/80">
+                                <ArrowRightLeft className="w-3 h-3" />
+                                {t.targetAccountId.name}
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                      </TableCell>
+
+                      {/* Category */}
+                      <TableCell className="py-4">
+                        <div className="flex items-center gap-2 px-2 py-1 bg-muted/40 border border-border/40 rounded-lg w-fit">
+                          <span className="text-sm leading-none">{t.categoryId?.icon || '📦'}</span>
+                          <span className="text-[11px] font-bold text-muted-foreground whitespace-nowrap">
+                            {t.categoryId?.name || 'Unclassified'}
+                          </span>
+                        </div>
+                      </TableCell>
+
+                      {/* Date */}
+                      <TableCell className="py-4 text-center">
+                        <span className="text-[11px] font-mono text-muted-foreground/80 font-medium">
+                          {formatDate(t.date)}
+                        </span>
+                      </TableCell>
+
+                      {/* Amount & Actions */}
+                      <TableCell className="py-4 text-right">
+                        <div className="flex items-center justify-end gap-3">
+                          <div className="flex flex-col items-end gap-0.5">
+                            <span className={cn("text-sm font-bold tracking-tight", amtDisplay.cls)}>
+                              {amtDisplay.prefix}{formatAmount(t.amount)}
+                            </span>
+                          </div>
+                          
+                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="w-8 h-8 hover:bg-primary/10 hover:text-primary"
+                              onClick={() => handleEdit(t)}
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="w-8 h-8 hover:bg-destructive/10 hover:text-destructive"
+                              onClick={() => handleDeleteClick(t._id)}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
         </div>
 
-        {/* Body */}
-        {loading && list.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-2 py-16 px-6 text-muted-foreground text-sm">
-            <div className="w-9 h-9 border-4 border-border border-t-primary rounded-full animate-spin" />
-            <span>Synchronizing Ledger…</span>
-          </div>
-        ) : list.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-2 py-16 px-6 text-muted-foreground text-sm">
-            <div className="text-3xl mb-3">📭</div>
-            <div className="text-sm font-semibold text-foreground">
-              No movements found
-            </div>
-            <div className="text-xs mt-1 text-muted-foreground">
-              Try adjusting your filters or add a transaction.
-            </div>
-          </div>
-        ) : (
-          <div className={loading ? 'opacity-60 pointer-events-none transition-opacity' : ''}>
-            {list.filter(Boolean).map((t) => {
-              const badge = getTypeBadge(t);
-              const amtDisplay = getAmountDisplay(t);
-              const typeName = (t.type || 'expense').toLowerCase();
-              const isDebt = typeName === 'debt';
-              const isTransfer = typeName === 'transfer';
-
-              return (
-                <div key={t._id} className="p-3 md:px-4 md:py-3 border-b border-border last:border-b-0 hover:bg-muted/50 transition-colors cursor-pointer flex flex-col md:grid md:grid-cols-[110px_1fr_130px_90px_160px] md:gap-3 md:items-center group">
-                  {/* Mobile Header Row */}
-                <div className="flex items-center justify-between md:hidden mb-2">
-                  <span className={badge.cls}>{badge.label}</span>
-                  <div className="flex items-center gap-2">
-                    <span className={amtDisplay.cls}>
-                      {amtDisplay.prefix}
-                      {formatAmount(t.amount)}
-                    </span>
-                    <div className="flex gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="w-6 h-6 text-[10px]"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEdit(t);
-                        }}
-                      >
-                        ✏️
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="w-6 h-6 text-[10px] text-destructive hover:text-destructive hover:bg-destructive/10"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteClick(t._id);
-                        }}
-                      >
-                        🗑️
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Desktop: Type (Col 1) */}
-                <div className="hidden md:block">
-                  <span className={badge.cls}>{badge.label}</span>
-                  {isDebt && t.partyId && (
-                    <div className="text-[10px] text-amber-600 dark:text-amber-400 mt-1">
-                      👤 {t.partyId.name}
-                    </div>
-                  )}
-                </div>
-
-                {/* Description + Account (Col 2) */}
-                <div>
-                  <div className="text-[13px] font-medium text-foreground">
-                    {t.title || '— No description —'}
-                  </div>
-                  <div className="text-[11px] text-muted-foreground mt-0.5">
-                    {t.accountId?.name || 'Unknown'}
-                    {isTransfer && t.targetAccountId?.name && (
-                      <span className="text-primary">
-                        {' '}
-                        → {t.targetAccountId.name}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Category (Col 3) */}
-                <div className="mt-2 md:mt-0">
-                  <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 bg-muted rounded-md text-muted-foreground">
-                    {t.categoryId?.icon && <span>{t.categoryId.icon}</span>}
-                    {t.categoryId?.name || 'Unclassified'}
-                  </span>
-                </div>
-
-                {/* Date (Col 4) */}
-                <div className="text-xs text-muted-foreground font-mono mt-1 md:mt-0">{formatDate(t.date)}</div>
-
-                {/* Amount + Actions (Col 5) - Desktop Only layout here */}
-                <div
-                  className="hidden md:flex items-center justify-end gap-1.5"
-                >
-                  <span className={amtDisplay.cls}>
-                    {amtDisplay.prefix}
-                    {formatAmount(t.amount)}
-                  </span>
-                  <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="w-7 h-7"
-                      title="Edit"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEdit(t);
-                      }}
-                    >
-                      ✏️
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="w-7 h-7 text-destructive hover:text-destructive hover:bg-destructive/10"
-                      title="Delete"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteClick(t._id);
-                      }}
-                    >
-                      🗑️
-                    </Button>
-                  </div>
-                </div>
-                
-                {/* Mobile Only: Party Info if Debt */}
-                {isDebt && t.partyId && (
-                  <div className="md:hidden mt-1 text-[10px] text-amber-600 dark:text-amber-400">
-                    👤 {t.partyId.name}
-                  </div>
-                )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-
         {/* ── PAGINATION FOOTER ── */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-between items-center p-3 md:px-4 border-t border-border text-[11px] text-muted-foreground">
-          <span className="text-center sm:text-left">
-            Showing {startRecord}–{endRecord} of {totalRecords} records
+        <div className="flex flex-col sm:flex-row gap-4 justify-between items-center p-4 bg-muted/20 border-t border-border/40 text-[11px] font-medium text-muted-foreground">
+          <span className="text-center sm:text-left flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-primary/40" />
+            Showing <span className="text-foreground font-bold">{startRecord}–{endRecord}</span> of <span className="text-foreground font-bold">{totalRecords}</span> entries
           </span>
-          <div className="flex gap-1 justify-center">
+          
+          <div className="flex items-center gap-1.5">
             <Button
               variant="outline"
               size="icon"
-              className="w-7 h-7 text-[11px]"
+              className="w-8 h-8 rounded-lg border-border/50 hover:bg-background shadow-sm disabled:opacity-30"
               onClick={() => setPage(1)}
               disabled={page === 1}
             >
-              ⟨⟨
+              <ChevronsLeft className="w-4 h-4" />
             </Button>
             <Button
               variant="outline"
               size="icon"
-              className="w-7 h-7 text-[11px]"
+              className="w-8 h-8 rounded-lg border-border/50 hover:bg-background shadow-sm disabled:opacity-30"
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
             >
-              ⟨
+              <ChevronLeft className="w-4 h-4" />
             </Button>
 
-            {Array.from({ length: Math.min(totalPages, 3) }, (_, i) => {
-              const start = Math.max(1, Math.min(totalPages - 2, page - 1));
-              const pageNum = start + i;
-              if (pageNum < 1 || pageNum > totalPages) return null;
-              return (
-                <Button
-                  key={pageNum}
-                  variant={pageNum === page ? 'default' : 'outline'}
-                  size="icon"
-                  className="w-7 h-7 text-[11px]"
-                  onClick={() => setPage(pageNum)}
-                >
-                  {pageNum}
-                </Button>
-              );
-            })}
+            <div className="flex items-center gap-1 px-1">
+              {Array.from({ length: Math.min(totalPages, 3) }, (_, i) => {
+                const start = Math.max(1, Math.min(totalPages - 2, page - 1));
+                const pageNum = start + i;
+                if (pageNum < 1 || pageNum > totalPages) return null;
+                return (
+                  <Button
+                    key={pageNum}
+                    variant={pageNum === page ? 'default' : 'ghost'}
+                    size="icon"
+                    className={cn(
+                      "w-8 h-8 rounded-lg text-xs font-bold transition-all",
+                      pageNum === page ? "shadow-md shadow-primary/20" : "hover:bg-background"
+                    )}
+                    onClick={() => setPage(pageNum)}
+                  >
+                    {pageNum}
+                  </Button>
+                );
+              })}
+            </div>
 
             <Button
               variant="outline"
               size="icon"
-              className="w-7 h-7 text-[11px]"
+              className="w-8 h-8 rounded-lg border-border/50 hover:bg-background shadow-sm disabled:opacity-30"
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page >= totalPages}
             >
-              ⟩
+              <ChevronRight className="w-4 h-4" />
             </Button>
             <Button
               variant="outline"
               size="icon"
-              className="w-7 h-7 text-[11px]"
+              className="w-8 h-8 rounded-lg border-border/50 hover:bg-background shadow-sm disabled:opacity-30"
               onClick={() => setPage(totalPages)}
               disabled={page >= totalPages}
             >
-              ⟩⟩
+              <ChevronsRight className="w-4 h-4" />
             </Button>
           </div>
         </div>

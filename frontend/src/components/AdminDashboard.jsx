@@ -10,6 +10,7 @@ import {
   PieChart as PieChartIcon,
   Activity
 } from 'lucide-react';
+import PremiumKpiCard from '@/components/ui/PremiumKpiCard';
 import api from '@/utils/httpMethods';
 import {
   XAxis,
@@ -74,54 +75,51 @@ const AdminDashboard = () => {
       </div>
 
       {/* KPI Cards */}
-      <div className="stat-row">
-        <div className="kpi-card blue">
-          <div className="kpi-icon blue">
-            <Users size={18} />
-          </div>
-          <div className="kpi-label">Total Users</div>
-          <div className="kpi-val">{stats.totalUsers.toLocaleString()}</div>
-          <div className="kpi-change up">
-            <ArrowUpRight size={14} />
-            <span>12% over baseline</span>
-          </div>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <PremiumKpiCard
+          title="Total Users"
+          value={stats.totalUsers.toLocaleString()}
+          icon={Users}
+          color="blue"
+          trend={{
+            value: "12% over baseline",
+            direction: "up",
+          }}
+          delay={100}
+        />
 
-        <div className="kpi-card purple">
-          <div className="kpi-icon" style={{backgroundColor: 'rgba(167, 139, 250, 0.1)', color: '#A78BFA'}}>
-            <ShieldCheck size={18} />
-          </div>
-          <div className="kpi-label">Pro License Nodes</div>
-          <div className="kpi-val">{stats.proUsers.toLocaleString()}</div>
-          <div className="kpi-change up">
-            <ArrowUpRight size={14} />
-            <span>8% conversion</span>
-          </div>
-        </div>
+        <PremiumKpiCard
+          title="Pro License Nodes"
+          value={stats.proUsers.toLocaleString()}
+          icon={ShieldCheck}
+          color="purple"
+          trend={{
+            value: "8% conversion",
+            direction: "up",
+          }}
+          delay={200}
+        />
 
-        <div className="kpi-card green">
-          <div className="kpi-icon green">
-            <TrendingUp size={18} />
-          </div>
-          <div className="kpi-label">System Revenue</div>
-          <div className="kpi-val">{formatAmount(stats.totalRevenue)}</div>
-          <div className="kpi-change up">
-            <ArrowUpRight size={14} />
-            <span>15% growth</span>
-          </div>
-        </div>
+        <PremiumKpiCard
+          title="System Revenue"
+          value={formatAmount(stats.totalRevenue)}
+          icon={TrendingUp}
+          color="green"
+          trend={{
+            value: "15% growth",
+            direction: "up",
+          }}
+          delay={300}
+        />
 
-        <div className="kpi-card amber">
-          <div className="kpi-icon amber">
-            <Clock size={18} />
-          </div>
-          <div className="kpi-label">Pending Verifications</div>
-          <div className="kpi-val">{stats.activePayments}</div>
-          <div className="kpi-change neutral">
-            <Activity size={14} />
-            <span>Awaiting Review</span>
-          </div>
-        </div>
+        <PremiumKpiCard
+          title="Pending Verifications"
+          value={stats.activePayments}
+          icon={Clock}
+          color="amber"
+          subtitle="Awaiting Review"
+          delay={400}
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

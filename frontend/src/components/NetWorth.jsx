@@ -31,6 +31,8 @@ import {
   Coins,
   Sparkles,
 } from 'lucide-react';
+import PremiumKpiCard from '@/components/ui/PremiumKpiCard';
+
 import {
   AreaChart,
   Area,
@@ -361,53 +363,36 @@ const NetWorth = () => {
       {/* Main KPI & Chart Grid */}
       <div className="flex flex-col lg:flex-row gap-8 mb-12 items-stretch min-h-[420px]">
         {/* Left: Summary Cards */}
-        <div className="w-full lg:w-[350px] flex flex-col shrink-0">
-          <div className="account-card flex-1 relative overflow-hidden flex flex-col justify-between shadow-sm">
-            <div className="space-y-10 relative z-10">
-              <div className="group">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="text-[11px] font-bold text-text3 uppercase tracking-[0.2em]">
-                    Total Assets
-                  </div>
-                  <span className="acc-type-badge bank">
-                    <Landmark size={12} className="mr-1" />
-                    Portfolio
-                  </span>
-                </div>
-                <div className="text-4xl font-bold font-mono text-accent tracking-tighter">
-                  {formatAmount(overview.totalAssets, null, 0)}
-                </div>
-              </div>
-
-              <div className="group">
-                <div className="text-[11px] font-bold text-text3 uppercase tracking-[0.2em] mb-3">
-                  Total Liabilities
-                </div>
-                <div className="text-2xl font-bold font-mono text-text2/60 tracking-tight">
-                  {formatAmount(overview.totalLiabilities, null, 0)}
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-8 border-t border-border/50 relative z-10 mt-8">
-              <div className="text-[11px] font-bold text-accent uppercase tracking-[0.2em] mb-3">
-                Net Worth Valuation
-              </div>
-              <div
-                className={`text-5xl font-extrabold font-mono tracking-tighter ${overview.netWorth >= 0 ? 'text-green' : 'text-red'}`}
-              >
-                {formatAmount(overview.netWorth, null, 0)}
-              </div>
-            </div>
-
-            {/* Visual background element - Explicitly low opacity */}
-            <div
-              className="absolute -right-8 -bottom-8 text-text pointer-events-none"
-              style={{ opacity: 0.03 }}
-            >
-              <Landmark size={240} strokeWidth={1} />
-            </div>
-          </div>
+        <div className="w-full lg:w-[380px] flex flex-col gap-4 shrink-0">
+          <PremiumKpiCard
+            title="Total Assets"
+            value={formatAmount(overview.totalAssets, null, 0)}
+            subtitle="Total Portfolio Valuation"
+            icon={Landmark}
+            color="blue"
+            delay={100}
+          />
+          <PremiumKpiCard
+            title="Total Liabilities"
+            value={formatAmount(overview.totalLiabilities, null, 0)}
+            subtitle="Outstanding Obligations"
+            icon={TrendingDown}
+            color="red"
+            delay={200}
+          />
+          <PremiumKpiCard
+            title="Net Worth Valuation"
+            value={formatAmount(overview.netWorth, null, 0)}
+            subtitle="Equity & Capital Base"
+            icon={ShieldCheck}
+            color={overview.netWorth >= 0 ? 'green' : 'red'}
+            badge={
+              overview.netWorth >= 0
+                ? { text: 'STABLE', variant: 'success' }
+                : { text: 'DEFICIT', variant: 'error' }
+            }
+            delay={300}
+          />
         </div>
 
         {/* Right: Trajectory Chart */}
@@ -576,7 +561,7 @@ const NetWorth = () => {
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {[
             {
               label: 'FORMAL LOANS',
@@ -590,7 +575,7 @@ const NetWorth = () => {
               label: 'CREDIT CARDS',
               val: overview.breakdown?.creditCardDebt,
               icon: CreditCard,
-              color: 'accent',
+              color: 'amber',
               sub: `Due in ${Math.floor(Math.random() * 20) + 1} days`,
               badge: 'ACTIVE',
             },
@@ -603,33 +588,16 @@ const NetWorth = () => {
               badge: 'PRIVATE',
             },
           ].map((item, i) => (
-            <div key={i} className="account-card group shadow-sm" style={{ flex: '1 1 calc(33.333% - 16px)', minWidth: '280px' }}>
-              <div className="flex justify-between items-start mb-6 transition-transform group-hover:-translate-y-1 duration-300">
-                <div
-                  className={`w-10 h-10 rounded-xl bg-${item.color}-bg flex items-center justify-center text-${item.color}`}
-                >
-                  <item.icon size={20} />
-                </div>
-                <span
-                  className={`acc-type-badge ${item.color === 'accent' ? 'bank' : item.color === 'red' ? 'credit' : 'investment'}`}
-                >
-                  {item.badge}
-                </span>
-              </div>
-
-              <div className="text-[10px] font-black text-text3 uppercase tracking-[0.2em] mb-3">
-                {item.label}
-              </div>
-
-              <div className="text-3xl font-bold font-mono text-text tracking-tighter mb-6">
-                {formatAmount(item.val, null, 0)}
-              </div>
-
-              <div className="flex items-center gap-2 text-[10px] text-text3 italic opacity-60 pt-4 border-t border-border/30">
-                <div className={`w-1 h-1 rounded-full bg-${item.color}`}></div>
-                {item.sub}
-              </div>
-            </div>
+            <PremiumKpiCard
+              key={i}
+              title={item.label}
+              value={formatAmount(item.val, null, 0)}
+              subtitle={item.sub}
+              icon={item.icon}
+              color={item.color}
+              badge={{ text: item.badge, variant: item.color === 'red' ? 'error' : 'outline' }}
+              delay={i * 100}
+            />
           ))}
         </div>
       </div>

@@ -1,64 +1,41 @@
 import React from 'react';
-
-const ICONS = {
-  blue: '🏛️',
-  green: '💵',
-  red: '🛒',
-  amber: '💳',
-  purple: '📈',
-};
-
-const TREND_LABELS = {
-  blue: { up: '↑', down: '↓' },
-  green: { up: '↑', down: '↓' },
-  red: { up: '↑', down: '↑' }, // for expense, up is bad
-};
-
-const StatCard = ({ title, value, trend, trendValue, color, trendLabel }) => {
-  const isUp = trend === 'up';
-  // For expenses (red), "up" trend means more spending = bad (down color)
-  const changeClass =
-    color === 'red' ? (isUp ? 'down' : 'up') : isUp ? 'up' : 'down';
-
-  const arrow = isUp ? '↑' : '↓';
-
-  return (
-    <div className={`kpi-card ${color}`}>
-      <div className={`kpi-icon ${color}`}>{ICONS[color] || '💰'}</div>
-      <div className="kpi-label">{title}</div>
-      <div className="kpi-val">{value}</div>
-      <div className={`kpi-change ${changeClass}`}>
-        {arrow} {trendLabel || `${trendValue}% vs last month`}
-      </div>
-    </div>
-  );
-};
+import PremiumKpiCard from '@/components/ui/PremiumKpiCard';
+import { Wallet, Landmark, Receipt } from 'lucide-react';
 
 export const DashboardStats = ({ stats }) => {
   return (
-    <div className="stat-row">
-      <StatCard
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <PremiumKpiCard
         title="Total Balance"
         value={stats.totalBalance}
-        trend={stats.balanceTrend}
-        trendValue={stats.balanceTrendValue}
-        trendLabel={`+${stats.balanceTrendValue}% from last month`}
+        trend={{
+          value: `${stats.balanceTrendValue}%`,
+          direction: stats.balanceTrend === 'up' ? 'up' : 'down',
+          label: 'from last month'
+        }}
+        icon={Wallet}
         color="blue"
       />
-      <StatCard
+      <PremiumKpiCard
         title="Monthly Income"
         value={stats.monthlyIncome}
-        trend={stats.incomeTrend}
-        trendValue={stats.incomeTrendValue}
-        trendLabel={`↑ vs last month`}
+        trend={{
+          value: '↑',
+          direction: stats.incomeTrend === 'up' ? 'up' : 'down',
+          label: 'vs last month'
+        }}
+        icon={Landmark}
         color="green"
       />
-      <StatCard
+      <PremiumKpiCard
         title="Monthly Expense"
         value={stats.monthlyExpense}
-        trend={stats.expenseTrend}
-        trendValue={stats.expenseTrendValue}
-        trendLabel={`↑ ${stats.expenseTrendValue}% vs last month`}
+        trend={{
+          value: `${stats.expenseTrendValue}%`,
+          direction: stats.expenseTrend === 'up' ? 'down' : 'up', // For expenses, "up" trend is "down" (bad)
+          label: 'vs last month'
+        }}
+        icon={Receipt}
         color="red"
       />
     </div>
@@ -66,3 +43,4 @@ export const DashboardStats = ({ stats }) => {
 };
 
 export default DashboardStats;
+
