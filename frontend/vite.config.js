@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import { fileURLToPath } from 'url';
@@ -45,7 +45,14 @@ export default defineConfig({
   ],
   server: {
     port: 4000,
-    open: true,
+    strictPort: true,
+    open: false,
+
+  },
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: './vitest.setup.jsx',
   },
   resolve: {
     alias: {

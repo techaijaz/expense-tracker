@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import SideMenu from './SideMenu';
 import Header from './Header';
-import TransactionPopup from '@/components/TransactionPopup';
+import TransactionPopup from '@/features/transactions/components/TransactionPopup';
 
 function MainLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);

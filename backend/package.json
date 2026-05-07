@@ -23,7 +23,6 @@
         "cookie-parser": "^1.4.7",
         "cors": "^2.8.5",
         "cross-env": "^7.0.3",
-        "crypto": "^1.0.1",
         "dayjs": "^1.11.13",
         "dotenv-flow": "^4.1.0",
         "express": "^4.21.1",

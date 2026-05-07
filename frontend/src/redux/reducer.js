@@ -1,11 +1,11 @@
-import authSlice from './authSlice';
+import authSlice from '@/features/auth/state/authSlice';
 import { combineReducers } from '@reduxjs/toolkit';
 import appSlice from './appSlice';
-import accountSlice from './accountSlice';
-import categorySlice from './categorySlice';
-import transactionSlice from './transactionSlice';
-import loanSlice from './loanSlice';
-import dashboardSlice from './dashboardSlice';
+import accountSlice from '@/features/accounts/state/accountSlice';
+import categorySlice from '@/features/categories/state/categorySlice';
+import transactionSlice from '@/features/transactions/state/transactionSlice';
+import loanSlice from '@/features/loans/state/loanSlice';
+import dashboardSlice from '@/features/dashboard/state/dashboardSlice';
 
 const rootReducer = combineReducers({
   auth: authSlice,

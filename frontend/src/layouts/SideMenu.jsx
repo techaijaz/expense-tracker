@@ -2,8 +2,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDispatch, useSelector } from 'react-redux';
-import { logout } from '@/redux/authSlice';
-import SubscriptionPopup from '@/components/SubscriptionPopup';
+import { logout } from '@/features/auth/state/authSlice';
+import SubscriptionPopup from '@/features/settings/components/SubscriptionPopup';
 import { toast } from 'sonner';
 import api from '@/utils/httpMethods';
 import { 

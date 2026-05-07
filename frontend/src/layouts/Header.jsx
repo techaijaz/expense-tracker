@@ -1,9 +1,9 @@
 import { useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useSelector, useDispatch } from 'react-redux';
-import { DateRangePicker } from '@/components/DateRangePicker';
-import { setDateRange } from '@/redux/dashboardSlice';
-import AddAccounts from '@/components/AddAccounts';
+import { DateRangePicker } from '@/components/common/DateRangePicker';
+import { setDateRange } from '@/features/dashboard/state/dashboardSlice';
+import AddAccounts from '@/features/accounts/components/AddAccounts';
 import { useTheme } from '@/context/ThemeContext';
 import { 
   Menu, 
